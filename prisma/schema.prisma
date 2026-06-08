@@ -1,0 +1,160 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Ruolo {
+  UTENTE
+  SEGRETERIA
+  ADMIN
+}
+
+enum StatoPrenotazione {
+  IN_ATTESA_PAGAMENTO
+  PAGAMENTO_CARICATO
+  CONFERMATA
+  ANNULLATA
+  SCADUTA
+}
+
+model Utente {
+  id               String    @id @default(cuid())
+  email            String    @unique
+  nome             String
+  cognome          String
+  telefono         String?
+  password         String?
+  ruolo            Ruolo     @default(UTENTE)
+  emailVerificata  DateTime?
+  tokenReset       String?
+  scadenzaToken    DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  prenotazioni     Prenotazione[]
+  account          Account[]
+  sessioni         Session[]
+
+  @@map("utenti")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  utenteId          String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  utente Utente @relation(fields: [utenteId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("account")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  utenteId     String
+  expires      DateTime
+
+  utente Utente @relation(fields: [utenteId], references: [id], onDelete: Cascade)
+
+  @@map("sessioni")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Corso {
+  id                   String   @id @default(cuid())
+  titolo               String
+  descrizione          String   @db.Text
+  dataInizio           DateTime
+  dataFine             DateTime?
+  orario               String
+  durata               String?
+  luogo                String?
+  costo                Decimal  @db.Decimal(10, 2)
+  postiTotali          Int
+  postiOccupati        Int      @default(0)
+  timeoutPagamentoOre  Int      @default(48)
+  coordinateBancarie   String   @db.Text
+  immagineUrl          String?
+  pubblicato           Boolean  @default(false)
+  // Attestato: template caricato dalla segreteria (PDF o immagine)
+  attestatoTemplateUrl String?
+  attestatoNomeFile    String?
+  attestatoAbilitato   Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  prenotazioni         Prenotazione[]
+
+  @@map("corsi")
+}
+
+model Prenotazione {
+  id                String            @id @default(cuid())
+  utenteId          String
+  corsoId           String
+  numeroPosti       Int               @default(1)
+  stato             StatoPrenotazione @default(IN_ATTESA_PAGAMENTO)
+  scadenzaPagamento DateTime
+  urlContabile      String?
+  nomeFileContabile String?
+  note              String?
+  noteSegreteria    String?
+  // Attestato: generato/caricato dalla segreteria dopo conferma
+  attestatoUrl      String?
+  attestatoEmesso   Boolean           @default(false)
+  attestatoEmessoAt DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  utente            Utente            @relation(fields: [utenteId], references: [id])
+  corso             Corso             @relation(fields: [corsoId], references: [id])
+  partecipanti      Partecipante[]
+
+  @@map("prenotazioni")
+}
+
+// Impostazioni di sistema (chiave-valore, crittografati per dati sensibili)
+model Impostazione {
+  id        String   @id @default(cuid())
+  chiave    String   @unique
+  valore    String   @db.Text
+  gruppo    String   @default("generale")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("impostazioni")
+}
+
+model Partecipante {
+  id             String   @id @default(cuid())
+  prenotazioneId String
+  nome           String
+  cognome        String
+  email          String?
+  telefono       String?
+
+  prenotazione   Prenotazione @relation(fields: [prenotazioneId], references: [id], onDelete: Cascade)
+
+  @@map("partecipanti")
+}
