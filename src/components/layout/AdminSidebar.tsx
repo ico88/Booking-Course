@@ -60,7 +60,7 @@ const navItems = [
   },
 ];
 
-export default function AdminSidebar() {
+export default function AdminSidebar({ logoUrl }: { logoUrl?: string | null } = {}) {
   const pathname = usePathname();
   const { data: session } = useSession();
 
@@ -68,8 +68,14 @@ export default function AdminSidebar() {
     <aside className="w-64 bg-gray-900 min-h-screen flex flex-col">
       <div className="p-6 border-b border-gray-700">
         <Link href="/admin" className="flex items-center gap-2 text-white font-bold">
-          <BookOpen className="h-5 w-5 text-blue-400" />
-          <span>Back Office</span>
+          {logoUrl ? (
+            <img src={logoUrl} alt="Logo" className="h-7 w-auto max-w-[140px] object-contain brightness-0 invert" />
+          ) : (
+            <>
+              <BookOpen className="h-5 w-5 text-blue-400" />
+              <span>Back Office</span>
+            </>
+          )}
         </Link>
       </div>
 

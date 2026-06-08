@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import AdminSidebar from "@/components/layout/AdminSidebar";
+import { prisma } from "@/lib/prisma";
 
 export default async function AdminLayout({
   children,
@@ -14,9 +15,11 @@ export default async function AdminLayout({
 
   if (!["SEGRETERIA", "ADMIN"].includes(session.user.ruolo)) redirect("/dashboard");
 
+  const logoSetting = await prisma.impostazione.findUnique({ where: { chiave: "logo_url" } }).catch(() => null);
+
   return (
     <div className="flex min-h-screen bg-gray-100">
-      <AdminSidebar />
+      <AdminSidebar logoUrl={logoSetting?.valore} />
       <div className="flex-1 flex flex-col min-h-screen overflow-auto">
         <header className="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between">
           <div />

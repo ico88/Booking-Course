@@ -1,14 +1,17 @@
 import Navbar from "@/components/layout/Navbar";
 import Link from "next/link";
+import { prisma } from "@/lib/prisma";
 
-export default function PublicLayout({
+export default async function PublicLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const logoSetting = await prisma.impostazione.findUnique({ where: { chiave: "logo_url" } }).catch(() => null);
+
   return (
     <>
-      <Navbar />
+      <Navbar logoUrl={logoSetting?.valore} />
       <main className="flex-1">{children}</main>
       <footer className="bg-white border-t border-gray-200 mt-16">
         <div className="max-w-7xl mx-auto px-4 py-8">

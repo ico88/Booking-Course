@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Button from "@/components/ui/Button";
 import Alert from "@/components/ui/Alert";
 import { Card } from "@/components/ui/Card";
-import { Save, Eye, EyeOff, Mail, MessageSquare, Send, Settings } from "lucide-react";
+import { Save, Eye, EyeOff, Mail, MessageSquare, Send, Settings, ImagePlus, Trash2, BookOpen } from "lucide-react";
 
 interface Impostazione {
   id: string;
@@ -71,6 +71,9 @@ export default function ImpostazioniClient() {
   const [caricamento, setCaricamento] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [messaggio, setMessaggio] = useState<{ tipo: "success" | "error"; testo: string } | null>(null);
+  const [caricandoLogo, setCaricandoLogo] = useState(false);
+  const [messaggioLogo, setMessaggioLogo] = useState<{ tipo: "success" | "error"; testo: string } | null>(null);
+  const inputLogoRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetch("/api/admin/impostazioni")
@@ -83,6 +86,36 @@ export default function ImpostazioniClient() {
       })
       .catch(() => setCaricamento(false));
   }, []);
+
+  async function caricaLogo(file: File) {
+    setCaricandoLogo(true);
+    setMessaggioLogo(null);
+    const form = new FormData();
+    form.append("logo", file);
+    const res = await fetch("/api/admin/impostazioni/logo", { method: "POST", body: form });
+    const json = await res.json();
+    setCaricandoLogo(false);
+    if (res.ok) {
+      setImpostazioni((prev) => ({ ...prev, logo_url: json.url }));
+      setMessaggioLogo({ tipo: "success", testo: "Logo caricato con successo!" });
+    } else {
+      setMessaggioLogo({ tipo: "error", testo: json.error ?? "Errore durante il caricamento." });
+    }
+  }
+
+  async function rimuoviLogo() {
+    setCaricandoLogo(true);
+    setMessaggioLogo(null);
+    const res = await fetch("/api/admin/impostazioni/logo", { method: "DELETE" });
+    setCaricandoLogo(false);
+    if (res.ok) {
+      setImpostazioni((prev) => { const n = { ...prev }; delete n.logo_url; return n; });
+      setMessaggioLogo({ tipo: "success", testo: "Logo rimosso. Verrà usato il logo predefinito." });
+      if (inputLogoRef.current) inputLogoRef.current.value = "";
+    } else {
+      setMessaggioLogo({ tipo: "error", testo: "Errore durante la rimozione." });
+    }
+  }
 
   async function salva() {
     setSalvando(true);
@@ -123,6 +156,82 @@ export default function ImpostazioniClient() {
           {messaggio.testo}
         </Alert>
       )}
+
+      {/* Card Logo */}
+      <Card>
+        <div className="flex items-center gap-3 mb-1">
+          <ImagePlus className="h-5 w-5 text-blue-600" />
+          <h2 className="font-semibold text-gray-900">Logo piattaforma</h2>
+        </div>
+        <p className="text-sm text-gray-500 mb-4">
+          Carica un'immagine personalizzata (PNG, JPG, WebP o SVG, max 2 MB).
+          Viene mostrata nella barra di navigazione e nel pannello admin.
+        </p>
+
+        {/* Anteprima */}
+        <div className="flex items-center gap-6 mb-4">
+          <div className="flex items-center justify-center w-40 h-20 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 overflow-hidden shrink-0">
+            {impostazioni.logo_url ? (
+              <img
+                src={impostazioni.logo_url}
+                alt="Logo corrente"
+                className="max-h-14 max-w-36 object-contain"
+              />
+            ) : (
+              <div className="flex flex-col items-center gap-1 text-gray-400">
+                <BookOpen className="h-6 w-6" />
+                <span className="text-xs">Predefinito</span>
+              </div>
+            )}
+          </div>
+          <div className="text-sm text-gray-600">
+            {impostazioni.logo_url ? (
+              <p className="font-medium text-green-700">Logo personalizzato attivo</p>
+            ) : (
+              <p className="text-gray-500">Nessun logo personalizzato — viene usato il logo predefinito.</p>
+            )}
+          </div>
+        </div>
+
+        {messaggioLogo && (
+          <Alert variant={messaggioLogo.tipo} className="mb-4">
+            {messaggioLogo.testo}
+          </Alert>
+        )}
+
+        <div className="flex flex-wrap items-center gap-3">
+          <label className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-colors ${
+            caricandoLogo
+              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+              : "bg-blue-600 text-white hover:bg-blue-700"
+          }`}>
+            <ImagePlus className="h-4 w-4" />
+            {caricandoLogo ? "Caricamento…" : "Seleziona e carica logo"}
+            <input
+              ref={inputLogoRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/svg+xml"
+              disabled={caricandoLogo}
+              className="sr-only"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) caricaLogo(f);
+              }}
+            />
+          </label>
+
+          {impostazioni.logo_url && (
+            <button
+              onClick={rimuoviLogo}
+              disabled={caricandoLogo}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-red-600 bg-red-50 border border-red-200 hover:bg-red-100 disabled:opacity-50 transition-colors"
+            >
+              <Trash2 className="h-4 w-4" />
+              Rimuovi logo
+            </button>
+          )}
+        </div>
+      </Card>
 
       {STRUTTURA_IMPOSTAZIONI.map((sezione) => (
         <Card key={sezione.gruppo}>

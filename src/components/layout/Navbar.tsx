@@ -14,7 +14,7 @@ import {
   Shield,
 } from "lucide-react";
 
-export default function Navbar() {
+export default function Navbar({ logoUrl }: { logoUrl?: string | null } = {}) {
   const { data: session } = useSession();
   const [menuAperto, setMenuAperto] = useState(false);
 
@@ -27,8 +27,14 @@ export default function Navbar() {
             href="/"
             className="flex items-center gap-2 font-bold text-blue-700 text-lg hover:text-blue-800 transition-colors"
           >
-            <BookOpen className="h-6 w-6" />
-            <span>Gestione Corsi</span>
+            {logoUrl ? (
+              <img src={logoUrl} alt="Logo" className="h-8 w-auto max-w-[160px] object-contain" />
+            ) : (
+              <>
+                <BookOpen className="h-6 w-6" />
+                <span>Gestione Corsi</span>
+              </>
+            )}
           </Link>
 
           {/* Desktop nav */}
