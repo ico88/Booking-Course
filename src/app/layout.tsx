@@ -3,16 +3,36 @@ import { Geist } from "next/font/google";
 import "./globals.css";
 import Providers from "./Providers";
 import CookieBanner from "@/components/gdpr/CookieBanner";
+import { prisma } from "@/lib/prisma";
 
 const geist = Geist({
   subsets: ["latin"],
   variable: "--font-geist",
 });
 
-export const metadata: Metadata = {
-  title: "Gestione Corsi",
-  description: "Piattaforma per la gestione e prenotazione di corsi formativi",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const logoSetting = await prisma.impostazione
+    .findUnique({ where: { chiave: "logo_url" } })
+    .catch(() => null);
+
+  const appNameSetting = await prisma.impostazione
+    .findUnique({ where: { chiave: "app_name" } })
+    .catch(() => null);
+
+  const titolo = appNameSetting?.valore || "Gestione Corsi";
+
+  return {
+    title: titolo,
+    description: "Piattaforma per la gestione e prenotazione di corsi formativi",
+    ...(logoSetting?.valore && {
+      icons: {
+        icon: logoSetting.valore,
+        shortcut: logoSetting.valore,
+        apple: logoSetting.valore,
+      },
+    }),
+  };
+}
 
 export default function RootLayout({
   children,
