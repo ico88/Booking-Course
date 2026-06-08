@@ -10,6 +10,10 @@ const schema = z.object({
   email: z.string().email("Email non valida"),
   telefono: z.string().optional(),
   password: z.string().min(8, "La password deve avere almeno 8 caratteri"),
+  consensoPrivacy: z.boolean().refine((v) => v === true, {
+    message: "È necessario accettare la Privacy Policy per registrarsi",
+  }),
+  consensoMarketing: z.boolean().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -37,10 +41,12 @@ export async function POST(request: NextRequest) {
         email: data.email.toLowerCase(),
         telefono: data.telefono,
         password: passwordHash,
+        consensoPrivacy: data.consensoPrivacy,
+        consensoMarketing: data.consensoMarketing ?? false,
+        dataConsenso: new Date(),
       },
     });
 
-    // Email di benvenuto (non bloccante)
     inviaEmailBenvenuto(utente.email, utente.nome).catch(console.error);
 
     return NextResponse.json(

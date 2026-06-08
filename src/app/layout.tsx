@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import Providers from "./Providers";
+import CookieBanner from "@/components/gdpr/CookieBanner";
 
 const geist = Geist({
   subsets: ["latin"],
@@ -22,6 +23,7 @@ export default function RootLayout({
     <html lang="it" className={`${geist.variable} h-full antialiased`}>
       <body className="min-h-full bg-gray-50 text-gray-900 font-sans">
         <Providers>{children}</Providers>
+        <CookieBanner />
       </body>
     </html>
   );

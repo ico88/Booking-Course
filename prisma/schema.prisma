@@ -29,10 +29,13 @@ model Utente {
   password         String?
   ruolo            Ruolo     @default(UTENTE)
   emailVerificata  DateTime?
-  tokenReset       String?
-  scadenzaToken    DateTime?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  tokenReset         String?
+  scadenzaToken      DateTime?
+  consensoPrivacy    Boolean   @default(false)
+  consensoMarketing  Boolean   @default(false)
+  dataConsenso       DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   prenotazioni     Prenotazione[]
   account          Account[]

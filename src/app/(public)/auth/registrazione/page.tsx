@@ -19,6 +19,10 @@ const schema = z.object({
   telefono: z.string().optional(),
   password: z.string().min(8, "Almeno 8 caratteri"),
   confermaPassword: z.string(),
+  consensoPrivacy: z.boolean().refine((v) => v === true, {
+    message: "Devi accettare la Privacy Policy per registrarti",
+  }),
+  consensoMarketing: z.boolean().optional(),
 }).refine((d) => d.password === d.confermaPassword, {
   message: "Le password non corrispondono",
   path: ["confermaPassword"],
@@ -53,6 +57,8 @@ function FormRegistrazione() {
           email: data.email,
           telefono: data.telefono,
           password: data.password,
+          consensoPrivacy: data.consensoPrivacy,
+          consensoMarketing: data.consensoMarketing ?? false,
         }),
       });
 
@@ -63,7 +69,6 @@ function FormRegistrazione() {
         return;
       }
 
-      // Login automatico dopo registrazione
       await signIn("credentials", {
         email: data.email,
         password: data.password,
@@ -129,11 +134,56 @@ function FormRegistrazione() {
         error={errors.confermaPassword?.message}
       />
 
+      {/* Consensi GDPR */}
+      <div className="border-t border-gray-100 pt-4 space-y-3">
+        <div className="flex items-start gap-3">
+          <input
+            id="consensoPrivacy"
+            type="checkbox"
+            {...register("consensoPrivacy")}
+            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 shrink-0"
+          />
+          <label htmlFor="consensoPrivacy" className="text-xs text-gray-600 leading-relaxed">
+            <span className="text-red-500 mr-1">*</span>
+            Ho letto e accetto la{" "}
+            <Link href="/privacy-policy" target="_blank" className="text-blue-600 hover:underline font-medium">
+              Privacy Policy
+            </Link>{" "}
+            e i{" "}
+            <Link href="/termini-condizioni" target="_blank" className="text-blue-600 hover:underline font-medium">
+              Termini e Condizioni
+            </Link>
+            . Acconsento al trattamento dei miei dati personali per la gestione dell'account e delle prenotazioni.
+          </label>
+        </div>
+        {errors.consensoPrivacy && (
+          <p className="text-xs text-red-600 mt-1">{errors.consensoPrivacy.message}</p>
+        )}
+
+        <div className="flex items-start gap-3">
+          <input
+            id="consensoMarketing"
+            type="checkbox"
+            {...register("consensoMarketing")}
+            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 shrink-0"
+          />
+          <label htmlFor="consensoMarketing" className="text-xs text-gray-600 leading-relaxed">
+            <span className="text-gray-400 mr-1">(opzionale)</span>
+            Acconsento a ricevere comunicazioni commerciali e aggiornamenti sui corsi via email. Potrai
+            disiscriverti in qualsiasi momento.
+          </label>
+        </div>
+      </div>
+
       {errore && <Alert variant="error">{errore}</Alert>}
 
       <Button type="submit" size="lg" className="w-full" loading={caricamento}>
         Crea account
       </Button>
+
+      <p className="text-xs text-center text-gray-400">
+        I campi contrassegnati con <span className="text-red-500">*</span> sono obbligatori.
+      </p>
     </form>
   );
 }

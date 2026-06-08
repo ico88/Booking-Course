@@ -11,6 +11,7 @@ import {
   X,
   ShieldCheck,
   User,
+  Shield,
 } from "lucide-react";
 
 export default function Navbar() {
@@ -66,6 +67,15 @@ export default function Navbar() {
                       {session.user.name}
                     </span>
                   </div>
+                  {session.user.ruolo === "UTENTE" && (
+                    <Link
+                      href="/dashboard/dati-personali"
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                      title="Privacy e dati personali"
+                    >
+                      <Shield className="h-4 w-4" />
+                    </Link>
+                  )}
                   <button
                     onClick={() => signOut({ callbackUrl: "/" })}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 transition-colors"
@@ -131,6 +141,16 @@ export default function Navbar() {
                     onClick={() => setMenuAperto(false)}
                   >
                     La mia area
+                  </Link>
+                )}
+                {session.user.ruolo === "UTENTE" && (
+                  <Link
+                    href="/dashboard/dati-personali"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => setMenuAperto(false)}
+                  >
+                    <Shield className="h-4 w-4" />
+                    Privacy e dati personali
                   </Link>
                 )}
                 <button
