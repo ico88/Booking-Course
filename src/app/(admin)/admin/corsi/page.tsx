@@ -3,6 +3,7 @@ import Link from "next/link";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { PlusCircle, Edit, Users, GraduationCap } from "lucide-react";
 import Badge from "@/components/ui/Badge";
+import DuplicaCorsoButton from "./DuplicaCorsoButton";
 
 export const revalidate = 0;
 
@@ -134,13 +135,16 @@ export default async function PaginaAdminCorsi() {
                     )}
                   </td>
                   <td className="px-4 py-4 text-right">
-                    <Link
-                      href={`/admin/corsi/${corso.id}`}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-                    >
-                      <Edit className="h-3.5 w-3.5" />
-                      Modifica
-                    </Link>
+                    <div className="flex items-center justify-end gap-1">
+                      <DuplicaCorsoButton corsoId={corso.id} />
+                      <Link
+                        href={`/admin/corsi/${corso.id}`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                      >
+                        <Edit className="h-3.5 w-3.5" />
+                        Modifica
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ))}

@@ -1,34 +1,53 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Copy } from "lucide-react";
 import { Card } from "@/components/ui/Card";
+import Alert from "@/components/ui/Alert";
 import FormCorso from "@/components/corsi/FormCorso";
 import UploadTemplateAttestato from "./UploadTemplateAttestato";
+import DuplicaCorsoButton from "../DuplicaCorsoButton";
 
 export default async function PaginaModificaCorso({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ duplicato?: string }>;
 }) {
   const { id } = await params;
+  const { duplicato } = await searchParams;
 
   const corso = await prisma.corso.findUnique({ where: { id } });
-
   if (!corso) notFound();
 
   return (
     <div className="max-w-3xl">
-      <Link
-        href="/admin/corsi"
-        className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-6"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Tutti i corsi
-      </Link>
+      <div className="flex items-center justify-between mb-6">
+        <Link
+          href="/admin/corsi"
+          className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Tutti i corsi
+        </Link>
+        <DuplicaCorsoButton corsoId={corso.id} variant="page" />
+      </div>
+
+      {duplicato === "1" && (
+        <Alert variant="warning" className="mb-6">
+          <strong>Corso duplicato come bozza.</strong> Aggiorna le date, l'orario
+          e il titolo se necessario, poi pubblica il corso.
+        </Alert>
+      )}
 
       <h1 className="text-2xl font-bold text-gray-900 mb-6">
-        Modifica: {corso.titolo}
+        {corso.pubblicato ? corso.titolo : (
+          <span className="flex items-center gap-2">
+            {corso.titolo}
+            <span className="text-sm font-normal text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">bozza</span>
+          </span>
+        )}
       </h1>
 
       <div className="space-y-6">
