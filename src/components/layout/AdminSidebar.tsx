@@ -12,6 +12,7 @@ import {
   PlusCircle,
   GraduationCap,
   Settings,
+  FileText,
 } from "lucide-react";
 
 const navItems = [
@@ -51,6 +52,12 @@ const navItems = [
     label: "Utenti",
     icon: Users,
     ruolo: ["SEGRETERIA", "ADMIN"],
+  },
+  {
+    href: "/admin/pagine-legali",
+    label: "Pagine Legali",
+    icon: FileText,
+    ruolo: ["ADMIN"],
   },
   {
     href: "/admin/impostazioni",
