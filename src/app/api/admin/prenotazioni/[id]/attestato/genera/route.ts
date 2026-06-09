@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { formatDate } from "@/lib/utils";
+import { formatDate, sostituisciVariabiliAttestato } from "@/lib/utils";
 
 export async function GET(
   request: NextRequest,
@@ -50,26 +50,23 @@ export async function GET(
   const codiceAttestato = id.slice(-8).toUpperCase();
 
   const variabili: Record<string, string> = {
-    "{{nome}}": nome,
-    "{{cognome}}": cognome,
-    "{{nomeCompleto}}": `${nome} ${cognome}`,
-    "{{codiceFiscale}}": codiceFiscale,
-    "{{email}}": email,
-    "{{titoloCorso}}": prenotazione.corso.titolo,
-    "{{dataCorso}}": formatDate(prenotazione.corso.dataInizio),
-    "{{dataFineCorso}}": prenotazione.corso.dataFine ? formatDate(prenotazione.corso.dataFine) : "",
-    "{{luogoCorso}}": prenotazione.corso.luogo ?? "",
-    "{{durataCorso}}": prenotazione.corso.durata ?? "",
-    "{{orarioCorso}}": prenotazione.corso.orario ?? "",
-    "{{dataEmissione}}": dataEmissione,
-    "{{anno}}": anno,
-    "{{codiceAttestato}}": codiceAttestato,
+    nome,
+    cognome,
+    nomeCompleto: `${nome} ${cognome}`,
+    codiceFiscale,
+    email,
+    titoloCorso: prenotazione.corso.titolo,
+    dataCorso: formatDate(prenotazione.corso.dataInizio),
+    dataFineCorso: prenotazione.corso.dataFine ? formatDate(prenotazione.corso.dataFine) : "",
+    luogoCorso: prenotazione.corso.luogo ?? "",
+    durataCorso: prenotazione.corso.durata ?? "",
+    orarioCorso: prenotazione.corso.orario ?? "",
+    dataEmissione,
+    anno,
+    codiceAttestato,
   };
 
-  let html = template;
-  for (const [variabile, valore] of Object.entries(variabili)) {
-    html = html.replaceAll(variabile, valore);
-  }
+  let html = sostituisciVariabiliAttestato(template, variabili);
 
   // Wrap in a print-ready page if template doesn't include <html>
   if (!html.includes("<html")) {

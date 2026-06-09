@@ -38,6 +38,23 @@ export function formatDateShort(date: Date | string): string {
   }).format(new Date(date));
 }
 
+/**
+ * Replaces {{variabile}} placeholders in an HTML attestato template.
+ * Uses a single-pass regex so order never matters and partial key names
+ * can never contaminate each other. Unknown placeholders are left unchanged.
+ */
+export function sostituisciVariabiliAttestato(
+  template: string,
+  variabili: Record<string, string>
+): string {
+  return template.replace(/\{\{([^{}]+)\}\}/g, (_match, key: string) => {
+    const k = key.trim();
+    return Object.prototype.hasOwnProperty.call(variabili, k)
+      ? variabili[k]
+      : `{{${k}}}`;
+  });
+}
+
 export const STATI_PRENOTAZIONE: Record<string, { label: string; color: string; bg: string }> = {
   IN_ATTESA_PAGAMENTO: {
     label: "In attesa di pagamento",
