@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
@@ -10,7 +10,10 @@ import { z } from "zod";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import Alert from "@/components/ui/Alert";
+import TurnstileWidget from "@/components/ui/TurnstileWidget";
 import { BookOpen } from "lucide-react";
+
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
 
 const schema = z.object({
   nome: z.string().min(2, "Almeno 2 caratteri"),
@@ -36,6 +39,7 @@ function FormRegistrazione() {
   const redirect = searchParams.get("redirect") || "/dashboard";
   const [errore, setErrore] = useState<string | null>(null);
   const [caricamento, setCaricamento] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   const {
     register,
@@ -43,8 +47,18 @@ function FormRegistrazione() {
     formState: { errors },
   } = useForm<FormData>({ resolver: zodResolver(schema) });
 
+  const onTurnstileVerify = useCallback((token: string) => {
+    setTurnstileToken(token);
+  }, []);
+
   async function onSubmit(data: FormData) {
     setErrore(null);
+
+    if (TURNSTILE_SITE_KEY && !turnstileToken) {
+      setErrore("Completa la verifica CAPTCHA prima di procedere.");
+      return;
+    }
+
     setCaricamento(true);
 
     try {
@@ -59,6 +73,7 @@ function FormRegistrazione() {
           password: data.password,
           consensoPrivacy: data.consensoPrivacy,
           consensoMarketing: data.consensoMarketing ?? false,
+          turnstileToken,
         }),
       });
 
@@ -175,9 +190,20 @@ function FormRegistrazione() {
         </div>
       </div>
 
+      {/* Cloudflare Turnstile CAPTCHA */}
+      {TURNSTILE_SITE_KEY && (
+        <TurnstileWidget siteKey={TURNSTILE_SITE_KEY} onVerify={onTurnstileVerify} />
+      )}
+
       {errore && <Alert variant="error">{errore}</Alert>}
 
-      <Button type="submit" size="lg" className="w-full" loading={caricamento}>
+      <Button
+        type="submit"
+        size="lg"
+        className="w-full"
+        loading={caricamento}
+        disabled={TURNSTILE_SITE_KEY ? !turnstileToken : false}
+      >
         Crea account
       </Button>
 

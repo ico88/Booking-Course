@@ -2,8 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { inviaEmailResetPassword } from "@/lib/email";
 import crypto from "crypto";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request);
+
+  // 3 password reset requests per IP per hour
+  if (!checkRateLimit(`reset:${ip}`, 3, 60 * 60 * 1000)) {
+    return NextResponse.json(
+      { error: "Troppe richieste. Riprova tra qualche minuto." },
+      { status: 429 }
+    );
+  }
+
   try {
     const { email } = await request.json();
 
@@ -15,7 +26,7 @@ export async function POST(request: NextRequest) {
       where: { email: email.toLowerCase() },
     });
 
-    // Risposta generica per sicurezza (non rivela se l'email esiste)
+    // Generic response — does not reveal whether the email exists
     if (!utente) {
       return NextResponse.json({
         message: "Se l'email è registrata, riceverai le istruzioni per il reset",
