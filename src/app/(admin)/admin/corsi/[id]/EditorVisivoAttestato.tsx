@@ -2,8 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import DropZone from "@/components/ui/DropZone";
-import { Trash2, X, MousePointer } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Trash2, X, MousePointer, Eye } from "lucide-react";
+import { cn, sostituisciVariabiliAttestato } from "@/lib/utils";
 
 const VARIABILI = [
   { var: "{{nomeCompleto}}", label: "Nome e cognome" },
@@ -191,6 +191,75 @@ export default function EditorVisivoAttestato({ onSalva, salvando }: Props) {
 
     const html = `<div style="width:297mm;height:210mm;position:relative;${bgStyle}print-color-adjust:exact;-webkit-print-color-adjust:exact;overflow:hidden;">\n${spans}\n</div>`;
     onSalva(html, null);
+  }
+
+  function handleAnteprima() {
+    if (elementi.length === 0) return;
+
+    const oggi = new Date();
+    const valoriEsempio: Record<string, string> = {
+      nome: "Mario",
+      cognome: "Rossi",
+      nomeCompleto: "Mario Rossi",
+      codiceFiscale: "RSSMRA80A01H501U",
+      email: "mario.rossi@esempio.it",
+      titoloCorso: "Corso di primo soccorso",
+      dataCorso: "15 gennaio 2025",
+      dataFineCorso: "16 gennaio 2025",
+      luogoCorso: "Milano, Via Roma 1",
+      durataCorso: "8 ore",
+      orarioCorso: "09:00 – 18:00",
+      dataEmissione: oggi.toLocaleDateString("it-IT", { day: "2-digit", month: "long", year: "numeric" }),
+      anno: oggi.getFullYear().toString(),
+      codiceAttestato: "ABCD1234",
+    };
+
+    // Use the object URL directly for preview (no re-compression needed)
+    const bgStyle = sfondoUrl
+      ? `background-image:url('${sfondoUrl}');background-size:cover;background-position:center;`
+      : "background:#fff;";
+
+    const spans = elementi
+      .map(
+        (el) =>
+          `  <span style="position:absolute;left:${el.x.toFixed(2)}%;top:${el.y.toFixed(2)}%;font-size:${el.fontSize}pt;font-weight:${el.fontWeight};font-style:${el.fontStyle};color:${el.color};font-family:${el.fontFamily};white-space:nowrap;transform:translateY(-50%);">${el.testo}</span>`
+      )
+      .join("\n");
+
+    const divHtml = `<div style="width:297mm;height:210mm;position:relative;${bgStyle}print-color-adjust:exact;-webkit-print-color-adjust:exact;overflow:hidden;">\n${spans}\n</div>`;
+
+    const fullHtml = sostituisciVariabiliAttestato(
+      `<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Anteprima attestato</title>
+  <style>
+    @page { size: A4 landscape; margin: 0; }
+    body { margin: 0; padding: 0; background: #e5e7eb; display: flex; justify-content: center; padding: 24px; }
+    @media print { body { background: none; padding: 0; } .no-print { display: none !important; } }
+  </style>
+</head>
+<body>
+  <div class="no-print" style="position:fixed;top:16px;right:16px;z-index:999;display:flex;gap:8px;">
+    <div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:8px 14px;font-size:13px;font-family:sans-serif;color:#92400e;">
+      ⚠ Anteprima con dati di esempio
+    </div>
+    <button onclick="window.print()" style="padding:8px 18px;background:#dc2626;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-family:sans-serif">
+      Stampa / Salva PDF
+    </button>
+  </div>
+  ${divHtml}
+</body>
+</html>`,
+      valoriEsempio
+    );
+
+    const blob = new Blob([fullHtml], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
+    // Release the blob URL after the new tab has had time to load it
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
   }
 
   const elSel = elementi.find((el) => el.id === selezionato);
@@ -446,8 +515,16 @@ export default function EditorVisivoAttestato({ onSalva, salvando }: Props) {
             </div>
           )}
 
-          {/* Save */}
+          {/* Save / Preview */}
           <div className="flex items-center gap-3 flex-wrap">
+            <button
+              onClick={handleAnteprima}
+              disabled={elementi.length === 0}
+              className="flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50"
+            >
+              <Eye className="h-4 w-4" />
+              Anteprima
+            </button>
             <button
               onClick={handleSalva}
               disabled={salvando || elementi.length === 0}
