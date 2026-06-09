@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const isDev = process.env.NODE_ENV === "development";
+
 const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
@@ -43,8 +45,8 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              // Next.js App Router requires 'unsafe-inline' for hydration scripts
-              "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com",
+              // Next.js App Router requires 'unsafe-inline'; dev mode also needs 'unsafe-eval' for React source maps
+              `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://challenges.cloudflare.com`,
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https:",
               "font-src 'self' data:",
