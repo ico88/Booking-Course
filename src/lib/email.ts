@@ -27,7 +27,7 @@ function layoutEmail(contenuto: string): string {
         <tr><td align="center">
           <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
             <tr>
-              <td style="background:#1e40af;padding:24px 32px;">
+              <td style="background:#dc2626;padding:24px 32px;">
                 <h1 style="color:#ffffff;margin:0;font-size:22px;">${appName}</h1>
               </td>
             </tr>
@@ -65,7 +65,7 @@ export async function inviaEmailBenvenuto(
       Ora puoi accedere alla piattaforma per visualizzare i corsi disponibili e prenotare il tuo posto.
     </p>
     <a href="${appUrl}/auth/login"
-       style="display:inline-block;background:#1e40af;color:#ffffff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;margin-top:16px;">
+       style="display:inline-block;background:#dc2626;color:#ffffff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;margin-top:16px;">
       Accedi alla piattaforma
     </a>
   `);
@@ -102,8 +102,8 @@ export async function inviaEmailPrenotazione(
       <strong>"${titoloCorso}"</strong> è stata registrata con successo.
     </p>
 
-    <div style="background:#eff6ff;border-left:4px solid #1e40af;padding:16px;border-radius:4px;margin:20px 0;">
-      <p style="margin:0 0 8px 0;font-weight:bold;color:#1e40af;">Dettagli prenotazione</p>
+    <div style="background:#fef2f2;border-left:4px solid #dc2626;padding:16px;border-radius:4px;margin:20px 0;">
+      <p style="margin:0 0 8px 0;font-weight:bold;color:#dc2626;">Dettagli prenotazione</p>
       <p style="margin:0;color:#475569;">Posti prenotati: <strong>${numeroPosti}</strong></p>
       <p style="margin:4px 0 0 0;color:#dc2626;font-weight:bold;">
         ⏰ Scadenza pagamento: ${scadenzaStr}
@@ -121,7 +121,7 @@ ${coordinateBancarie}
     </p>
 
     <a href="${appUrl}/dashboard/prenotazioni/${prenotazioneId}"
-       style="display:inline-block;background:#1e40af;color:#ffffff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;margin-top:8px;">
+       style="display:inline-block;background:#dc2626;color:#ffffff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;margin-top:8px;">
       Carica ricevuta bonifico
     </a>
   `);
@@ -150,7 +150,7 @@ export async function inviaEmailContabileCaricata(
       Riceverai una notifica via email non appena la tua prenotazione sarà confermata.
     </p>
     <a href="${appUrl}/dashboard"
-       style="display:inline-block;background:#1e40af;color:#ffffff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;margin-top:8px;">
+       style="display:inline-block;background:#dc2626;color:#ffffff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;margin-top:8px;">
       Vai alla tua area personale
     </a>
   `);
@@ -289,7 +289,7 @@ export async function inviaEmailNotificaSegreteria(
       <strong>Corso:</strong> ${dati.titoloCorso}
     </p>
     <a href="${appUrl}/admin/prenotazioni/${dati.prenotazioneId}"
-       style="display:inline-block;background:#1e40af;color:#ffffff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;margin-top:8px;">
+       style="display:inline-block;background:#dc2626;color:#ffffff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;margin-top:8px;">
       Gestisci prenotazione
     </a>
   `);
@@ -299,5 +299,190 @@ export async function inviaEmailNotificaSegreteria(
     to: emailSegreteria,
     subject: `[${appName}] ${titoli[tipoNotifica]}`,
     html,
+  });
+}
+
+export async function inviaEmailMarketing(
+  email: string,
+  nome: string,
+  corso: {
+    id: string;
+    titolo: string;
+    descrizione: string;
+    dataInizio: Date;
+    dataFine: Date | null;
+    orario: string;
+    luogo: string | null;
+    costo: string;
+    postiDisponibili: number;
+    immagineUrl: string | null;
+  },
+  unsubscribeUrl: string
+): Promise<void> {
+  const dataInizioStr = new Intl.DateTimeFormat("it-IT", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  }).format(corso.dataInizio);
+
+  const dataFineStr = corso.dataFine
+    ? new Intl.DateTimeFormat("it-IT", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+      }).format(corso.dataFine)
+    : null;
+
+  const dataLabel = dataFineStr
+    ? `${dataInizioStr} – ${dataFineStr}`
+    : dataInizioStr;
+
+  const immagineHtml = corso.immagineUrl
+    ? `<tr><td style="padding:0;">
+        <img src="${corso.immagineUrl}" alt="${corso.titolo}"
+             style="width:100%;max-height:240px;object-fit:cover;display:block;" />
+       </td></tr>`
+    : `<tr><td style="background:#fef2f2;height:8px;"></td></tr>`;
+
+  const descrizioneBreve =
+    corso.descrizione.length > 300
+      ? corso.descrizione.substring(0, 297) + "…"
+      : corso.descrizione;
+
+  const html = `
+    <!DOCTYPE html>
+    <html lang="it">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>${corso.titolo} - ${appName}</title>
+    </head>
+    <body style="margin:0;padding:0;background:#f5f5f5;font-family:Arial,sans-serif;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:40px 0;">
+        <tr><td align="center">
+          <table width="600" cellpadding="0" cellspacing="0"
+                 style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+
+            <!-- Header -->
+            <tr>
+              <td style="background:#dc2626;padding:20px 32px;">
+                <p style="color:rgba(255,255,255,0.8);margin:0 0 4px 0;font-size:13px;text-transform:uppercase;letter-spacing:1px;">
+                  Nuovo corso disponibile
+                </p>
+                <h1 style="color:#ffffff;margin:0;font-size:24px;line-height:1.3;">${corso.titolo}</h1>
+              </td>
+            </tr>
+
+            <!-- Immagine corso -->
+            ${immagineHtml}
+
+            <!-- Corpo -->
+            <tr>
+              <td style="padding:32px;">
+                <p style="color:#475569;line-height:1.6;margin-top:0;">
+                  Ciao <strong>${nome}</strong>,<br>
+                  è disponibile un nuovo corso su <strong>${appName}</strong>. Dai un'occhiata!
+                </p>
+
+                <p style="color:#374151;line-height:1.7;margin:0 0 24px 0;">${descrizioneBreve}</p>
+
+                <!-- Dettagli corso -->
+                <table width="100%" cellpadding="0" cellspacing="0"
+                       style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-bottom:28px;">
+                  <tr>
+                    <td style="padding:16px 20px;border-bottom:1px solid #e2e8f0;">
+                      <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td style="color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;width:40%;">📅 Data</td>
+                          <td style="color:#111827;font-weight:bold;font-size:14px;">${dataLabel}</td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:16px 20px;border-bottom:1px solid #e2e8f0;">
+                      <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td style="color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;width:40%;">🕐 Orario</td>
+                          <td style="color:#111827;font-weight:bold;font-size:14px;">${corso.orario}</td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  ${corso.luogo ? `
+                  <tr>
+                    <td style="padding:16px 20px;border-bottom:1px solid #e2e8f0;">
+                      <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td style="color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;width:40%;">📍 Sede</td>
+                          <td style="color:#111827;font-weight:bold;font-size:14px;">${corso.luogo}</td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>` : ""}
+                  <tr>
+                    <td style="padding:16px 20px;border-bottom:1px solid #e2e8f0;">
+                      <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td style="color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;width:40%;">💶 Quota</td>
+                          <td style="color:#dc2626;font-weight:bold;font-size:18px;">€ ${corso.costo}</td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:16px 20px;">
+                      <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td style="color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;width:40%;">🪑 Posti</td>
+                          <td style="color:#16a34a;font-weight:bold;font-size:14px;">${corso.postiDisponibili} disponibili</td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- CTA -->
+                <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
+                  <tr>
+                    <td align="center">
+                      <a href="${appUrl}/corsi/${corso.id}"
+                         style="display:inline-block;background:#dc2626;color:#ffffff;padding:14px 36px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;">
+                        Prenota ora →
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td style="background:#f8fafc;padding:20px 32px;border-top:1px solid #e2e8f0;">
+                <p style="color:#64748b;font-size:12px;margin:0 0 8px 0;">
+                  Hai ricevuto questa email perché hai acconsentito a ricevere comunicazioni sui nuovi corsi da <strong>${appName}</strong>.
+                </p>
+                <p style="color:#64748b;font-size:12px;margin:0;">
+                  Non vuoi più ricevere queste email?
+                  <a href="${unsubscribeUrl}" style="color:#dc2626;text-decoration:underline;">Disiscriviti qui</a>.
+                </p>
+              </td>
+            </tr>
+
+          </table>
+        </td></tr>
+      </table>
+    </body>
+    </html>
+  `;
+
+  await transporter.sendMail({
+    from: `"${appName}" <${process.env.SMTP_FROM}>`,
+    to: email,
+    subject: `🆕 Nuovo corso: ${corso.titolo}`,
+    html,
+    list: {
+      unsubscribe: { url: unsubscribeUrl, comment: "Disiscriviti" },
+    },
   });
 }

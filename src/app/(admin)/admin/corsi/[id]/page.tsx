@@ -1,12 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Copy } from "lucide-react";
+import { ArrowLeft, Send } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import Alert from "@/components/ui/Alert";
 import FormCorso from "@/components/corsi/FormCorso";
 import UploadTemplateAttestato from "./UploadTemplateAttestato";
 import DuplicaCorsoButton from "../DuplicaCorsoButton";
+import NotificaMarketingButton from "./NotificaMarketingButton";
 
 export default async function PaginaModificaCorso({
   params,
@@ -18,7 +19,11 @@ export default async function PaginaModificaCorso({
   const { id } = await params;
   const { duplicato } = await searchParams;
 
-  const corso = await prisma.corso.findUnique({ where: { id } });
+  const [corso, contattiMarketing] = await Promise.all([
+    prisma.corso.findUnique({ where: { id } }),
+    prisma.utente.count({ where: { consensoMarketing: true, ruolo: "UTENTE" } }),
+  ]);
+
   if (!corso) notFound();
 
   return (
@@ -70,6 +75,25 @@ export default async function PaginaModificaCorso({
               pubblicato: corso.pubblicato,
               attestatoAbilitato: corso.attestatoAbilitato,
             }}
+          />
+        </Card>
+
+        <Card>
+          <div className="flex items-center gap-3 mb-1">
+            <Send className="h-5 w-5 text-red-600" />
+            <h2 className="text-lg font-semibold text-gray-900">
+              Notifica marketing
+            </h2>
+          </div>
+          <p className="text-sm text-gray-500 mb-4">
+            Invia un annuncio email a tutti gli utenti che hanno acconsentito
+            a ricevere comunicazioni sui nuovi corsi.
+          </p>
+          <NotificaMarketingButton
+            corsoId={corso.id}
+            contattiMarketing={contattiMarketing}
+            ultimaNotifica={corso.ultimaNotificaMarketing}
+            pubblicato={corso.pubblicato}
           />
         </Card>
 

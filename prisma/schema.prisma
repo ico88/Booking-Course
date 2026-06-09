@@ -103,9 +103,10 @@ model Corso {
   // Attestato: template caricato dalla segreteria (PDF o immagine)
   attestatoTemplateUrl String?
   attestatoNomeFile    String?
-  attestatoAbilitato   Boolean  @default(false)
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  attestatoAbilitato      Boolean   @default(false)
+  ultimaNotificaMarketing DateTime?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
 
   prenotazioni         Prenotazione[]
 
