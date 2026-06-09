@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import Alert from "@/components/ui/Alert";
 import DropZone from "@/components/ui/DropZone";
-import { Upload, FileText, Trash2, Download, Code, Info, X } from "lucide-react";
+import EditorVisivoAttestato from "./EditorVisivoAttestato";
+import { Upload, FileText, Trash2, Download, Code, Info, X, Pencil } from "lucide-react";
 
 interface Props {
   corsoId: string;
@@ -68,7 +69,7 @@ export default function UploadTemplateAttestato({
   abilitato,
 }: Props) {
   const router = useRouter();
-  const [tab, setTab] = useState<"file" | "html">(htmlTemplate ? "html" : "file");
+  const [tab, setTab] = useState<"file" | "html" | "visivo">(htmlTemplate ? "html" : "file");
   const [file, setFile] = useState<File | null>(null);
   const [htmlText, setHtmlText] = useState(htmlTemplate ?? "");
   const [caricamento, setCaricamento] = useState(false);
@@ -113,6 +114,24 @@ export default function UploadTemplateAttestato({
     router.refresh();
   }
 
+  async function salvaHtmlDiretto(html: string) {
+    setCaricamento(true);
+    setErrore(null);
+    try {
+      const formData = new FormData();
+      formData.append("abilita", abilitaAttestato.toString());
+      formData.append("htmlTemplate", html);
+      const res = await fetch(`/api/admin/corsi/${corsoId}/attestato-template`, { method: "POST", body: formData });
+      const json = await res.json();
+      if (!res.ok) { setErrore(json.error || "Errore"); return; }
+      router.refresh();
+    } catch {
+      setErrore("Errore di rete. Riprova.");
+    } finally {
+      setCaricamento(false);
+    }
+  }
+
   const canSave = tab === "file" ? (!!file || abilitaAttestato !== abilitato) : true;
 
   return (
@@ -130,6 +149,12 @@ export default function UploadTemplateAttestato({
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${tab === "html" ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
         >
           <Code className="h-4 w-4" /> Template HTML
+        </button>
+        <button
+          onClick={() => setTab("visivo")}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${tab === "visivo" ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
+        >
+          <Pencil className="h-4 w-4" /> Editor visivo
         </button>
       </div>
 
@@ -174,6 +199,10 @@ export default function UploadTemplateAttestato({
             />
           )}
         </>
+      )}
+
+      {tab === "visivo" && (
+        <EditorVisivoAttestato onSalva={salvaHtmlDiretto} salvando={caricamento} />
       )}
 
       {tab === "html" && (
@@ -231,16 +260,18 @@ export default function UploadTemplateAttestato({
 
       {errore && <Alert variant="error">{errore}</Alert>}
 
-      <div className="flex gap-3">
-        <Button onClick={salva} loading={caricamento} disabled={!canSave} variant="outline">
-          {tab === "html" ? "Salva template HTML" : file ? "Carica template" : "Salva impostazioni"}
-        </Button>
-        {(templateAttuale || htmlText) && (
-          <Button onClick={rimuovi} variant="outline" className="text-red-600 border-red-200 hover:bg-red-50">
-            <Trash2 className="h-4 w-4" /> Rimuovi template
+      {tab !== "visivo" && (
+        <div className="flex gap-3">
+          <Button onClick={salva} loading={caricamento} disabled={!canSave} variant="outline">
+            {tab === "html" ? "Salva template HTML" : file ? "Carica template" : "Salva impostazioni"}
           </Button>
-        )}
-      </div>
+          {(templateAttuale || htmlText) && (
+            <Button onClick={rimuovi} variant="outline" className="text-red-600 border-red-200 hover:bg-red-50">
+              <Trash2 className="h-4 w-4" /> Rimuovi template
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
