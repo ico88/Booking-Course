@@ -228,20 +228,40 @@ export default function ImpostazioniClient() {
         </p>
 
         {/* Anteprima */}
-        <div className="flex items-center gap-6 mb-4">
-          <div className="flex items-center justify-center w-40 h-20 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 overflow-hidden shrink-0">
-            {impostazioni.logo_url ? (
-              <img
-                src={impostazioni.logo_url}
-                alt="Logo corrente"
-                className="max-h-14 max-w-36 object-contain"
-              />
-            ) : (
-              <div className="flex flex-col items-center gap-1 text-gray-400">
-                <BookOpen className="h-6 w-6" />
-                <span className="text-xs">Predefinito</span>
-              </div>
-            )}
+        <div className="flex items-center gap-4 mb-4">
+          <div className="flex flex-col items-center gap-1">
+            <div className="flex items-center justify-center w-40 h-20 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 overflow-hidden shrink-0">
+              {impostazioni.logo_url ? (
+                <img
+                  src={impostazioni.logo_url}
+                  alt="Logo corrente"
+                  className="max-h-14 max-w-36 object-contain"
+                />
+              ) : (
+                <div className="flex flex-col items-center gap-1 text-gray-400">
+                  <BookOpen className="h-6 w-6" />
+                  <span className="text-xs">Predefinito</span>
+                </div>
+              )}
+            </div>
+            <span className="text-xs text-gray-400">Sfondo chiaro</span>
+          </div>
+          <div className="flex flex-col items-center gap-1">
+            <div className="flex items-center justify-center w-40 h-20 rounded-xl border-2 border-dashed border-gray-700 bg-gray-900 overflow-hidden shrink-0">
+              {impostazioni.logo_url ? (
+                <img
+                  src={impostazioni.logo_url}
+                  alt="Logo su sfondo scuro"
+                  className="max-h-14 max-w-36 object-contain"
+                />
+              ) : (
+                <div className="flex flex-col items-center gap-1 text-gray-600">
+                  <BookOpen className="h-6 w-6" />
+                  <span className="text-xs">Predefinito</span>
+                </div>
+              )}
+            </div>
+            <span className="text-xs text-gray-400">Sidebar admin</span>
           </div>
           <div className="text-sm text-gray-600">
             {impostazioni.logo_url ? (

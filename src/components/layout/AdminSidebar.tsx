@@ -9,7 +9,6 @@ import {
   BookOpen,
   Users,
   ClipboardList,
-  PlusCircle,
   GraduationCap,
   Settings,
   FileText,
@@ -31,12 +30,7 @@ const navItems = [
     icon: BookOpen,
     ruolo: ["SEGRETERIA", "ADMIN"],
   },
-  {
-    href: "/admin/corsi/nuovo",
-    label: "Nuovo corso",
-    icon: PlusCircle,
-    ruolo: ["SEGRETERIA", "ADMIN"],
-  },
+
   {
     href: "/admin/prenotazioni",
     label: "Prenotazioni",
@@ -90,7 +84,7 @@ export default function AdminSidebar({ logoUrl }: { logoUrl?: string | null } = 
       <div className="p-6 border-b border-gray-700">
         <Link href="/admin" className="flex items-center gap-2 text-white font-bold">
           {logoUrl ? (
-            <img src={logoUrl} alt="Logo" className="h-7 w-auto max-w-[140px] object-contain brightness-0 invert" />
+            <img src={logoUrl} alt="Logo" className="h-7 w-auto max-w-[140px] object-contain" />
           ) : (
             <>
               <BookOpen className="h-5 w-5 text-red-400" />
