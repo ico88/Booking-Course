@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Button from "@/components/ui/Button";
 import Alert from "@/components/ui/Alert";
 import { Card } from "@/components/ui/Card";
-import { Save, Eye, EyeOff, Mail, MessageSquare, Send, Settings, ImagePlus, Trash2, BookOpen, CreditCard, FlaskConical, CheckCircle, XCircle, Shield } from "lucide-react";
+import { Save, Eye, EyeOff, Mail, MessageSquare, Send, Settings, ImagePlus, Trash2, BookOpen, CreditCard, FlaskConical, CheckCircle, XCircle, Shield, Users } from "lucide-react";
 
 interface Impostazione {
   id: string;
@@ -59,6 +59,26 @@ const STRUTTURA_IMPOSTAZIONI = [
     campi: [
       { chiave: "turnstile_site_key", label: "Site Key (pubblica, inizia con 0x...)", placeholder: "0x4AAAAAAA...", tipo: "text" },
       { chiave: "turnstile_secret_key", label: "Secret Key (privata)", placeholder: "••••••••", tipo: "password" },
+    ],
+  },
+  {
+    gruppo: "marketing",
+    icona: Users,
+    titolo: "Marketing — Notifiche lead",
+    descrizione: "Configurazione del sistema di notifiche automatiche ai contatti iscritti. Le categorie definiscono i tag disponibili per i lead e i corsi.",
+    campi: [
+      {
+        chiave: "marketing_tags",
+        label: "Categorie disponibili (JSON)",
+        placeholder: '[{"valore":"fulld-sanitario","etichetta":"FULLD Sanitario"},{"valore":"msp","etichetta":"MSP"}]',
+        tipo: "text",
+      },
+      {
+        chiave: "marketing_mesi_max",
+        label: "Non notificare lead più vecchi di (mesi)",
+        placeholder: "36",
+        tipo: "text",
+      },
     ],
   },
   {
