@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatDate, sostituisciVariabiliAttestato } from "@/lib/utils";
+import { generaPdfDaHtml } from "@/lib/pdf";
 
 export async function GET(
   request: NextRequest,
@@ -15,6 +16,7 @@ export async function GET(
 
   const { id } = await params;
   const partecipanteId = request.nextUrl.searchParams.get("partecipante");
+  const wantPdf = request.nextUrl.searchParams.get("pdf") === "1";
 
   const prenotazione = await prisma.prenotazione.findUnique({
     where: { id },
@@ -104,6 +106,17 @@ export async function GET(
   ${html}
 </body>
 </html>`;
+  }
+
+  if (wantPdf) {
+    const pdf = await generaPdfDaHtml(html);
+    const filename = `attestato-${nome.toLowerCase().replace(/\s+/g, "-")}-${cognome.toLowerCase().replace(/\s+/g, "-")}.pdf`;
+    return new NextResponse(pdf, {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${filename}"`,
+      },
+    });
   }
 
   return new NextResponse(html, {

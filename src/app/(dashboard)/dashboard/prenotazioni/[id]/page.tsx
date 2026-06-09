@@ -108,13 +108,11 @@ export default async function PaginaPrenotazione({
                   {prenotazione.partecipanti.map((p) => (
                     <a
                       key={p.id}
-                      href={`/api/prenotazioni/${prenotazione.id}/attestato/genera?partecipante=${p.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      href={`/api/prenotazioni/${prenotazione.id}/attestato/genera?partecipante=${p.id}&pdf=1`}
                       className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
                     >
                       <Download className="h-4 w-4" />
-                      {prenotazione.partecipanti.length > 1 ? `${p.nome} ${p.cognome}` : "Scarica"}
+                      {prenotazione.partecipanti.length > 1 ? `${p.nome} ${p.cognome}` : "Scarica PDF"}
                     </a>
                   ))}
                 </div>

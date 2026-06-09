@@ -116,9 +116,7 @@ export default async function PaginaAdminPrenotazione({
                   {prenotazione.partecipanti.map((p) => (
                     <a
                       key={p.id}
-                      href={`/api/admin/prenotazioni/${prenotazione.id}/attestato/genera?partecipante=${p.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      href={`/api/admin/prenotazioni/${prenotazione.id}/attestato/genera?partecipante=${p.id}&pdf=1`}
                       className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-100 transition-colors"
                     >
                       <Eye className="h-3.5 w-3.5" />

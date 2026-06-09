@@ -112,6 +112,8 @@ export default function EditorVisivoAttestato({ onSalva, salvando, htmlTemplate 
   // Holds the already-compressed base64 when restoring from a saved template
   const [sfondoDataUrl, setSfondoDataUrl] = useState<string | null>(null);
   const [elementi, setElementi] = useState<Elemento[]>([]);
+  const [generandoPdf, setGenerandoPdf] = useState(false);
+  const [erroreAnteprima, setErroreAnteprima] = useState<string | null>(null);
   const [variabileAttiva, setVariabileAttiva] = useState<string | null>(null);
   const [selezionato, setSelezionato] = useState<string | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -323,10 +325,30 @@ export default function EditorVisivoAttestato({ onSalva, salvando, htmlTemplate 
       valoriEsempio
     );
 
-    const blob = new Blob([fullHtml], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    window.open(url, "_blank");
-    setTimeout(() => URL.revokeObjectURL(url), 15_000);
+    setGenerandoPdf(true);
+    setErroreAnteprima(null);
+    try {
+      const res = await fetch("/api/attestato/anteprima-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ html: fullHtml }),
+      });
+      if (!res.ok) {
+        setErroreAnteprima("Errore generazione PDF. Riprova.");
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "anteprima-attestato.pdf";
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 5_000);
+    } catch {
+      setErroreAnteprima("Errore di rete. Riprova.");
+    } finally {
+      setGenerandoPdf(false);
+    }
   }
 
   const elSel = elementi.find((el) => el.id === selezionato);
@@ -583,14 +605,17 @@ export default function EditorVisivoAttestato({ onSalva, salvando, htmlTemplate 
           )}
 
           {/* Save / Preview */}
+          {erroreAnteprima && (
+            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{erroreAnteprima}</p>
+          )}
           <div className="flex items-center gap-3 flex-wrap">
             <button
               onClick={handleAnteprima}
-              disabled={elementi.length === 0}
+              disabled={generandoPdf || elementi.length === 0}
               className="flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50"
             >
               <Eye className="h-4 w-4" />
-              Anteprima
+              {generandoPdf ? "Generazione PDF…" : "Anteprima PDF"}
             </button>
             <button
               onClick={handleSalva}
