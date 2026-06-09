@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { z } from "zod";
+import { inviaNotificaLeads } from "@/lib/leads";
 
 const schemaAggiornamento = z.object({
   titolo: z.string().min(3).optional(),
@@ -18,6 +19,7 @@ const schemaAggiornamento = z.object({
   coordinateBancarie: z.string().optional(),
   pubblicato: z.boolean().optional(),
   attestatoAbilitato: z.boolean().optional(),
+  tags: z.string().optional(), // JSON array
 });
 
 export async function GET(
@@ -55,6 +57,11 @@ export async function PUT(
     const body = await request.json();
     const data = schemaAggiornamento.parse(body);
 
+    // Read current published state before update (to detect publish event)
+    const corsoAttuale = data.pubblicato !== undefined
+      ? await prisma.corso.findUnique({ where: { id }, select: { pubblicato: true } })
+      : null;
+
     const aggiornamenti: Record<string, unknown> = { ...data };
     if (data.dataInizio) aggiornamenti.dataInizio = new Date(data.dataInizio);
     if (data.dataFine) aggiornamenti.dataFine = new Date(data.dataFine);
@@ -64,6 +71,11 @@ export async function PUT(
       where: { id },
       data: aggiornamenti,
     });
+
+    // Auto-notify leads when course is first published
+    if (data.pubblicato === true && corsoAttuale && !corsoAttuale.pubblicato) {
+      inviaNotificaLeads(id).catch(console.error); // fire-and-forget
+    }
 
     return NextResponse.json(corso);
   } catch (error) {

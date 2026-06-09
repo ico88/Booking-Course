@@ -14,6 +14,7 @@ import {
   Settings,
   FileText,
   HardDrive,
+  Mail,
 } from "lucide-react";
 
 const navItems = [
@@ -59,6 +60,12 @@ const navItems = [
     label: "Pagine Legali",
     icon: FileText,
     ruolo: ["ADMIN"],
+  },
+  {
+    href: "/admin/marketing",
+    label: "Marketing",
+    icon: Mail,
+    ruolo: ["ADMIN", "SEGRETERIA"],
   },
   {
     href: "/admin/backup",

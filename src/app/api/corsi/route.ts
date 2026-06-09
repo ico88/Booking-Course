@@ -18,6 +18,7 @@ const schemaCorso = z.object({
   coordinateBancarie: z.string().min(10),
   pubblicato: z.boolean().default(false),
   attestatoAbilitato: z.boolean().default(false),
+  tags: z.string().optional(),
 });
 
 // GET: lista corsi pubblici

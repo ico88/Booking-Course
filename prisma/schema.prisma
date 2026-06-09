@@ -106,11 +106,13 @@ model Corso {
   coordinateBancarie   String   @db.Text
   immagineUrl          String?
   pubblicato           Boolean  @default(false)
+  tags                 String   @default("[]")  // JSON: ["fulld-sanitario","msp"]
   // Attestato: template caricato dalla segreteria (PDF o immagine)
   attestatoTemplateUrl String?
   attestatoNomeFile    String?
   attestatoAbilitato      Boolean   @default(false)
   ultimaNotificaMarketing DateTime?
+  ultimaNotificaLeads     DateTime?
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
 
@@ -157,6 +159,23 @@ model Impostazione {
   updatedAt DateTime @updatedAt
 
   @@map("impostazioni")
+}
+
+model LeadMarketing {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  nome           String?
+  cognome        String?
+  tags           String    @default("[]")  // JSON: ["fulld-sanitario","msp"]
+  verificato     Boolean   @default(false)
+  tokenVerifica  String?   @unique
+  tokenScadenza  DateTime?
+  attivo         Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  ultimoContatto DateTime?
+
+  @@map("leads_marketing")
 }
 
 model Partecipante {

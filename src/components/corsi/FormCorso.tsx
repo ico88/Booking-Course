@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import Input from "@/components/ui/Input";
 import Textarea from "@/components/ui/Textarea";
 import Button from "@/components/ui/Button";
 import Alert from "@/components/ui/Alert";
+import { parseTags, serializeTags, TAG_DEFAULT } from "@/lib/leads";
 
 type FormData = {
   titolo: string;
@@ -38,6 +39,7 @@ interface ValoriIniziali {
   coordinateBancarie?: string;
   pubblicato?: boolean;
   attestatoAbilitato?: boolean;
+  tags?: string;
 }
 
 interface Props {
@@ -50,6 +52,17 @@ export default function FormCorso({ corsoId, valoriIniziali, modalita }: Props) 
   const router = useRouter();
   const [errore, setErrore] = useState<string | null>(null);
   const [caricamento, setCaricamento] = useState(false);
+  const [tagsSelezionati, setTagsSelezionati] = useState<string[]>(
+    () => parseTags(valoriIniziali?.tags ?? "[]")
+  );
+  const [tagsDisponibili, setTagsDisponibili] = useState(TAG_DEFAULT);
+
+  useEffect(() => {
+    fetch("/api/admin/marketing/tags")
+      .then((r) => r.json())
+      .then((d) => { if (Array.isArray(d)) setTagsDisponibili(d); })
+      .catch(() => {});
+  }, []);
 
   const {
     register,
@@ -95,6 +108,7 @@ export default function FormCorso({ corsoId, valoriIniziali, modalita }: Props) 
           postiTotali: Number(data.postiTotali),
           timeoutPagamentoOre: Number(data.timeoutPagamentoOre),
           dataFine: data.dataFine || null,
+          tags: serializeTags(tagsSelezionati),
         }),
       });
 
@@ -204,6 +218,42 @@ export default function FormCorso({ corsoId, valoriIniziali, modalita }: Props) 
           {...register("coordinateBancarie")}
           error={errors.coordinateBancarie?.message}
         />
+
+        {/* Tags per notifiche marketing leads */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Categorie corso
+            <span className="ml-2 text-xs font-normal text-gray-400">(usate per notificare automaticamente gli iscritti interessati)</span>
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {tagsDisponibili.map((tag) => {
+              const checked = tagsSelezionati.includes(tag.valore);
+              return (
+                <button
+                  key={tag.valore}
+                  type="button"
+                  onClick={() =>
+                    setTagsSelezionati((prev) =>
+                      checked ? prev.filter((t) => t !== tag.valore) : [...prev, tag.valore]
+                    )
+                  }
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                    checked
+                      ? "bg-red-600 text-white border-red-600"
+                      : "bg-white text-gray-600 border-gray-300 hover:border-red-400"
+                  }`}
+                >
+                  {tag.etichetta}
+                </button>
+              );
+            })}
+          </div>
+          {tagsSelezionati.length === 0 && (
+            <p className="text-xs text-gray-400 mt-1">
+              Nessuna categoria selezionata — il corso verrà notificato a <strong>tutti</strong> gli iscritti.
+            </p>
+          )}
+        </div>
 
         <div className="flex flex-col gap-3">
           <label className="flex items-center gap-3 cursor-pointer">

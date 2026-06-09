@@ -83,6 +83,7 @@ export default async function PaginaModificaCorso({
               coordinateBancarie: corso.coordinateBancarie,
               pubblicato: corso.pubblicato,
               attestatoAbilitato: corso.attestatoAbilitato,
+              tags: corso.tags,
             }}
           />
         </Card>
