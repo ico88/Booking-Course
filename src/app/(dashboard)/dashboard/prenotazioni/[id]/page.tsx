@@ -91,30 +91,45 @@ export default async function PaginaPrenotazione({
 
       <div className="grid gap-4">
         {/* Attestato */}
-        {prenotazione.attestatoEmesso && prenotazione.attestatoUrl && (
+        {prenotazione.attestatoEmesso && (prenotazione.attestatoUrl || prenotazione.corso.attestatoHtmlTemplate) && (
           <Card className="border-purple-200 bg-purple-50">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <GraduationCap className="h-6 w-6 text-purple-600" />
                 <div>
-                  <p className="font-semibold text-purple-900">
-                    Attestato disponibile!
-                  </p>
+                  <p className="font-semibold text-purple-900">Attestato disponibile!</p>
                   <p className="text-sm text-purple-700">
                     Emesso il {formatDate(prenotazione.attestatoEmessoAt!)}
                   </p>
                 </div>
               </div>
-              <a
-                href={prenotazione.attestatoUrl}
-                download
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
-              >
-                <Download className="h-4 w-4" />
-                Scarica
-              </a>
+              {prenotazione.corso.attestatoHtmlTemplate ? (
+                <div className="flex flex-col gap-2 items-end">
+                  {prenotazione.partecipanti.map((p) => (
+                    <a
+                      key={p.id}
+                      href={`/api/prenotazioni/${prenotazione.id}/attestato/genera?partecipante=${p.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
+                    >
+                      <Download className="h-4 w-4" />
+                      {prenotazione.partecipanti.length > 1 ? `${p.nome} ${p.cognome}` : "Scarica"}
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <a
+                  href={prenotazione.attestatoUrl!}
+                  download
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
+                >
+                  <Download className="h-4 w-4" />
+                  Scarica
+                </a>
+              )}
             </div>
           </Card>
         )}

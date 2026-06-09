@@ -74,6 +74,7 @@ export default function UploadTemplateAttestato({
   const [htmlText, setHtmlText] = useState(htmlTemplate ?? "");
   const [caricamento, setCaricamento] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
+  const [successo, setSuccesso] = useState(false);
   const [abilitaAttestato, setAbilitaAttestato] = useState(abilitato);
 
   async function salva() {
@@ -114,16 +115,19 @@ export default function UploadTemplateAttestato({
     router.refresh();
   }
 
-  async function salvaHtmlDiretto(html: string) {
+  async function salvaHtmlDiretto(html: string, sfondoFile: File | null) {
     setCaricamento(true);
     setErrore(null);
+    setSuccesso(false);
     try {
       const formData = new FormData();
-      formData.append("abilita", abilitaAttestato.toString());
+      formData.append("abilita", "true"); // always enable when saving from visual editor
       formData.append("htmlTemplate", html);
+      if (sfondoFile) formData.append("sfondo", sfondoFile);
       const res = await fetch(`/api/admin/corsi/${corsoId}/attestato-template`, { method: "POST", body: formData });
       const json = await res.json();
       if (!res.ok) { setErrore(json.error || "Errore"); return; }
+      setSuccesso(true);
       router.refresh();
     } catch {
       setErrore("Errore di rete. Riprova.");
@@ -258,6 +262,7 @@ export default function UploadTemplateAttestato({
         </div>
       )}
 
+      {successo && <Alert variant="success">Template salvato! Attestati abilitati per questo corso.</Alert>}
       {errore && <Alert variant="error">{errore}</Alert>}
 
       {tab !== "visivo" && (

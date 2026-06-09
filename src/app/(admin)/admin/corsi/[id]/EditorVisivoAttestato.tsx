@@ -41,7 +41,7 @@ type Elemento = {
 };
 
 interface Props {
-  onSalva: (html: string) => void;
+  onSalva: (html: string, sfondoFile: File | null) => void;
   salvando: boolean;
 }
 
@@ -153,16 +153,9 @@ export default function EditorVisivoAttestato({ onSalva, salvando }: Props) {
   }
 
   async function handleSalva() {
-    let bgStyle = "background:#fff;";
-    if (sfondoFile) {
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(sfondoFile);
-      });
-      bgStyle = `background-image:url('${base64}');background-size:cover;background-position:center;`;
-    }
+    const bgStyle = sfondoFile
+      ? `background-image:url('##SFONDO_URL##');background-size:cover;background-position:center;`
+      : "background:#fff;";
 
     const spans = elementi
       .map(
@@ -172,7 +165,7 @@ export default function EditorVisivoAttestato({ onSalva, salvando }: Props) {
       .join("\n");
 
     const html = `<div style="width:297mm;height:210mm;position:relative;${bgStyle}print-color-adjust:exact;-webkit-print-color-adjust:exact;overflow:hidden;">\n${spans}\n</div>`;
-    onSalva(html);
+    onSalva(html, sfondoFile);
   }
 
   const elSel = elementi.find((el) => el.id === selezionato);

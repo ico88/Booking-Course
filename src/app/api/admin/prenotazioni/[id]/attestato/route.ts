@@ -30,6 +30,7 @@ export async function POST(
           titolo: true,
           attestatoTemplateUrl: true,
           attestatoAbilitato: true,
+          attestatoHtmlTemplate: true,
         },
       },
     },
@@ -52,6 +53,25 @@ export async function POST(
   const formData = await request.formData();
   const fileUpload = formData.get("file") as File | null;
   const usaTemplate = formData.get("usaTemplate") === "true";
+  const usaHtmlTemplate = formData.get("usaHtmlTemplate") === "true";
+
+  if (usaHtmlTemplate) {
+    await prisma.prenotazione.update({
+      where: { id },
+      data: {
+        attestatoEmesso: true,
+        attestatoEmessoAt: new Date(),
+        attestatoUrl: null,
+      },
+    });
+    inviaEmailAttestato(
+      prenotazione.utente.email,
+      `${prenotazione.utente.nome} ${prenotazione.utente.cognome}`,
+      prenotazione.corso.titolo,
+      id
+    ).catch(console.error);
+    return NextResponse.json({ message: "Attestato emesso con successo" });
+  }
 
   let urlAttestato: string;
   const uploadDir = path.join(

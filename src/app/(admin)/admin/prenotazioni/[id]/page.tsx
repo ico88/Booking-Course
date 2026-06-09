@@ -123,29 +123,31 @@ export default async function PaginaAdminPrenotazione({
               </div>
             )}
 
-            {prenotazione.attestatoEmesso && prenotazione.attestatoUrl ? (
-              <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-4">
+            {prenotazione.attestatoEmesso && (prenotazione.attestatoUrl || prenotazione.corso.attestatoHtmlTemplate) && (
+              <div className="mb-4 flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-4">
                 <div>
                   <p className="text-sm font-medium text-green-800">
                     Attestato emesso il {formatDate(prenotazione.attestatoEmessoAt!)}
                   </p>
+                  {prenotazione.attestatoUrl && !prenotazione.corso.attestatoHtmlTemplate && (
+                    <a
+                      href={prenotazione.attestatoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-green-700 hover:underline mt-1"
+                    >
+                      <Download className="h-3 w-3" /> Scarica file
+                    </a>
+                  )}
                 </div>
-                <a
-                  href={prenotazione.attestatoUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700"
-                >
-                  <Download className="h-4 w-4" />
-                  Scarica
-                </a>
               </div>
-            ) : (
-              <EmettiAttestato
-                prenotazioneId={prenotazione.id}
-                hasTemplate={!!prenotazione.corso.attestatoTemplateUrl}
-              />
             )}
+            <EmettiAttestato
+              prenotazioneId={prenotazione.id}
+              hasTemplate={!!prenotazione.corso.attestatoTemplateUrl}
+              hasHtmlTemplate={!!prenotazione.corso.attestatoHtmlTemplate}
+              giaEmesso={prenotazione.attestatoEmesso}
+            />
           </Card>
         )}
 
