@@ -15,7 +15,7 @@ const schema = z.object({
     message: "È necessario accettare la Privacy Policy per registrarsi",
   }),
   consensoMarketing: z.boolean().optional(),
-  turnstileToken: z.string().optional(),
+  turnstileToken: z.string().nullish(),
 });
 
 async function verifyTurnstile(token: string, ip: string): Promise<boolean> {

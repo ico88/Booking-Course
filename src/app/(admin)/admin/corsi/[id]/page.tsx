@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import Alert from "@/components/ui/Alert";
 import FormCorso from "@/components/corsi/FormCorso";
 import UploadTemplateAttestato from "./UploadTemplateAttestato";
+import UploadImmagineCorso from "./UploadImmagineCorso";
 import DuplicaCorsoButton from "../DuplicaCorsoButton";
 import NotificaMarketingButton from "./NotificaMarketingButton";
 import ElencoPartecipantiButton from "./ElencoPartecipantiButton";
@@ -121,6 +122,11 @@ export default async function PaginaModificaCorso({
             Genera l&apos;elenco completo dei partecipanti confermati. Puoi stamparlo o scaricarlo in formato CSV per Excel.
           </p>
           <ElencoPartecipantiButton corsoId={corso.id} totalePartecipanti={statPartecipanti} />
+        </Card>
+
+        <Card>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Immagine corso</h2>
+          <UploadImmagineCorso corsoId={corso.id} immagineAttuale={corso.immagineUrl ?? null} />
         </Card>
 
         <Card>

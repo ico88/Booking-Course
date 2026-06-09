@@ -55,7 +55,7 @@ export default function FormRegistrazione({ siteKey }: Props) {
   async function onSubmit(data: FormData) {
     setErrore(null);
 
-    if (siteKey && !turnstileToken) {
+    if (siteKey && siteKey.length > 0 && !turnstileToken) {
       setErrore("Completa la verifica CAPTCHA prima di procedere.");
       return;
     }
