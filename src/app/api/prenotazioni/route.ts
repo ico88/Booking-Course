@@ -6,6 +6,7 @@ import { z } from "zod";
 import {
   inviaEmailPrenotazione,
   inviaEmailNotificaSegreteria,
+  inviaEmailConfermaPrenotazione,
 } from "@/lib/email";
 
 const schemaPartecipante = z.object({
@@ -123,7 +124,29 @@ export async function POST(request: NextRequest) {
       where: { id: session.user.id },
     });
 
-    // Notifiche (non bloccanti)
+    const costoTotale = Number(corso.costo) * data.numeroPosti;
+    const gratuito = costoTotale === 0;
+
+    if (gratuito) {
+      // Corso gratuito: conferma immediata senza passare per il pagamento
+      await prisma.prenotazione.update({
+        where: { id: prenotazione.id },
+        data: { stato: "CONFERMATA", metodoPagamento: "BONIFICO", importoPagato: 0 },
+      });
+
+      if (utente) {
+        inviaEmailConfermaPrenotazione(
+          utente.email,
+          `${utente.nome} ${utente.cognome}`,
+          corso.titolo,
+          corso.dataInizio
+        ).catch(console.error);
+      }
+
+      return NextResponse.json({ ...prenotazione, gratuito: true }, { status: 201 });
+    }
+
+    // Corso a pagamento: notifiche standard
     if (utente) {
       inviaEmailPrenotazione(
         utente.email,
@@ -150,7 +173,7 @@ export async function POST(request: NextRequest) {
       }).catch(console.error);
     });
 
-    return NextResponse.json(prenotazione, { status: 201 });
+    return NextResponse.json({ ...prenotazione, gratuito: false }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

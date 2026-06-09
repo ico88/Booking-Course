@@ -20,6 +20,12 @@ enum StatoPrenotazione {
   SCADUTA
 }
 
+enum MetodoPagamento {
+  BONIFICO
+  STRIPE
+  PAYPAL
+}
+
 model Utente {
   id               String    @id @default(cuid())
   email            String    @unique
@@ -120,6 +126,9 @@ model Prenotazione {
   numeroPosti       Int               @default(1)
   stato             StatoPrenotazione @default(IN_ATTESA_PAGAMENTO)
   scadenzaPagamento DateTime
+  metodoPagamento   MetodoPagamento   @default(BONIFICO)
+  idTransazione     String?
+  importoPagato     Decimal?          @db.Decimal(10, 2)
   urlContabile      String?
   nomeFileContabile String?
   note              String?

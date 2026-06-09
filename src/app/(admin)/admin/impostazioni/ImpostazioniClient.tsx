@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Button from "@/components/ui/Button";
 import Alert from "@/components/ui/Alert";
 import { Card } from "@/components/ui/Card";
-import { Save, Eye, EyeOff, Mail, MessageSquare, Send, Settings, ImagePlus, Trash2, BookOpen } from "lucide-react";
+import { Save, Eye, EyeOff, Mail, MessageSquare, Send, Settings, ImagePlus, Trash2, BookOpen, CreditCard } from "lucide-react";
 
 interface Impostazione {
   id: string;
@@ -232,6 +232,139 @@ export default function ImpostazioniClient() {
           )}
         </div>
       </Card>
+
+      {/* Card Pagamenti */}
+      {(() => {
+        let metodiAbilitati: string[] = [];
+        try { metodiAbilitati = JSON.parse(impostazioni["metodi_pagamento"] ?? "[]"); } catch { /* ignore */ }
+
+        const toggleMetodo = (m: string) => {
+          const next = metodiAbilitati.includes(m)
+            ? metodiAbilitati.filter((x) => x !== m)
+            : [...metodiAbilitati, m];
+          setImpostazioni((prev) => ({ ...prev, metodi_pagamento: JSON.stringify(next) }));
+        };
+
+        return (
+          <Card>
+            <div className="flex items-center gap-3 mb-1">
+              <CreditCard className="h-5 w-5 text-red-600" />
+              <h2 className="font-semibold text-gray-900">Metodi di pagamento</h2>
+            </div>
+            <p className="text-sm text-gray-500 mb-5">
+              Abilita i metodi di pagamento online. Il bonifico bancario è sempre disponibile.
+            </p>
+
+            <div className="space-y-5">
+              {/* Bonifico — sempre attivo */}
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
+                <input type="checkbox" checked readOnly disabled className="h-4 w-4 text-red-600 rounded" />
+                <div>
+                  <p className="text-sm font-medium text-gray-700">Bonifico bancario</p>
+                  <p className="text-xs text-gray-400">Sempre abilitato — nessuna configurazione richiesta</p>
+                </div>
+              </div>
+
+              {/* Stripe */}
+              <div>
+                <div className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 mb-3">
+                  <input
+                    type="checkbox"
+                    id="stripe-check"
+                    checked={metodiAbilitati.includes("STRIPE")}
+                    onChange={() => toggleMetodo("STRIPE")}
+                    className="h-4 w-4 text-red-600 rounded"
+                  />
+                  <label htmlFor="stripe-check" className="text-sm font-medium text-gray-700 cursor-pointer">
+                    Stripe (carta di credito/debito)
+                  </label>
+                </div>
+                {metodiAbilitati.includes("STRIPE") && (
+                  <div className="space-y-3 pl-4 border-l-2 border-gray-100">
+                    {[
+                      { chiave: "stripe_publishable_key", label: "Publishable Key (pk_...)", tipo: "text" },
+                      { chiave: "stripe_secret_key", label: "Secret Key (sk_...)", tipo: "password" },
+                    ].map((campo) => (
+                      <div key={campo.chiave}>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{campo.label}</label>
+                        <div className="relative">
+                          <input
+                            type={campo.tipo === "password" && !visibili[campo.chiave] ? "password" : "text"}
+                            value={impostazioni[campo.chiave] ?? ""}
+                            onChange={(e) => setImpostazioni((prev) => ({ ...prev, [campo.chiave]: e.target.value }))}
+                            placeholder={campo.tipo === "password" ? "••••••••" : ""}
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 pr-10 font-mono"
+                          />
+                          {campo.tipo === "password" && (
+                            <button type="button" onClick={() => setVisibili((prev) => ({ ...prev, [campo.chiave]: !prev[campo.chiave] }))}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700">
+                              {visibili[campo.chiave] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* PayPal */}
+              <div>
+                <div className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 mb-3">
+                  <input
+                    type="checkbox"
+                    id="paypal-check"
+                    checked={metodiAbilitati.includes("PAYPAL")}
+                    onChange={() => toggleMetodo("PAYPAL")}
+                    className="h-4 w-4 text-red-600 rounded"
+                  />
+                  <label htmlFor="paypal-check" className="text-sm font-medium text-gray-700 cursor-pointer">
+                    PayPal
+                  </label>
+                </div>
+                {metodiAbilitati.includes("PAYPAL") && (
+                  <div className="space-y-3 pl-4 border-l-2 border-gray-100">
+                    {[
+                      { chiave: "paypal_client_id", label: "Client ID", tipo: "text" },
+                      { chiave: "paypal_client_secret", label: "Client Secret", tipo: "password" },
+                    ].map((campo) => (
+                      <div key={campo.chiave}>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{campo.label}</label>
+                        <div className="relative">
+                          <input
+                            type={campo.tipo === "password" && !visibili[campo.chiave] ? "password" : "text"}
+                            value={impostazioni[campo.chiave] ?? ""}
+                            onChange={(e) => setImpostazioni((prev) => ({ ...prev, [campo.chiave]: e.target.value }))}
+                            placeholder={campo.tipo === "password" ? "••••••••" : ""}
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 pr-10 font-mono"
+                          />
+                          {campo.tipo === "password" && (
+                            <button type="button" onClick={() => setVisibili((prev) => ({ ...prev, [campo.chiave]: !prev[campo.chiave] }))}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700">
+                              {visibili[campo.chiave] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Modalità</label>
+                      <select
+                        value={impostazioni["paypal_mode"] ?? "sandbox"}
+                        onChange={(e) => setImpostazioni((prev) => ({ ...prev, paypal_mode: e.target.value }))}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                      >
+                        <option value="sandbox">Sandbox (test)</option>
+                        <option value="live">Live (produzione)</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </Card>
+        );
+      })()}
 
       {STRUTTURA_IMPOSTAZIONI.map((sezione) => (
         <Card key={sezione.gruppo}>

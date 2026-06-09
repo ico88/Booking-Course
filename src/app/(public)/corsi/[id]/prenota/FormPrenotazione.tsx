@@ -86,7 +86,12 @@ export default function FormPrenotazione({
         return;
       }
 
-      router.push(`/dashboard/prenotazioni/${json.id}?nuova=1`);
+      // Gratuito → già confermato, vai alla prenotazione
+      if (json.gratuito) {
+        router.push(`/dashboard/prenotazioni/${json.id}?confermata=1`);
+      } else {
+        router.push(`/dashboard/pagamento/${json.id}`);
+      }
     } catch {
       setErrore("Errore di rete. Riprova.");
     } finally {

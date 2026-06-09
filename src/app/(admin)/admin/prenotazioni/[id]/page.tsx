@@ -11,6 +11,7 @@ import { ArrowLeft, Download, Users, GraduationCap } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import AzioniPrenotazione from "./AzioniPrenotazione";
 import EmettiAttestato from "./EmettiAttestato";
+import RimborsoButton from "./RimborsoButton";
 
 export const revalidate = 0;
 
@@ -128,6 +129,36 @@ export default async function PaginaAdminPrenotazione({
             )}
           </Card>
         )}
+
+        {/* Rimborso */}
+        {prenotazione.stato === "CONFERMATA" &&
+          prenotazione.metodoPagamento !== "BONIFICO" &&
+          prenotazione.idTransazione && (
+            <Card>
+              <h2 className="font-semibold text-gray-900 mb-1">Pagamento online</h2>
+              <div className="text-sm text-gray-600 space-y-1 mb-4">
+                <p>
+                  <span className="text-gray-400">Metodo:</span>{" "}
+                  <strong>{prenotazione.metodoPagamento}</strong>
+                </p>
+                <p>
+                  <span className="text-gray-400">Transazione:</span>{" "}
+                  <code className="text-xs bg-gray-100 px-1 rounded">{prenotazione.idTransazione}</code>
+                </p>
+                {prenotazione.importoPagato && (
+                  <p>
+                    <span className="text-gray-400">Importo pagato:</span>{" "}
+                    <strong>€{Number(prenotazione.importoPagato).toFixed(2)}</strong>
+                  </p>
+                )}
+              </div>
+              <RimborsoButton
+                prenotazioneId={prenotazione.id}
+                metodoPagamento={prenotazione.metodoPagamento as "STRIPE" | "PAYPAL"}
+                importoPagato={prenotazione.importoPagato ? Number(prenotazione.importoPagato) : null}
+              />
+            </Card>
+          )}
 
         {/* Dati utente */}
         <Card>
