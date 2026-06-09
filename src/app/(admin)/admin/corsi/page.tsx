@@ -29,7 +29,7 @@ export default async function PaginaAdminCorsi() {
         <h1 className="text-2xl font-bold text-gray-900">Corsi</h1>
         <Link
           href="/admin/corsi/nuovo"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-700 text-white rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-red-700 text-white rounded-lg text-sm font-medium hover:bg-red-800 transition-colors"
         >
           <PlusCircle className="h-4 w-4" />
           Nuovo corso
@@ -42,7 +42,7 @@ export default async function PaginaAdminCorsi() {
           <p className="text-gray-500">Nessun corso creato.</p>
           <Link
             href="/admin/corsi/nuovo"
-            className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-blue-700 text-white rounded-lg text-sm font-medium hover:bg-blue-800"
+            className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-red-700 text-white rounded-lg text-sm font-medium hover:bg-red-800"
           >
             <PlusCircle className="h-4 w-4" />
             Crea il primo corso
@@ -111,7 +111,7 @@ export default async function PaginaAdminCorsi() {
                       </p>
                       <div className="w-20 h-1.5 bg-gray-100 rounded-full mt-1">
                         <div
-                          className="h-full rounded-full bg-blue-400"
+                          className="h-full rounded-full bg-red-400"
                           style={{
                             width: `${Math.min(
                               (corso.postiOccupati / corso.postiTotali) * 100,
@@ -139,7 +139,7 @@ export default async function PaginaAdminCorsi() {
                       <DuplicaCorsoButton corsoId={corso.id} />
                       <Link
                         href={`/admin/corsi/${corso.id}`}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                       >
                         <Edit className="h-3.5 w-3.5" />
                         Modifica

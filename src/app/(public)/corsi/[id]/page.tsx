@@ -91,9 +91,9 @@ export default async function PaginaCorso({
           </div>
 
           {/* Come funziona */}
-          <div className="bg-blue-50 rounded-xl p-6 border border-blue-100">
-            <h3 className="font-semibold text-blue-900 mb-4 flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-blue-600" />
+          <div className="bg-red-50 rounded-xl p-6 border border-red-100">
+            <h3 className="font-semibold text-red-900 mb-4 flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-red-600" />
               Come funziona la prenotazione
             </h3>
             <ol className="space-y-3">
@@ -109,8 +109,8 @@ export default async function PaginaCorso({
               ]
                 .filter(Boolean)
                 .map((step, i) => (
-                  <li key={i} className="flex items-start gap-3 text-sm text-blue-800">
-                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs">
+                  <li key={i} className="flex items-start gap-3 text-sm text-red-800">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-red-600 text-white flex items-center justify-center font-bold text-xs">
                       {i + 1}
                     </span>
                     {step}

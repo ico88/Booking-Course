@@ -21,7 +21,7 @@ export default function PaginaPrivacyPolicy() {
           <p>
             Il titolare del trattamento dei dati personali è <strong>Gestione Corsi S.r.l.</strong>, con sede legale in
             Via Roma 10, 20121 Milano (MI), C.F./P.IVA: [inserire], email:{" "}
-            <a href="mailto:privacy@gestione-corsi.it" className="text-blue-600 hover:underline">
+            <a href="mailto:privacy@gestione-corsi.it" className="text-red-600 hover:underline">
               privacy@gestione-corsi.it
             </a>
             .
@@ -120,11 +120,11 @@ export default function PaginaPrivacyPolicy() {
           </ul>
           <p className="mt-2">
             Puoi esercitare i tuoi diritti dalla tua area personale (
-            <Link href="/dashboard/dati-personali" className="text-blue-600 hover:underline">
+            <Link href="/dashboard/dati-personali" className="text-red-600 hover:underline">
               Dashboard → Dati personali
             </Link>
             ) oppure scrivendo a{" "}
-            <a href="mailto:privacy@gestione-corsi.it" className="text-blue-600 hover:underline">
+            <a href="mailto:privacy@gestione-corsi.it" className="text-red-600 hover:underline">
               privacy@gestione-corsi.it
             </a>
             . Risponderemo entro 30 giorni.
@@ -132,7 +132,7 @@ export default function PaginaPrivacyPolicy() {
           <p className="mt-2">
             Hai inoltre il diritto di proporre reclamo all'autorità di controllo italiana:{" "}
             <strong>Garante per la Protezione dei Dati Personali</strong>, Piazza Venezia 11, Roma —{" "}
-            <a href="https://www.garanteprivacy.it" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
+            <a href="https://www.garanteprivacy.it" className="text-red-600 hover:underline" target="_blank" rel="noopener noreferrer">
               www.garanteprivacy.it
             </a>
             .
@@ -143,7 +143,7 @@ export default function PaginaPrivacyPolicy() {
           <h2 className="text-lg font-semibold text-gray-900 mb-3">7. Cookie</h2>
           <p>
             Per informazioni dettagliate sui cookie utilizzati consulta la{" "}
-            <Link href="/cookie-policy" className="text-blue-600 hover:underline">
+            <Link href="/cookie-policy" className="text-red-600 hover:underline">
               Cookie Policy
             </Link>
             .

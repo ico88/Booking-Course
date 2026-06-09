@@ -31,9 +31,9 @@ export default async function PaginaPrenota({
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
-      <div className="bg-blue-50 rounded-xl p-5 border border-blue-100 mb-8">
-        <h2 className="font-semibold text-blue-900 text-lg">{corso.titolo}</h2>
-        <div className="flex flex-wrap gap-4 mt-2 text-sm text-blue-700">
+      <div className="bg-red-50 rounded-xl p-5 border border-red-100 mb-8">
+        <h2 className="font-semibold text-red-900 text-lg">{corso.titolo}</h2>
+        <div className="flex flex-wrap gap-4 mt-2 text-sm text-red-700">
           <span>{formatDate(corso.dataInizio)}</span>
           <span>•</span>
           <span>{corso.orario}</span>
@@ -45,10 +45,10 @@ export default async function PaginaPrenota({
           )}
         </div>
         <div className="mt-2 flex items-center justify-between">
-          <span className="text-sm text-blue-700">
+          <span className="text-sm text-red-700">
             {postiLiberi} posti disponibili
           </span>
-          <span className="font-bold text-blue-900">
+          <span className="font-bold text-red-900">
             {formatCurrency(corso.costo as unknown as number)}/persona
           </span>
         </div>

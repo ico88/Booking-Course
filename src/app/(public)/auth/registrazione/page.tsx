@@ -141,16 +141,16 @@ function FormRegistrazione() {
             id="consensoPrivacy"
             type="checkbox"
             {...register("consensoPrivacy")}
-            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 shrink-0"
+            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500 shrink-0"
           />
           <label htmlFor="consensoPrivacy" className="text-xs text-gray-600 leading-relaxed">
             <span className="text-red-500 mr-1">*</span>
             Ho letto e accetto la{" "}
-            <Link href="/privacy-policy" target="_blank" className="text-blue-600 hover:underline font-medium">
+            <Link href="/privacy-policy" target="_blank" className="text-red-600 hover:underline font-medium">
               Privacy Policy
             </Link>{" "}
             e i{" "}
-            <Link href="/termini-condizioni" target="_blank" className="text-blue-600 hover:underline font-medium">
+            <Link href="/termini-condizioni" target="_blank" className="text-red-600 hover:underline font-medium">
               Termini e Condizioni
             </Link>
             . Acconsento al trattamento dei miei dati personali per la gestione dell'account e delle prenotazioni.
@@ -165,7 +165,7 @@ function FormRegistrazione() {
             id="consensoMarketing"
             type="checkbox"
             {...register("consensoMarketing")}
-            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 shrink-0"
+            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500 shrink-0"
           />
           <label htmlFor="consensoMarketing" className="text-xs text-gray-600 leading-relaxed">
             <span className="text-gray-400 mr-1">(opzionale)</span>
@@ -193,8 +193,8 @@ export default function PaginaRegistrazione() {
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-blue-100 mb-4">
-            <BookOpen className="h-7 w-7 text-blue-700" />
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-red-100 mb-4">
+            <BookOpen className="h-7 w-7 text-red-700" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Crea un account</h1>
           <p className="text-gray-500 mt-1">
@@ -211,7 +211,7 @@ export default function PaginaRegistrazione() {
             Hai già un account?{" "}
             <Link
               href="/auth/login"
-              className="text-blue-600 hover:underline font-medium"
+              className="text-red-600 hover:underline font-medium"
             >
               Accedi
             </Link>

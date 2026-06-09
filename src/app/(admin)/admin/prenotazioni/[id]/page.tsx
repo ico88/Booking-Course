@@ -68,8 +68,8 @@ export default async function PaginaAdminPrenotazione({
       <div className="grid gap-4">
         {/* Azioni */}
         {prenotazione.stato === "PAGAMENTO_CARICATO" && (
-          <Card className="border-blue-200 bg-blue-50">
-            <h2 className="font-semibold text-blue-900 mb-4">
+          <Card className="border-red-200 bg-red-50">
+            <h2 className="font-semibold text-red-900 mb-4">
               Verifica pagamento
             </h2>
 
@@ -79,7 +79,7 @@ export default async function PaginaAdminPrenotazione({
                   href={prenotazione.urlContabile}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-blue-200 rounded-lg text-sm text-blue-700 hover:bg-blue-50 transition-colors"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-red-200 rounded-lg text-sm text-red-700 hover:bg-red-50 transition-colors"
                 >
                   <Download className="h-4 w-4" />
                   Visualizza ricevuta ({prenotazione.nomeFileContabile || "file"})
@@ -87,7 +87,7 @@ export default async function PaginaAdminPrenotazione({
               </div>
             )}
 
-            <p className="text-sm text-blue-700 mb-4">
+            <p className="text-sm text-red-700 mb-4">
               Importo atteso: <strong>{formatCurrency(costoTotale)}</strong>
             </p>
 

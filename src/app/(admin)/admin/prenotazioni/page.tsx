@@ -52,7 +52,7 @@ export default async function PaginaAdminPrenotazioni({
             href={`/admin/prenotazioni${f.value ? `?stato=${f.value}` : ""}`}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               stato === f.value || (!stato && !f.value)
-                ? "bg-blue-700 text-white"
+                ? "bg-red-700 text-white"
                 : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
             }`}
           >
@@ -124,7 +124,7 @@ export default async function PaginaAdminPrenotazioni({
                     <td className="px-4 py-4 text-right">
                       <Link
                         href={`/admin/prenotazioni/${p.id}`}
-                        className="text-sm text-blue-700 hover:underline"
+                        className="text-sm text-red-700 hover:underline"
                       >
                         Dettagli →
                       </Link>

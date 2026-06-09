@@ -28,8 +28,8 @@ export default function Alert({
       icon: <AlertCircle className="h-5 w-5 text-amber-500 shrink-0" />,
     },
     info: {
-      container: "bg-blue-50 border-blue-200 text-blue-800",
-      icon: <Info className="h-5 w-5 text-blue-500 shrink-0" />,
+      container: "bg-red-50 border-red-200 text-red-800",
+      icon: <Info className="h-5 w-5 text-red-500 shrink-0" />,
     },
   };
 

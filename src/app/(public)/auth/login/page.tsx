@@ -75,7 +75,7 @@ function FormLogin() {
       <div className="text-right">
         <Link
           href="/auth/recupera-password"
-          className="text-sm text-blue-600 hover:underline"
+          className="text-sm text-red-600 hover:underline"
         >
           Password dimenticata?
         </Link>
@@ -95,8 +95,8 @@ export default function PaginaLogin() {
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-blue-100 mb-4">
-            <BookOpen className="h-7 w-7 text-blue-700" />
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-red-100 mb-4">
+            <BookOpen className="h-7 w-7 text-red-700" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Accedi</h1>
           <p className="text-gray-500 mt-1">
@@ -113,7 +113,7 @@ export default function PaginaLogin() {
             Non hai un account?{" "}
             <Link
               href="/auth/registrazione"
-              className="text-blue-600 hover:underline font-medium"
+              className="text-red-600 hover:underline font-medium"
             >
               Registrati
             </Link>

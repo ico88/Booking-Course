@@ -63,7 +63,7 @@ export default function UploadContabile({
       {!file ? (
         <div
           onClick={() => inputRef.current?.click()}
-          className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors"
+          className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-red-400 hover:bg-red-50 transition-colors"
         >
           <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
           <p className="text-sm font-medium text-gray-700">
@@ -81,12 +81,12 @@ export default function UploadContabile({
           />
         </div>
       ) : (
-        <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-xl p-4">
+        <div className="flex items-center justify-between bg-red-50 border border-red-200 rounded-xl p-4">
           <div className="flex items-center gap-3">
-            <FileText className="h-6 w-6 text-blue-600 shrink-0" />
+            <FileText className="h-6 w-6 text-red-600 shrink-0" />
             <div>
-              <p className="text-sm font-medium text-blue-900">{file.name}</p>
-              <p className="text-xs text-blue-600">
+              <p className="text-sm font-medium text-red-900">{file.name}</p>
+              <p className="text-xs text-red-600">
                 {(file.size / 1024).toFixed(0)} KB
               </p>
             </div>

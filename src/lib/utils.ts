@@ -46,8 +46,8 @@ export const STATI_PRENOTAZIONE: Record<string, { label: string; color: string; 
   },
   PAGAMENTO_CARICATO: {
     label: "Verifica in corso",
-    color: "text-blue-700",
-    bg: "bg-blue-50 border-blue-200",
+    color: "text-red-700",
+    bg: "bg-red-50 border-red-200",
   },
   CONFERMATA: {
     label: "Confermata",

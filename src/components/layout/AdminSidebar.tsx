@@ -72,7 +72,7 @@ export default function AdminSidebar({ logoUrl }: { logoUrl?: string | null } = 
             <img src={logoUrl} alt="Logo" className="h-7 w-auto max-w-[140px] object-contain brightness-0 invert" />
           ) : (
             <>
-              <BookOpen className="h-5 w-5 text-blue-400" />
+              <BookOpen className="h-5 w-5 text-red-400" />
               <span>Back Office</span>
             </>
           )}
@@ -96,7 +96,7 @@ export default function AdminSidebar({ logoUrl }: { logoUrl?: string | null } = 
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
                 attivo
-                  ? "bg-blue-600 text-white"
+                  ? "bg-red-600 text-white"
                   : "text-gray-400 hover:text-white hover:bg-gray-800"
               )}
             >

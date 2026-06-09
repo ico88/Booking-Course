@@ -54,7 +54,7 @@ export default async function PaginaDashboard() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <StatCard
-          icon={<BookOpen className="h-5 w-5 text-blue-600" />}
+          icon={<BookOpen className="h-5 w-5 text-red-600" />}
           label="Prenotazioni attive"
           value={attive.length}
           color="blue"
@@ -135,7 +135,7 @@ export default async function PaginaDashboard() {
             </p>
             <Link
               href="/"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-700 text-white rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-red-700 text-white rounded-lg text-sm font-medium hover:bg-red-800 transition-colors"
             >
               Vedi i corsi
             </Link>
@@ -171,7 +171,7 @@ function StatCard({
   color: string;
 }) {
   const colors: Record<string, string> = {
-    blue: "bg-blue-50 border-blue-200",
+    blue: "bg-red-50 border-red-200",
     amber: "bg-amber-50 border-amber-200",
     green: "bg-green-50 border-green-200",
     purple: "bg-purple-50 border-purple-200",
@@ -212,7 +212,7 @@ function CardPrenotazione({
   return (
     <Link
       href={`/dashboard/prenotazioni/${prenotazione.id}`}
-      className="flex items-center justify-between bg-white border border-gray-200 rounded-xl p-4 hover:border-blue-300 hover:shadow-sm transition-all"
+      className="flex items-center justify-between bg-white border border-gray-200 rounded-xl p-4 hover:border-red-300 hover:shadow-sm transition-all"
     >
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">

@@ -25,7 +25,7 @@ export default function Navbar({ logoUrl }: { logoUrl?: string | null } = {}) {
           {/* Logo */}
           <Link
             href="/"
-            className="flex items-center gap-2 font-bold text-blue-700 text-lg hover:text-blue-800 transition-colors"
+            className="flex items-center gap-2 font-bold text-red-700 text-lg hover:text-red-800 transition-colors"
           >
             {logoUrl ? (
               <img src={logoUrl} alt="Logo" className="h-8 w-auto max-w-[160px] object-contain" />
@@ -101,7 +101,7 @@ export default function Navbar({ logoUrl }: { logoUrl?: string | null } = {}) {
                 </Link>
                 <Link
                   href="/auth/registrazione"
-                  className="px-4 py-2 rounded-lg text-sm bg-blue-700 text-white hover:bg-blue-800 transition-colors font-medium"
+                  className="px-4 py-2 rounded-lg text-sm bg-red-700 text-white hover:bg-red-800 transition-colors font-medium"
                 >
                   Registrati
                 </Link>
@@ -177,7 +177,7 @@ export default function Navbar({ logoUrl }: { logoUrl?: string | null } = {}) {
                 </Link>
                 <Link
                   href="/auth/registrazione"
-                  className="block px-3 py-2 rounded-lg text-sm text-blue-700 font-medium hover:bg-blue-50"
+                  className="block px-3 py-2 rounded-lg text-sm text-red-700 font-medium hover:bg-red-50"
                   onClick={() => setMenuAperto(false)}
                 >
                   Registrati

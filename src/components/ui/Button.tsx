@@ -23,7 +23,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const variants = {
-      primary: "bg-blue-700 hover:bg-blue-800 text-white border-transparent",
+      primary: "bg-red-700 hover:bg-red-800 text-white border-transparent",
       secondary: "bg-gray-100 hover:bg-gray-200 text-gray-800 border-gray-200",
       danger: "bg-red-600 hover:bg-red-700 text-white border-transparent",
       ghost: "bg-transparent hover:bg-gray-100 text-gray-700 border-transparent",
@@ -41,7 +41,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         disabled={disabled || loading}
         className={cn(
-          "inline-flex items-center justify-center gap-2 rounded-lg border font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed",
+          "inline-flex items-center justify-center gap-2 rounded-lg border font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed",
           variants[variant],
           sizes[size],
           className

@@ -33,7 +33,7 @@ export default async function PaginaDatiPersonali() {
     <div className="max-w-2xl">
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-1">
-          <Shield className="h-6 w-6 text-blue-600" />
+          <Shield className="h-6 w-6 text-red-600" />
           <h1 className="text-2xl font-bold text-gray-900">Dati personali e privacy</h1>
         </div>
         <p className="text-gray-500 text-sm">
@@ -134,7 +134,7 @@ export default async function PaginaDatiPersonali() {
             <a
               href="/api/utente/dati"
               download
-              className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+              className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
             >
               <Download className="h-3.5 w-3.5" />
               Scarica
@@ -158,15 +158,15 @@ export default async function PaginaDatiPersonali() {
       {/* Link documenti */}
       <div className="text-xs text-gray-500 space-y-1">
         <p>Per esercitare altri diritti (rettifica, limitazione, opposizione) scrivi a{" "}
-          <a href="mailto:privacy@gestione-corsi.it" className="text-blue-600 hover:underline">
+          <a href="mailto:privacy@gestione-corsi.it" className="text-red-600 hover:underline">
             privacy@gestione-corsi.it
           </a>.
         </p>
         <p>
           Leggi la{" "}
-          <Link href="/privacy-policy" className="text-blue-600 hover:underline">Privacy Policy</Link>
+          <Link href="/privacy-policy" className="text-red-600 hover:underline">Privacy Policy</Link>
           {" "}e la{" "}
-          <Link href="/cookie-policy" className="text-blue-600 hover:underline">Cookie Policy</Link>.
+          <Link href="/cookie-policy" className="text-red-600 hover:underline">Cookie Policy</Link>.
         </p>
       </div>
     </div>

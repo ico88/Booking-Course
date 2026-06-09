@@ -119,11 +119,11 @@ export default function PaginaCookiePolicy() {
           <h2 className="text-lg font-semibold text-gray-900 mb-3">5. Contatti</h2>
           <p>
             Per qualsiasi domanda relativa ai cookie scrivi a{" "}
-            <a href="mailto:privacy@gestione-corsi.it" className="text-blue-600 hover:underline">
+            <a href="mailto:privacy@gestione-corsi.it" className="text-red-600 hover:underline">
               privacy@gestione-corsi.it
             </a>
             . Per maggiori informazioni sul trattamento dei dati personali consulta la{" "}
-            <Link href="/privacy-policy" className="text-blue-600 hover:underline">
+            <Link href="/privacy-policy" className="text-red-600 hover:underline">
               Privacy Policy
             </Link>
             .

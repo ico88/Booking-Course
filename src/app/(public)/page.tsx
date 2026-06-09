@@ -32,15 +32,15 @@ export default async function Homepage() {
   return (
     <div>
       {/* Hero */}
-      <div className="bg-gradient-to-br from-blue-700 to-blue-900 text-white py-20 px-4">
+      <div className="bg-gradient-to-br from-red-700 to-red-900 text-white py-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <div className="flex justify-center mb-4">
-            <GraduationCap className="h-16 w-16 text-blue-200" />
+            <GraduationCap className="h-16 w-16 text-red-200" />
           </div>
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
             Corsi di Formazione
           </h1>
-          <p className="text-xl text-blue-100 max-w-2xl mx-auto">
+          <p className="text-xl text-red-100 max-w-2xl mx-auto">
             Scopri i corsi disponibili e prenota il tuo posto in pochi clic.
             Investi nella tua formazione professionale.
           </p>
@@ -148,7 +148,7 @@ function CardCorso({
   return (
     <Link
       href={`/corsi/${corso.id}`}
-      className="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all overflow-hidden flex flex-col"
+      className="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-red-300 transition-all overflow-hidden flex flex-col"
     >
       {corso.immagineUrl ? (
         <div className="h-48 overflow-hidden">
@@ -159,14 +159,14 @@ function CardCorso({
           />
         </div>
       ) : (
-        <div className="h-32 bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center">
+        <div className="h-32 bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center">
           <GraduationCap className="h-12 w-12 text-white/60" />
         </div>
       )}
 
       <div className="p-5 flex flex-col flex-1">
         <div className="flex items-start justify-between gap-2 mb-2">
-          <h3 className="font-semibold text-gray-900 text-lg leading-tight group-hover:text-blue-700 transition-colors">
+          <h3 className="font-semibold text-gray-900 text-lg leading-tight group-hover:text-red-700 transition-colors">
             {corso.titolo}
           </h3>
           {passato ? (

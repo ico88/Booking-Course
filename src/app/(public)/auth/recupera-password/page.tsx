@@ -29,8 +29,8 @@ export default function PaginaRecuperaPassword() {
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-blue-100 mb-4">
-            <BookOpen className="h-7 w-7 text-blue-700" />
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-red-100 mb-4">
+            <BookOpen className="h-7 w-7 text-red-700" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Password dimenticata?</h1>
           <p className="text-gray-500 mt-1">

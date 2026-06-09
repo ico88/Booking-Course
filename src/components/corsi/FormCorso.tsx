@@ -210,7 +210,7 @@ export default function FormCorso({ corsoId, valoriIniziali, modalita }: Props) 
             <input
               type="checkbox"
               {...register("pubblicato")}
-              className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              className="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500"
             />
             <div>
               <span className="text-sm font-medium text-gray-700">

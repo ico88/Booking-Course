@@ -160,7 +160,7 @@ export default function ImpostazioniClient() {
       {/* Card Logo */}
       <Card>
         <div className="flex items-center gap-3 mb-1">
-          <ImagePlus className="h-5 w-5 text-blue-600" />
+          <ImagePlus className="h-5 w-5 text-red-600" />
           <h2 className="font-semibold text-gray-900">Logo piattaforma</h2>
         </div>
         <p className="text-sm text-gray-500 mb-4">
@@ -203,7 +203,7 @@ export default function ImpostazioniClient() {
           <label className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-colors ${
             caricandoLogo
               ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-              : "bg-blue-600 text-white hover:bg-blue-700"
+              : "bg-red-600 text-white hover:bg-red-700"
           }`}>
             <ImagePlus className="h-4 w-4" />
             {caricandoLogo ? "Caricamento…" : "Seleziona e carica logo"}
@@ -236,7 +236,7 @@ export default function ImpostazioniClient() {
       {STRUTTURA_IMPOSTAZIONI.map((sezione) => (
         <Card key={sezione.gruppo}>
           <div className="flex items-center gap-3 mb-1">
-            <sezione.icona className="h-5 w-5 text-blue-600" />
+            <sezione.icona className="h-5 w-5 text-red-600" />
             <h2 className="font-semibold text-gray-900">{sezione.titolo}</h2>
           </div>
           <p className="text-sm text-gray-500 mb-4">{sezione.descrizione}</p>
@@ -253,7 +253,7 @@ export default function ImpostazioniClient() {
                     onChange={(e) =>
                       setImpostazioni((prev) => ({ ...prev, [campo.chiave]: e.target.value }))
                     }
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
                   >
                     <option value="">-- non configurato --</option>
                     {campo.opzioni.map((o) => (
@@ -273,7 +273,7 @@ export default function ImpostazioniClient() {
                         setImpostazioni((prev) => ({ ...prev, [campo.chiave]: e.target.value }))
                       }
                       placeholder={campo.placeholder}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 pr-10"
                     />
                     {campo.tipo === "password" && (
                       <button

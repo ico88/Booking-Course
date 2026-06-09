@@ -164,7 +164,7 @@ export default async function PaginaPrenotazione({
                   href={prenotazione.urlContabile}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-blue-700 hover:underline text-sm"
+                  className="inline-flex items-center gap-1 text-red-700 hover:underline text-sm"
                 >
                   <Download className="h-3.5 w-3.5" />
                   {prenotazione.nomeFileContabile || "Visualizza ricevuta"}
@@ -241,7 +241,7 @@ export default async function PaginaPrenotazione({
                 key={p.id}
                 className="flex items-start gap-3 py-3 border-b border-gray-100 last:border-0"
               >
-                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm shrink-0">
+                <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-700 font-bold text-sm shrink-0">
                   {i + 1}
                 </div>
                 <div>

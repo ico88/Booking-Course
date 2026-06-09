@@ -112,7 +112,7 @@ export default function NuovoUtenteDialog() {
                     <label className="text-sm font-medium text-gray-700">Ruolo</label>
                     <select
                       {...register("ruolo")}
-                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
                     >
                       <option value="UTENTE">Utente</option>
                       <option value="SEGRETERIA">Segreteria</option>

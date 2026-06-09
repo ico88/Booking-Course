@@ -66,7 +66,7 @@ export default function CookieBanner() {
       <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
         <div className="p-6">
           <div className="flex items-start gap-3">
-            <Cookie className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+            <Cookie className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-gray-900 text-sm">
                 Questo sito utilizza i cookie
@@ -75,11 +75,11 @@ export default function CookieBanner() {
                 Utilizziamo cookie tecnici necessari al funzionamento del sito e, previo consenso,
                 cookie analitici e di marketing. Puoi personalizzare le tue preferenze o accettare
                 tutti i cookie. Per maggiori informazioni leggi la{" "}
-                <Link href="/cookie-policy" className="text-blue-600 hover:underline">
+                <Link href="/cookie-policy" className="text-red-600 hover:underline">
                   Cookie Policy
                 </Link>{" "}
                 e la{" "}
-                <Link href="/privacy-policy" className="text-blue-600 hover:underline">
+                <Link href="/privacy-policy" className="text-red-600 hover:underline">
                   Privacy Policy
                 </Link>
                 .
@@ -115,7 +115,7 @@ export default function CookieBanner() {
                     onChange={(e) => setAnalitici(e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600" />
+                  <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-red-600" />
                 </label>
               </div>
 
@@ -133,7 +133,7 @@ export default function CookieBanner() {
                     onChange={(e) => setMarketing(e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600" />
+                  <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-red-600" />
                 </label>
               </div>
             </div>
@@ -142,7 +142,7 @@ export default function CookieBanner() {
           <div className="flex flex-wrap items-center gap-2 mt-4">
             <button
               onClick={accettaTutti}
-              className="px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 bg-red-600 text-white text-xs font-semibold rounded-lg hover:bg-red-700 transition-colors"
             >
               Accetta tutti
             </button>

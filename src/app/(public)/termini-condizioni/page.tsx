@@ -85,7 +85,7 @@ export default function PaginaTerminiCondizioni() {
           </ul>
           <p className="mt-2">
             Per richiedere una disdetta contatta la segreteria all'indirizzo email indicato nel corso o scrivi a{" "}
-            <a href="mailto:segreteria@gestione-corsi.it" className="text-blue-600 hover:underline">
+            <a href="mailto:segreteria@gestione-corsi.it" className="text-red-600 hover:underline">
               segreteria@gestione-corsi.it
             </a>
             .
@@ -127,11 +127,11 @@ export default function PaginaTerminiCondizioni() {
           <h2 className="text-lg font-semibold text-gray-900 mb-3">9. Privacy e trattamento dei dati</h2>
           <p>
             Il trattamento dei dati personali è regolato dalla{" "}
-            <Link href="/privacy-policy" className="text-blue-600 hover:underline">
+            <Link href="/privacy-policy" className="text-red-600 hover:underline">
               Privacy Policy
             </Link>
             {" "}e dalla{" "}
-            <Link href="/cookie-policy" className="text-blue-600 hover:underline">
+            <Link href="/cookie-policy" className="text-red-600 hover:underline">
               Cookie Policy
             </Link>
             , che costituiscono parte integrante dei presenti Termini.
@@ -159,7 +159,7 @@ export default function PaginaTerminiCondizioni() {
           <h2 className="text-lg font-semibold text-gray-900 mb-3">12. Contatti</h2>
           <p>
             Per qualsiasi domanda relativa ai presenti Termini scrivi a{" "}
-            <a href="mailto:info@gestione-corsi.it" className="text-blue-600 hover:underline">
+            <a href="mailto:info@gestione-corsi.it" className="text-red-600 hover:underline">
               info@gestione-corsi.it
             </a>
             .

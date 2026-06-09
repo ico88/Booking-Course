@@ -73,7 +73,7 @@ export default async function PaginaAdminDashboard() {
       {/* Stats grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard
-          icon={<BookOpen className="h-6 w-6 text-blue-600" />}
+          icon={<BookOpen className="h-6 w-6 text-red-600" />}
           label="Corsi pubblicati"
           value={corsiPubblicati}
           sub={`${totaleCorsi} totali`}
@@ -122,7 +122,7 @@ export default async function PaginaAdminDashboard() {
               label="Contabile caricata"
               valore={pagamentoCaricato}
               totale={totalePrenotazioni}
-              color="bg-blue-400"
+              color="bg-red-400"
             />
             <BarStato
               label="Confermate"
@@ -188,7 +188,7 @@ function StatCard({
   color: string;
 }) {
   const colors: Record<string, string> = {
-    blue: "bg-blue-50 border-blue-200 hover:bg-blue-100",
+    blue: "bg-red-50 border-red-200 hover:bg-red-100",
     indigo: "bg-indigo-50 border-indigo-200 hover:bg-indigo-100",
     green: "bg-green-50 border-green-200 hover:bg-green-100",
     purple: "bg-purple-50 border-purple-200 hover:bg-purple-100",
@@ -241,7 +241,7 @@ function BarStato({
 function StatoBadge({ stato }: { stato: string }) {
   const colori: Record<string, string> = {
     IN_ATTESA_PAGAMENTO: "text-amber-700 bg-amber-50",
-    PAGAMENTO_CARICATO: "text-blue-700 bg-blue-50",
+    PAGAMENTO_CARICATO: "text-red-700 bg-red-50",
     CONFERMATA: "text-green-700 bg-green-50",
     ANNULLATA: "text-red-700 bg-red-50",
     SCADUTA: "text-gray-600 bg-gray-50",

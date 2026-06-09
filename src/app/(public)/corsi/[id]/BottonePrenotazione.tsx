@@ -58,7 +58,7 @@ export default function BottonePrenotazione({
           Non hai un account?{" "}
           <a
             href={`/auth/registrazione?redirect=/corsi/${corsoId}`}
-            className="text-blue-600 hover:underline font-medium"
+            className="text-red-600 hover:underline font-medium"
           >
             Registrati gratis
           </a>
