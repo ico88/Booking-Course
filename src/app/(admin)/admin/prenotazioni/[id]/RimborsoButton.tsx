@@ -44,7 +44,7 @@ export default function RimborsoButton({ prenotazioneId, metodoPagamento, import
     <div className="space-y-3">
       {errore && <Alert variant="error">{errore}</Alert>}
 
-      {stato === "conferma" ? (
+      {stato === "conferma" || stato === "invio" ? (
         <div className="flex items-center gap-3 flex-wrap">
           <p className="text-sm text-gray-700">
             Rimborsare {importoPagato ? `€${importoPagato.toFixed(2)}` : "l'importo pagato"} via {nomeMetodo}?

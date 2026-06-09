@@ -13,6 +13,7 @@ import {
   GraduationCap,
   Settings,
   FileText,
+  HardDrive,
 } from "lucide-react";
 
 const navItems = [
@@ -57,6 +58,12 @@ const navItems = [
     href: "/admin/pagine-legali",
     label: "Pagine Legali",
     icon: FileText,
+    ruolo: ["ADMIN"],
+  },
+  {
+    href: "/admin/backup",
+    label: "Backup",
+    icon: HardDrive,
     ruolo: ["ADMIN"],
   },
   {

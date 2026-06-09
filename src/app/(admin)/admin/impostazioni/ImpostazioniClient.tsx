@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Button from "@/components/ui/Button";
 import Alert from "@/components/ui/Alert";
 import { Card } from "@/components/ui/Card";
-import { Save, Eye, EyeOff, Mail, MessageSquare, Send, Settings, ImagePlus, Trash2, BookOpen, CreditCard } from "lucide-react";
+import { Save, Eye, EyeOff, Mail, MessageSquare, Send, Settings, ImagePlus, Trash2, BookOpen, CreditCard, FlaskConical, CheckCircle, XCircle } from "lucide-react";
 
 interface Impostazione {
   id: string;
@@ -73,6 +73,8 @@ export default function ImpostazioniClient() {
   const [messaggio, setMessaggio] = useState<{ tipo: "success" | "error"; testo: string } | null>(null);
   const [caricandoLogo, setCaricandoLogo] = useState(false);
   const [messaggioLogo, setMessaggioLogo] = useState<{ tipo: "success" | "error"; testo: string } | null>(null);
+  const [testandoEmail, setTestandoEmail] = useState(false);
+  const [risultatoTestEmail, setRisultatoTestEmail] = useState<{ tipo: "success" | "error"; testo: string } | null>(null);
   const inputLogoRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -114,6 +116,34 @@ export default function ImpostazioniClient() {
       if (inputLogoRef.current) inputLogoRef.current.value = "";
     } else {
       setMessaggioLogo({ tipo: "error", testo: "Errore durante la rimozione." });
+    }
+  }
+
+  async function testaSmtp() {
+    setTestandoEmail(true);
+    setRisultatoTestEmail(null);
+    try {
+      const res = await fetch("/api/admin/impostazioni/test-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          host: impostazioni.smtp_host,
+          port: Number(impostazioni.smtp_port) || 587,
+          user: impostazioni.smtp_user,
+          pass: impostazioni.smtp_password,
+          fromName: impostazioni.smtp_from_name,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setRisultatoTestEmail({ tipo: "success", testo: data.messaggio });
+      } else {
+        setRisultatoTestEmail({ tipo: "error", testo: `${data.error}${data.dettaglio ? `: ${data.dettaglio}` : ""}` });
+      }
+    } catch {
+      setRisultatoTestEmail({ tipo: "error", testo: "Errore di rete durante il test." });
+    } finally {
+      setTestandoEmail(false);
     }
   }
 
@@ -429,6 +459,38 @@ export default function ImpostazioniClient() {
               </div>
             ))}
           </div>
+
+          {sezione.gruppo === "email" && (
+            <div className="mt-5 pt-5 border-t border-gray-100">
+              <div className="flex items-center gap-3 flex-wrap">
+                <button
+                  type="button"
+                  onClick={testaSmtp}
+                  disabled={testandoEmail}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                >
+                  <FlaskConical className="h-4 w-4" />
+                  {testandoEmail ? "Invio in corso…" : "Invia email di test"}
+                </button>
+                <p className="text-xs text-gray-400">
+                  Invia un&apos;email di prova alla tua casella admin per verificare la configurazione.
+                  Salva prima le impostazioni se hai modificato la password.
+                </p>
+              </div>
+              {risultatoTestEmail && (
+                <div className={`mt-3 flex items-start gap-2 text-sm rounded-lg p-3 ${
+                  risultatoTestEmail.tipo === "success"
+                    ? "bg-green-50 text-green-800 border border-green-200"
+                    : "bg-red-50 text-red-800 border border-red-200"
+                }`}>
+                  {risultatoTestEmail.tipo === "success"
+                    ? <CheckCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                    : <XCircle className="h-4 w-4 shrink-0 mt-0.5" />}
+                  <span>{risultatoTestEmail.testo}</span>
+                </div>
+              )}
+            </div>
+          )}
         </Card>
       ))}
 

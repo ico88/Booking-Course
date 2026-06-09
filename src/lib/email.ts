@@ -1,14 +1,59 @@
 import nodemailer from "nodemailer";
+import { prisma } from "@/lib/prisma";
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT) || 587,
-  secure: Number(process.env.SMTP_PORT) === 465,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+export interface SmtpConfig {
+  host: string;
+  port: number;
+  user: string;
+  pass: string;
+  fromName: string;
+}
+
+async function getSmtpConfig(): Promise<SmtpConfig> {
+  try {
+    const rows = await prisma.impostazione.findMany({
+      where: { chiave: { in: ["smtp_host", "smtp_port", "smtp_user", "smtp_password", "smtp_from_name"] } },
+    });
+    const m: Record<string, string> = {};
+    rows.forEach((r) => { m[r.chiave] = r.valore; });
+
+    return {
+      host: m.smtp_host || process.env.SMTP_HOST || "",
+      port: Number(m.smtp_port || process.env.SMTP_PORT) || 587,
+      user: m.smtp_user || process.env.SMTP_USER || "",
+      pass: m.smtp_password || process.env.SMTP_PASS || "",
+      fromName: m.smtp_from_name || process.env.APP_NAME || "Gestione Corsi",
+    };
+  } catch {
+    return {
+      host: process.env.SMTP_HOST || "",
+      port: Number(process.env.SMTP_PORT) || 587,
+      user: process.env.SMTP_USER || "",
+      pass: process.env.SMTP_PASS || "",
+      fromName: process.env.APP_NAME || "Gestione Corsi",
+    };
+  }
+}
+
+export function buildTransporter(cfg: SmtpConfig) {
+  return nodemailer.createTransport({
+    host: cfg.host,
+    port: cfg.port,
+    secure: cfg.port === 465,
+    auth: { user: cfg.user, pass: cfg.pass },
+  });
+}
+
+async function getTransporter() {
+  const cfg = await getSmtpConfig();
+  return { transport: buildTransporter(cfg), cfg };
+}
+
+type MailOpts = { to: string; subject: string; html: string; list?: { unsubscribe: { url: string; comment: string } } };
+async function send(opts: MailOpts) {
+  const { transport, cfg } = await getTransporter();
+  return transport.sendMail({ from: `"${cfg.fromName}" <${cfg.user}>`, ...opts });
+}
 
 const appName = process.env.APP_NAME || "Gestione Corsi";
 const appUrl = process.env.APP_URL || "http://localhost:3000";
@@ -70,8 +115,7 @@ export async function inviaEmailBenvenuto(
     </a>
   `);
 
-  await transporter.sendMail({
-    from: `"${appName}" <${process.env.SMTP_FROM}>`,
+  await send({
     to: email,
     subject: `Benvenuto/a su ${appName}`,
     html,
@@ -126,8 +170,7 @@ ${coordinateBancarie}
     </a>
   `);
 
-  await transporter.sendMail({
-    from: `"${appName}" <${process.env.SMTP_FROM}>`,
+  await send({
     to: email,
     subject: `Prenotazione corso: ${titoloCorso}`,
     html,
@@ -155,8 +198,7 @@ export async function inviaEmailContabileCaricata(
     </a>
   `);
 
-  await transporter.sendMail({
-    from: `"${appName}" <${process.env.SMTP_FROM}>`,
+  await send({
     to: emailUtente,
     subject: `Ricevuta ricevuta - ${titoloCorso}`,
     html,
@@ -201,8 +243,7 @@ export async function inviaEmailConfermaPrenotazione(
     </a>
   `);
 
-  await transporter.sendMail({
-    from: `"${appName}" <${process.env.SMTP_FROM}>`,
+  await send({
     to: email,
     subject: `✅ Iscrizione confermata - ${titoloCorso}`,
     html,
@@ -227,8 +268,7 @@ export async function inviaEmailAttestato(
     </a>
   `);
 
-  await transporter.sendMail({
-    from: `"${appName}" <${process.env.SMTP_FROM}>`,
+  await send({
     to: email,
     subject: `🎓 Attestato disponibile - ${titoloCorso}`,
     html,
@@ -260,8 +300,7 @@ export async function inviaEmailResetPassword(
     </p>
   `);
 
-  await transporter.sendMail({
-    from: `"${appName}" <${process.env.SMTP_FROM}>`,
+  await send({
     to: email,
     subject: `Reset password - ${appName}`,
     html,
@@ -294,8 +333,7 @@ export async function inviaEmailNotificaSegreteria(
     </a>
   `);
 
-  await transporter.sendMail({
-    from: `"${appName}" <${process.env.SMTP_FROM}>`,
+  await send({
     to: emailSegreteria,
     subject: `[${appName}] ${titoli[tipoNotifica]}`,
     html,
@@ -476,8 +514,7 @@ export async function inviaEmailMarketing(
     </html>
   `;
 
-  await transporter.sendMail({
-    from: `"${appName}" <${process.env.SMTP_FROM}>`,
+  await send({
     to: email,
     subject: `🆕 Nuovo corso: ${corso.titolo}`,
     html,
