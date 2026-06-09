@@ -23,16 +23,19 @@
       <div class="flex flex-wrap gap-2">
         {% if p.stato.value in ('IN_ATTESA_PAGAMENTO', 'PAGAMENTO_CARICATO') %}
         <form method="POST" action="{{ url_for('admin.prenotazione_conferma', prenotazione_id=p.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700">✓ Conferma</button>
         </form>
         {% endif %}
         {% if p.stato.value not in ('ANNULLATA', 'SCADUTA') %}
         <form method="POST" action="{{ url_for('admin.prenotazione_annulla', prenotazione_id=p.id) }}" onsubmit="return confirm('Annullare la prenotazione?')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button class="bg-red-50 text-red-700 border border-red-200 px-4 py-2 rounded-lg text-sm hover:bg-red-100">✕ Annulla</button>
         </form>
         {% endif %}
         {% if p.stato.value == 'CONFERMATA' and p.corso.attestato_abilitato %}
         <form method="POST" action="{{ url_for('admin.emetti_attestato', prenotazione_id=p.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button class="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-700">📄 Emetti attestato</button>
         </form>
         {% endif %}
@@ -50,6 +53,7 @@
 
     {# Note segreteria #}
     <form method="POST" class="bg-white border border-gray-200 rounded-xl p-5">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <h3 class="font-semibold mb-3">Note segreteria</h3>
       <textarea name="note_segreteria" rows="4" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 mb-3">{{ p.note_segreteria or '' }}</textarea>
       <button type="submit" class="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-900">Salva note</button>

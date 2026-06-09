@@ -5,6 +5,7 @@
   <h1 class="text-2xl font-bold mb-2">Ricevi notifiche sui corsi</h1>
   <p class="text-gray-600 mb-8">Inserisci la tua email per ricevere aggiornamenti sui nuovi corsi disponibili.</p>
   <form method="POST" class="space-y-4 text-left">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="grid grid-cols-2 gap-3">
       <div>
         <label class="block text-sm font-medium mb-1">Nome</label>

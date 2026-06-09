@@ -7,6 +7,7 @@
   <h1 class="text-2xl font-bold mb-6">Prenota il corso</h1>
 
   <form method="POST" id="form-prenota">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="bg-white border border-gray-200 rounded-xl p-6 mb-6">
       <h2 class="font-semibold mb-4">Riepilogo corso</h2>
       <div class="text-gray-700">{{ corso.titolo }}</div>

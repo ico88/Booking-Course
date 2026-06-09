@@ -41,6 +41,7 @@
   <div class="mt-4">
     <h4 class="font-medium mb-2">Carica la ricevuta</h4>
     <form method="POST" action="{{ url_for('dashboard.upload_contabile', prenotazione_id=p.id) }}" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="flex gap-3">
         <input type="file" name="file" accept=".pdf,.jpg,.jpeg,.png" required class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm">
         <button type="submit" class="bg-blue-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-800">Carica</button>

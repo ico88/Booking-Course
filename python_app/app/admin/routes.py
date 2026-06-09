@@ -1,3 +1,4 @@
+import logging
 import os
 import uuid
 import csv
@@ -7,10 +8,11 @@ from functools import wraps
 
 from flask import (
     Blueprint, render_template, redirect, url_for,
-    request, flash, current_app, abort, jsonify,
+    request, flash, current_app, abort,
     send_from_directory, Response,
 )
 from flask_login import login_required, current_user
+from markupsafe import escape
 from sqlalchemy import func
 
 from ..models import (
@@ -21,9 +23,10 @@ from ..email_service import (
     invia_email_conferma_prenotazione, invia_email_attestato,
     invia_email_marketing, invia_email_benvenuto,
 )
-from ..utils import allowed_file, safe_filename
+from ..utils import allowed_file, safe_filename, sanitize_html, validate_email_address
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
+logger = logging.getLogger(__name__)
 
 
 def admin_required(f):
@@ -78,6 +81,7 @@ def corso_nuovo():
         corso = _corso_da_form(Corso())
         db.session.add(corso)
         db.session.commit()
+        logger.info("Admin %s: corso creato %s", current_user.email, corso.id)
         flash("Corso creato.", "success")
         return redirect(url_for("admin.corso_modifica", corso_id=corso.id))
     return render_template("admin/corsi/form.html", corso=None)
@@ -90,34 +94,42 @@ def corso_modifica(corso_id):
     if request.method == "POST":
         action = request.form.get("_action", "save")
         if action == "delete":
+            logger.info("Admin %s: corso eliminato %s", current_user.email, corso.id)
             db.session.delete(corso)
             db.session.commit()
             flash("Corso eliminato.", "success")
             return redirect(url_for("admin.corsi"))
         _corso_da_form(corso)
         db.session.commit()
+        logger.info("Admin %s: corso aggiornato %s", current_user.email, corso.id)
         flash("Corso aggiornato.", "success")
         return redirect(url_for("admin.corso_modifica", corso_id=corso.id))
     return render_template("admin/corsi/form.html", corso=corso)
 
 
 def _corso_da_form(corso: Corso) -> Corso:
-    corso.titolo = request.form.get("titolo", "").strip()
-    corso.descrizione = request.form.get("descrizione", "").strip()
-    corso.luogo = request.form.get("luogo", "").strip()
-    corso.orario = request.form.get("orario", "").strip()
-    corso.durata = request.form.get("durata", "").strip()
-    corso.coordinate_bancarie = request.form.get("coordinate_bancarie", "").strip()
+    corso.titolo = request.form.get("titolo", "").strip()[:200]
+    corso.descrizione = sanitize_html(request.form.get("descrizione", ""))
+    corso.luogo = request.form.get("luogo", "").strip()[:200]
+    corso.orario = request.form.get("orario", "").strip()[:100]
+    corso.durata = request.form.get("durata", "").strip()[:100]
+    corso.coordinate_bancarie = request.form.get("coordinate_bancarie", "").strip()[:500]
     try:
-        corso.costo = float(request.form.get("costo", "0").replace(",", "."))
+        corso.costo = max(0.0, float(request.form.get("costo", "0").replace(",", ".")))
     except ValueError:
-        corso.costo = 0
-    corso.posti_totali = int(request.form.get("posti_totali", 0) or 0)
-    corso.timeout_pagamento_ore = int(request.form.get("timeout_pagamento_ore", 24) or 24)
+        corso.costo = 0.0
+    try:
+        corso.posti_totali = max(0, int(request.form.get("posti_totali", 0) or 0))
+    except ValueError:
+        corso.posti_totali = 0
+    try:
+        corso.timeout_pagamento_ore = max(1, int(request.form.get("timeout_pagamento_ore", 24) or 24))
+    except ValueError:
+        corso.timeout_pagamento_ore = 24
     corso.pubblicato = request.form.get("pubblicato") == "on"
     corso.attestato_abilitato = request.form.get("attestato_abilitato") == "on"
-    tags_raw = request.form.get("tags", "")
-    corso.tags = [t.strip() for t in tags_raw.split(",") if t.strip()]
+    tags_raw = request.form.get("tags", "")[:500]
+    corso.tags = [t.strip()[:50] for t in tags_raw.split(",") if t.strip()][:20]
 
     for field, fmt in [("data_inizio", "%Y-%m-%dT%H:%M"), ("data_fine", "%Y-%m-%dT%H:%M")]:
         val = request.form.get(field, "")
@@ -139,6 +151,11 @@ def corso_upload_immagine(corso_id):
     if not file or not allowed_file(file.filename, {"jpg", "jpeg", "png", "webp"}):
         flash("Formato non valido.", "error")
         return redirect(url_for("admin.corso_modifica", corso_id=corso_id))
+    file.seek(0, 2)
+    if file.tell() > 10 * 1024 * 1024:
+        flash("File troppo grande (max 10 MB).", "error")
+        return redirect(url_for("admin.corso_modifica", corso_id=corso_id))
+    file.seek(0)
     ext = file.filename.rsplit(".", 1)[1].lower()
     filename = f"corso_{corso_id}_{uuid.uuid4().hex[:8]}.{ext}"
     upload_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], "corsi")
@@ -155,7 +172,7 @@ def corso_upload_immagine(corso_id):
 def corso_duplica(corso_id):
     corso = Corso.query.get_or_404(corso_id)
     nuovo = Corso(
-        titolo=f"Copia di {corso.titolo}",
+        titolo=f"Copia di {corso.titolo}"[:200],
         descrizione=corso.descrizione,
         luogo=corso.luogo,
         orario=corso.orario,
@@ -169,6 +186,7 @@ def corso_duplica(corso_id):
     )
     db.session.add(nuovo)
     db.session.commit()
+    logger.info("Admin %s: corso duplicato %s -> %s", current_user.email, corso_id, nuovo.id)
     flash("Corso duplicato.", "success")
     return redirect(url_for("admin.corso_modifica", corso_id=nuovo.id))
 
@@ -206,7 +224,7 @@ def prenotazioni():
 def prenotazione_dettaglio(prenotazione_id):
     p = Prenotazione.query.get_or_404(prenotazione_id)
     if request.method == "POST":
-        p.note_segreteria = request.form.get("note_segreteria", "").strip()
+        p.note_segreteria = request.form.get("note_segreteria", "").strip()[:2000]
         db.session.commit()
         flash("Note aggiornate.", "success")
     return render_template("admin/prenotazioni/dettaglio.html", prenotazione=p)
@@ -218,6 +236,7 @@ def prenotazione_conferma(prenotazione_id):
     p = Prenotazione.query.get_or_404(prenotazione_id)
     p.stato = StatoPrenotazione.CONFERMATA
     db.session.commit()
+    logger.info("Admin %s: prenotazione confermata %s", current_user.email, p.id)
     try:
         invia_email_conferma_prenotazione(p)
     except Exception:
@@ -234,6 +253,7 @@ def prenotazione_annulla(prenotazione_id):
         p.corso.posti_occupati = max(0, (p.corso.posti_occupati or 0) - (p.numero_posti or 1))
     p.stato = StatoPrenotazione.ANNULLATA
     db.session.commit()
+    logger.info("Admin %s: prenotazione annullata %s", current_user.email, p.id)
     flash("Prenotazione annullata.", "success")
     return redirect(url_for("admin.prenotazione_dettaglio", prenotazione_id=p.id))
 
@@ -246,7 +266,6 @@ def emetti_attestato(prenotazione_id):
         flash("La prenotazione deve essere confermata per emettere l'attestato.", "error")
         return redirect(url_for("admin.prenotazione_dettaglio", prenotazione_id=p.id))
 
-    # Generate simple HTML attestato
     html_content = _genera_attestato_html(p)
     filename = f"attestato_{p.id}.html"
     upload_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], "attestati")
@@ -258,6 +277,7 @@ def emetti_attestato(prenotazione_id):
     p.attestato_emesso = True
     p.attestato_emesso_at = datetime.now(timezone.utc)
     db.session.commit()
+    logger.info("Admin %s: attestato emesso per prenotazione %s", current_user.email, p.id)
 
     try:
         invia_email_attestato(p)
@@ -271,7 +291,11 @@ def emetti_attestato(prenotazione_id):
 def _genera_attestato_html(prenotazione: Prenotazione) -> str:
     u = prenotazione.utente
     c = prenotazione.corso
-    app_name = Impostazione.get("app_name") or "Gestione Corsi"
+    app_name = escape(Impostazione.get("app_name") or "Gestione Corsi")
+    nome = escape(u.nome or "")
+    cognome = escape(u.cognome or "")
+    titolo = escape(c.titolo or "")
+    luogo = escape(c.luogo or "")
     data_str = c.data_inizio.strftime("%d/%m/%Y") if c.data_inizio else ""
     return f"""<!DOCTYPE html>
 <html lang="it"><head><meta charset="UTF-8">
@@ -287,9 +311,9 @@ def _genera_attestato_html(prenotazione: Prenotazione) -> str:
 <body>
 <h1>ATTESTATO DI PARTECIPAZIONE</h1>
 <p class="subtitle">Si certifica che</p>
-<p class="nome">{u.nome} {u.cognome}</p>
-<p class="corso">ha partecipato al corso<br><strong>{c.titolo}</strong></p>
-<p class="data">Tenuto in data {data_str} — {c.luogo or ''}</p>
+<p class="nome">{nome} {cognome}</p>
+<p class="corso">ha partecipato al corso<br><strong>{titolo}</strong></p>
+<p class="data">Tenuto in data {data_str} — {luogo}</p>
 <p class="firma">{app_name}</p>
 </body></html>"""
 
@@ -308,20 +332,32 @@ def utenti():
 @admin_bp.route("/utenti/nuovo", methods=["POST"])
 @admin_required
 def utente_nuovo():
-    email = request.form.get("email", "").strip().lower()
-    nome = request.form.get("nome", "").strip()
-    cognome = request.form.get("cognome", "").strip()
+    raw_email = request.form.get("email", "").strip()
+    email = validate_email_address(raw_email)
+    if not email:
+        flash("Indirizzo email non valido.", "error")
+        return redirect(url_for("admin.utenti"))
+    nome = request.form.get("nome", "").strip()[:100]
+    cognome = request.form.get("cognome", "").strip()[:100]
     password = request.form.get("password", "")
-    ruolo = request.form.get("ruolo", "UTENTE")
+    if len(password) < 8:
+        flash("La password deve avere almeno 8 caratteri.", "error")
+        return redirect(url_for("admin.utenti"))
+    ruolo_str = request.form.get("ruolo", "UTENTE")
+    try:
+        ruolo = Ruolo(ruolo_str)
+    except ValueError:
+        ruolo = Ruolo.UTENTE
 
     if Utente.query.filter_by(email=email).first():
         flash("Email già registrata.", "error")
         return redirect(url_for("admin.utenti"))
 
-    u = Utente(nome=nome, cognome=cognome, email=email, ruolo=Ruolo(ruolo))
+    u = Utente(nome=nome, cognome=cognome, email=email, ruolo=ruolo)
     u.set_password(password)
     db.session.add(u)
     db.session.commit()
+    logger.info("Admin %s: utente creato %s (ruolo: %s)", current_user.email, email, ruolo.value)
 
     try:
         invia_email_benvenuto(u)
@@ -339,6 +375,7 @@ def utente_elimina(utente_id):
         flash("Non puoi eliminare te stesso.", "error")
         return redirect(url_for("admin.utenti"))
     u = Utente.query.get_or_404(utente_id)
+    logger.info("Admin %s: utente eliminato %s", current_user.email, u.email)
     db.session.delete(u)
     db.session.commit()
     flash("Utente eliminato.", "success")
@@ -350,7 +387,10 @@ def utente_elimina(utente_id):
 def iscrivi_utente():
     corso_id = request.form.get("corso_id")
     utente_id = request.form.get("utente_id")
-    numero_posti = int(request.form.get("numero_posti", 1))
+    try:
+        numero_posti = max(1, min(100, int(request.form.get("numero_posti", 1))))
+    except (ValueError, TypeError):
+        numero_posti = 1
 
     corso = Corso.query.get_or_404(corso_id)
     utente = Utente.query.get_or_404(utente_id)
@@ -365,6 +405,7 @@ def iscrivi_utente():
     db.session.add(p)
     corso.posti_occupati = (corso.posti_occupati or 0) + numero_posti
     db.session.commit()
+    logger.info("Admin %s: utente %s iscritto al corso %s", current_user.email, utente.email, corso.id)
     flash(f"{utente.nome_completo} iscritto a {corso.titolo}.", "success")
     return redirect(url_for("admin.prenotazione_dettaglio", prenotazione_id=p.id))
 
@@ -377,13 +418,15 @@ def iscrivi_utente():
 @admin_required
 def marketing():
     leads = LeadMarketing.query.order_by(LeadMarketing.created_at.desc()).all()
-    return render_template("admin/marketing/lista.html", leads=leads)
+    corsi_pubblicati = Corso.query.filter_by(pubblicato=True).order_by(Corso.data_inizio.desc()).all()
+    return render_template("admin/marketing/lista.html", leads=leads, corsi_pubblicati=corsi_pubblicati)
 
 
 @admin_bp.route("/marketing/leads/<string:lead_id>/elimina", methods=["POST"])
 @admin_required
 def lead_elimina(lead_id):
     lead = LeadMarketing.query.get_or_404(lead_id)
+    logger.info("Admin %s: lead eliminato %s", current_user.email, lead.email)
     db.session.delete(lead)
     db.session.commit()
     flash("Lead eliminato.", "success")
@@ -406,6 +449,7 @@ def marketing_notifica():
             sent += 1
         except Exception:
             pass
+    logger.info("Admin %s: notifica marketing per corso %s a %d lead", current_user.email, corso.id, sent)
     flash(f"Notifica inviata a {sent} lead.", "success")
     return redirect(url_for("admin.marketing"))
 
@@ -417,24 +461,31 @@ def marketing_importa():
     if not file:
         flash("Nessun file.", "error")
         return redirect(url_for("admin.marketing"))
+    file.seek(0, 2)
+    if file.tell() > 5 * 1024 * 1024:
+        flash("File CSV troppo grande (max 5 MB).", "error")
+        return redirect(url_for("admin.marketing"))
+    file.seek(0)
     stream = io.StringIO(file.stream.read().decode("utf-8", errors="ignore"))
     reader = csv.DictReader(stream)
     added = 0
     for row in reader:
-        email = (row.get("email") or row.get("Email") or "").strip().lower()
-        if not email or "@" not in email:
+        raw_email = (row.get("email") or row.get("Email") or "").strip()
+        email = validate_email_address(raw_email)
+        if not email:
             continue
         if not LeadMarketing.query.filter_by(email=email).first():
             lead = LeadMarketing(
                 email=email,
-                nome=(row.get("nome") or row.get("Nome") or "").strip(),
-                cognome=(row.get("cognome") or row.get("Cognome") or "").strip(),
+                nome=(row.get("nome") or row.get("Nome") or "").strip()[:100],
+                cognome=(row.get("cognome") or row.get("Cognome") or "").strip()[:100],
                 verificato=True,
                 attivo=True,
             )
             db.session.add(lead)
             added += 1
     db.session.commit()
+    logger.info("Admin %s: importati %d lead da CSV", current_user.email, added)
     flash(f"Importati {added} lead.", "success")
     return redirect(url_for("admin.marketing"))
 
@@ -455,9 +506,10 @@ def impostazioni():
             "turnstile_site_key", "turnstile_secret_key",
         ]
         for key in keys:
-            val = request.form.get(key, "")
+            val = request.form.get(key, "").strip()[:500]
             Impostazione.set(key, val)
         db.session.commit()
+        logger.info("Admin %s: impostazioni aggiornate", current_user.email)
         flash("Impostazioni salvate.", "success")
         return redirect(url_for("admin.impostazioni"))
 
@@ -489,9 +541,14 @@ def upload_logo():
     if not file or not allowed_file(file.filename, {"jpg", "jpeg", "png", "svg", "webp"}):
         flash("Formato non valido.", "error")
         return redirect(url_for("admin.impostazioni"))
+    file.seek(0, 2)
+    if file.tell() > 5 * 1024 * 1024:
+        flash("File troppo grande (max 5 MB).", "error")
+        return redirect(url_for("admin.impostazioni"))
+    file.seek(0)
     ext = file.filename.rsplit(".", 1)[1].lower()
     filename = f"logo.{ext}"
-    upload_dir = os.path.join(current_app.config["UPLOAD_FOLDER"])
+    upload_dir = current_app.config["UPLOAD_FOLDER"]
     file.save(os.path.join(upload_dir, filename))
     Impostazione.set("logo_url", f"/static/uploads/{filename}")
     db.session.commit()
@@ -508,8 +565,9 @@ def upload_logo():
 def pagine_legali():
     if request.method == "POST":
         for key in ["pagina_privacy", "pagina_cookie", "pagina_termini"]:
-            Impostazione.set(key, request.form.get(key, ""))
+            Impostazione.set(key, sanitize_html(request.form.get(key, "")))
         db.session.commit()
+        logger.info("Admin %s: pagine legali aggiornate", current_user.email)
         flash("Pagine aggiornate.", "success")
         return redirect(url_for("admin.pagine_legali"))
 
@@ -530,33 +588,35 @@ def backup():
 @admin_bp.route("/backup/scarica")
 @admin_required
 def backup_scarica():
-    import subprocess, tempfile
+    import subprocess
     db_url = current_app.config["SQLALCHEMY_DATABASE_URI"]
-    # Extract connection details from URL
-    # postgresql://user:pass@host:port/dbname
     try:
         from urllib.parse import urlparse
         parsed = urlparse(db_url)
+        hostname = parsed.hostname or "localhost"
+        port = str(parsed.port or 5432)
+        username = parsed.username or "postgres"
+        dbname = parsed.path.lstrip("/")
+        for component in (hostname, port, username, dbname):
+            if not component or any(c in component for c in (";", "&", "|", "$", "`", "\n", "\r", "'")):
+                flash("Configurazione database non valida.", "error")
+                return redirect(url_for("admin.backup"))
         env = os.environ.copy()
         env["PGPASSWORD"] = parsed.password or ""
-        cmd = [
-            "pg_dump",
-            "-h", parsed.hostname or "localhost",
-            "-p", str(parsed.port or 5432),
-            "-U", parsed.username or "postgres",
-            "-d", parsed.path.lstrip("/"),
-            "--no-password",
-        ]
+        cmd = ["pg_dump", "-h", hostname, "-p", port, "-U", username, "-d", dbname, "--no-password"]
         result = subprocess.run(cmd, capture_output=True, env=env, timeout=60)
         if result.returncode != 0:
+            logger.error("Backup fallito: %s", result.stderr.decode(errors="replace")[:500])
             flash("Errore durante il backup.", "error")
             return redirect(url_for("admin.backup"))
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        logger.info("Admin %s: backup DB eseguito", current_user.email)
         return Response(
             result.stdout,
             mimetype="application/octet-stream",
             headers={"Content-Disposition": f"attachment; filename=backup_{ts}.sql"},
         )
     except Exception as e:
+        logger.error("Errore backup: %s", e)
         flash(f"Errore backup: {e}", "error")
         return redirect(url_for("admin.backup"))

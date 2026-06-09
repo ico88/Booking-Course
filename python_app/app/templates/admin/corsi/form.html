@@ -10,9 +10,11 @@
   {% if corso %}
   <div class="flex gap-2">
     <form method="POST" action="{{ url_for('admin.corso_duplica', corso_id=corso.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button type="submit" class="bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg text-sm">Duplica</button>
     </form>
     <form method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="_action" value="delete">
       <button type="submit" onclick="return confirm('Eliminare il corso?')" class="bg-red-50 text-red-700 hover:bg-red-100 px-3 py-2 rounded-lg text-sm">Elimina</button>
     </form>
@@ -23,6 +25,7 @@
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
   <div class="lg:col-span-2">
     <form method="POST" class="space-y-5">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
         <div>
           <label class="block text-sm font-medium mb-1">Titolo *</label>
@@ -107,6 +110,7 @@
         <img src="{{ corso.immagine_url }}" class="w-full h-32 object-cover rounded-lg mb-3">
       {% endif %}
       <form method="POST" action="{{ url_for('admin.corso_upload_immagine', corso_id=corso.id) }}" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="file" name="immagine" accept="image/*" class="w-full text-sm mb-2">
         <button type="submit" class="w-full bg-gray-100 hover:bg-gray-200 py-2 rounded-lg text-sm">Carica immagine</button>
       </form>
