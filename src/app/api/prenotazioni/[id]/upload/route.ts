@@ -36,7 +36,7 @@ export async function POST(
   }
 
   if (
-    session.user.ruolo !== "SEGRETERIA" &&
+    !["ADMIN", "SEGRETERIA"].includes(session.user.ruolo) &&
     prenotazione.utenteId !== session.user.id
   ) {
     return NextResponse.json({ error: "Non autorizzato" }, { status: 403 });

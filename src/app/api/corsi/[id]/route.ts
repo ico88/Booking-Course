@@ -49,7 +49,7 @@ export async function PUT(
   const session = await getServerSession(authOptions);
   const { id } = await params;
 
-  if (!session || session.user.ruolo !== "SEGRETERIA") {
+  if (!session || !["ADMIN", "SEGRETERIA"].includes(session.user.ruolo)) {
     return NextResponse.json({ error: "Non autorizzato" }, { status: 403 });
   }
 
@@ -100,7 +100,7 @@ export async function DELETE(
   const session = await getServerSession(authOptions);
   const { id } = await params;
 
-  if (!session || session.user.ruolo !== "SEGRETERIA") {
+  if (!session || !["ADMIN", "SEGRETERIA"].includes(session.user.ruolo)) {
     return NextResponse.json({ error: "Non autorizzato" }, { status: 403 });
   }
 

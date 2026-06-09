@@ -34,7 +34,7 @@ export async function GET(
 
   // Utente normale può vedere solo le proprie prenotazioni
   if (
-    session.user.ruolo !== "SEGRETERIA" &&
+    !["ADMIN", "SEGRETERIA"].includes(session.user.ruolo) &&
     prenotazione.utenteId !== session.user.id
   ) {
     return NextResponse.json({ error: "Non autorizzato" }, { status: 403 });
@@ -67,7 +67,7 @@ export async function DELETE(
   }
 
   if (
-    session.user.ruolo !== "SEGRETERIA" &&
+    !["ADMIN", "SEGRETERIA"].includes(session.user.ruolo) &&
     prenotazione.utenteId !== session.user.id
   ) {
     return NextResponse.json({ error: "Non autorizzato" }, { status: 403 });

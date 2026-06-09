@@ -6,7 +6,7 @@ import { authOptions } from "@/lib/auth";
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
 
-  if (!session || session.user.ruolo !== "SEGRETERIA") {
+  if (!session || !["ADMIN", "SEGRETERIA"].includes(session.user.ruolo)) {
     return NextResponse.json({ error: "Non autorizzato" }, { status: 403 });
   }
 
