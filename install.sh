@@ -84,6 +84,43 @@ if ! grep -qi ubuntu /etc/os-release 2>/dev/null; then
   ask_yn "Vuoi procedere comunque?" "n" || err "Installazione annullata."
 fi
 
+# ── RAM e Swap ───────────────────────────────────────────────────────────────
+RAM_MB=$(awk '/MemTotal/ {printf "%d", $2/1024}' /proc/meminfo)
+SWAP_MB=$(awk '/SwapTotal/ {printf "%d", $2/1024}' /proc/meminfo)
+TOTAL_MB=$(( RAM_MB + SWAP_MB ))
+
+info "RAM: ${RAM_MB} MB — Swap: ${SWAP_MB} MB — Totale: ${TOTAL_MB} MB"
+
+if (( TOTAL_MB < 1800 )); then
+  warn "Memoria totale insufficiente (${TOTAL_MB} MB). La build di Next.js richiede almeno 1.8 GB."
+  warn "Creazione di un file di swap da 2 GB per prevenire bus error..."
+
+  SWAP_FILE="/swapfile"
+  if [[ -f "$SWAP_FILE" ]]; then
+    info "Swap già presente in ${SWAP_FILE} — verrà ingrandita."
+    swapoff "$SWAP_FILE" 2>/dev/null || true
+  fi
+  dd if=/dev/zero of="$SWAP_FILE" bs=1M count=2048 status=none
+  chmod 600 "$SWAP_FILE"
+  mkswap -q "$SWAP_FILE"
+  swapon "$SWAP_FILE"
+
+  # Rende lo swap permanente (se non già presente)
+  if ! grep -q "$SWAP_FILE" /etc/fstab; then
+    echo "${SWAP_FILE} none swap sw 0 0" >> /etc/fstab
+  fi
+
+  SWAP_MB=$(awk '/SwapTotal/ {printf "%d", $2/1024}' /proc/meminfo)
+  ok "Swap attivata: ${SWAP_MB} MB — ora sarà disponibile anche ai riavvii"
+else
+  ok "Memoria sufficiente (${TOTAL_MB} MB)"
+fi
+
+# Calcola NODE_OPTIONS in base alla RAM disponibile (lascia 256 MB liberi per il SO)
+NODE_MEM=$(( RAM_MB > 512 ? RAM_MB - 256 : 512 ))
+export NODE_OPTIONS="--max-old-space-size=${NODE_MEM}"
+info "NODE_OPTIONS impostato: --max-old-space-size=${NODE_MEM}"
+
 # Aggiorna apt
 info "Aggiornamento lista pacchetti apt..."
 apt-get update -q
@@ -160,8 +197,14 @@ fi
 step "Installazione dipendenze Node.js"
 
 cd "$APP_DIR"
-info "Esecuzione npm install (ci vorrà un momento)..."
-sudo -u "$APP_USER" npm install --no-audit --no-fund 2>&1 | tail -3
+info "Esecuzione npm install (ci vorrà qualche minuto)..."
+sudo -u "$APP_USER" \
+  NODE_OPTIONS="--max-old-space-size=${NODE_MEM}" \
+  npm install --no-audit --no-fund --legacy-peer-deps 2>&1 | tail -5
+
+if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
+  err "npm install fallito. Controlla la connessione di rete e lo spazio su disco."
+fi
 ok "Dipendenze installate"
 
 # =============================================================================
@@ -326,8 +369,14 @@ fi
 # =============================================================================
 step "Build produzione (npm run build)"
 
-info "Questo passaggio può richiedere 2-5 minuti..."
-sudo -u "$APP_USER" npm run build 2>&1 | tail -10
+info "Questo passaggio può richiedere 3-8 minuti (RAM: ${RAM_MB} MB, swap: ${SWAP_MB} MB)..."
+sudo -u "$APP_USER" \
+  NODE_OPTIONS="--max-old-space-size=${NODE_MEM}" \
+  npm run build 2>&1 | tail -15
+
+if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
+  err "Build fallita. Controlla i log sopra. Causa più comune: RAM insufficiente (attuale: ${TOTAL_MB} MB totale)."
+fi
 ok "Build completata"
 
 # =============================================================================
