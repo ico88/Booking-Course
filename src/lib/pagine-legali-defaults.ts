@@ -135,61 +135,7 @@ export const DEFAULT_COOKIE_POLICY = `<section>
   </p>
 </section>
 
-<section>
-  <h2 class="text-lg font-semibold text-gray-900 mb-3">2. Cookie utilizzati da questo sito</h2>
-
-  <h3 class="font-semibold text-gray-800 mt-4 mb-2">2.1 Cookie strettamente necessari</h3>
-  <p class="mb-2 text-xs text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-1.5 inline-block">
-    Sempre attivi — non richiedono consenso
-  </p>
-  <div class="overflow-x-auto mt-2">
-    <table class="w-full text-xs border-collapse border border-gray-200 rounded-lg overflow-hidden">
-      <thead class="bg-gray-50">
-        <tr>
-          <th class="text-left px-3 py-2 border-b border-gray-200 font-medium">Nome</th>
-          <th class="text-left px-3 py-2 border-b border-gray-200 font-medium">Fornitore</th>
-          <th class="text-left px-3 py-2 border-b border-gray-200 font-medium">Scopo</th>
-          <th class="text-left px-3 py-2 border-b border-gray-200 font-medium">Scadenza</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-100">
-        <tr>
-          <td class="px-3 py-2 font-mono">next-auth.session-token</td>
-          <td class="px-3 py-2">[Nome organizzazione]</td>
-          <td class="px-3 py-2">Mantiene la sessione autenticata dell'utente</td>
-          <td class="px-3 py-2">Sessione / 30 giorni</td>
-        </tr>
-        <tr class="bg-gray-50">
-          <td class="px-3 py-2 font-mono">next-auth.csrf-token</td>
-          <td class="px-3 py-2">[Nome organizzazione]</td>
-          <td class="px-3 py-2">Protezione contro attacchi CSRF</td>
-          <td class="px-3 py-2">Sessione</td>
-        </tr>
-        <tr>
-          <td class="px-3 py-2 font-mono">cookie_consenso</td>
-          <td class="px-3 py-2">[Nome organizzazione]</td>
-          <td class="px-3 py-2">Memorizza le preferenze cookie dell'utente (localStorage)</td>
-          <td class="px-3 py-2">1 anno</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <h3 class="font-semibold text-gray-800 mt-6 mb-2">2.2 Cookie analitici</h3>
-  <p class="mb-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5 inline-block">
-    Richiedono consenso
-  </p>
-  <p class="mt-2">
-    Al momento non utilizziamo cookie analitici di terze parti. In caso di futura attivazione (es. Google
-    Analytics in modalità anonimizzata) questa sezione verrà aggiornata prima dell'installazione.
-  </p>
-
-  <h3 class="font-semibold text-gray-800 mt-6 mb-2">2.3 Cookie di marketing e profilazione</h3>
-  <p class="mb-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-1.5 inline-block">
-    Richiedono consenso esplicito
-  </p>
-  <p class="mt-2">Al momento non utilizziamo cookie di marketing o profilazione di terze parti.</p>
-</section>
+{{TABELLA_COOKIE}}
 
 <section>
   <h2 class="text-lg font-semibold text-gray-900 mb-3">3. Come gestire i cookie</h2>
@@ -348,3 +294,67 @@ export const DEFAULT_TERMINI_CONDIZIONI = `<section>
     <a href="mailto:[email info]" class="text-red-600 hover:underline">[email info]</a>.
   </p>
 </section>`;
+
+export function generaTabellaCoookie(nomeApp: string): string {
+  return `<section>
+  <h2 class="text-lg font-semibold text-gray-900 mb-3">2. Cookie utilizzati da questo sito</h2>
+
+  <h3 class="font-semibold text-gray-800 mt-4 mb-2">2.1 Cookie tecnici strettamente necessari</h3>
+  <p class="mb-2 text-xs text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-1.5 inline-block">
+    Sempre attivi — non richiedono consenso (art. 122 co. 1 Codice Privacy)
+  </p>
+  <div class="overflow-x-auto mt-2">
+    <table class="w-full text-xs border-collapse border border-gray-200 rounded-lg overflow-hidden">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="text-left px-3 py-2 border-b border-gray-200 font-medium">Nome</th>
+          <th class="text-left px-3 py-2 border-b border-gray-200 font-medium">Fornitore</th>
+          <th class="text-left px-3 py-2 border-b border-gray-200 font-medium">Scopo</th>
+          <th class="text-left px-3 py-2 border-b border-gray-200 font-medium">Scadenza</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <tr>
+          <td class="px-3 py-2 font-mono">next-auth.session-token</td>
+          <td class="px-3 py-2">${nomeApp}</td>
+          <td class="px-3 py-2">Mantiene la sessione autenticata dell'utente tra le pagine</td>
+          <td class="px-3 py-2">30 giorni</td>
+        </tr>
+        <tr class="bg-gray-50">
+          <td class="px-3 py-2 font-mono">next-auth.csrf-token</td>
+          <td class="px-3 py-2">${nomeApp}</td>
+          <td class="px-3 py-2">Token di sicurezza per prevenire attacchi CSRF sui form di autenticazione</td>
+          <td class="px-3 py-2">Fine sessione</td>
+        </tr>
+        <tr>
+          <td class="px-3 py-2 font-mono">next-auth.callback-url</td>
+          <td class="px-3 py-2">${nomeApp}</td>
+          <td class="px-3 py-2">Memorizza l'URL di reindirizzamento dopo il login</td>
+          <td class="px-3 py-2">Fine sessione</td>
+        </tr>
+        <tr class="bg-gray-50">
+          <td class="px-3 py-2 font-mono">cookie_consenso <span class="font-sans italic">(localStorage)</span></td>
+          <td class="px-3 py-2">${nomeApp}</td>
+          <td class="px-3 py-2">Salva le preferenze di consenso ai cookie espresse dall'utente tramite il banner</td>
+          <td class="px-3 py-2">1 anno</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="font-semibold text-gray-800 mt-6 mb-2">2.2 Cookie analitici</h3>
+  <p class="mb-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5 inline-block">
+    Richiedono consenso
+  </p>
+  <p class="mt-2">
+    Al momento non utilizziamo cookie analitici di terze parti. In caso di futura attivazione questa sezione
+    verrà aggiornata prima dell'installazione.
+  </p>
+
+  <h3 class="font-semibold text-gray-800 mt-6 mb-2">2.3 Cookie di marketing e profilazione</h3>
+  <p class="mb-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-1.5 inline-block">
+    Richiedono consenso esplicito
+  </p>
+  <p class="mt-2">Al momento non utilizziamo cookie di marketing o profilazione di terze parti.</p>
+</section>`;
+}

@@ -137,6 +137,14 @@ export default function PagineLegaliClient({
         </a>
       </div>
 
+      {/* Nota placeholder cookie */}
+      {tab === "pagina_cookie_policy" && contenuti[tab].includes("{{TABELLA_COOKIE}}") && (
+        <div className="flex items-center gap-2 text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+          <span className="font-mono bg-blue-100 px-1.5 py-0.5 rounded">{"{{TABELLA_COOKIE}}"}</span>
+          <span>— verrà sostituito automaticamente con la tabella dei cookie tecnici del sistema (nomi, scopi, scadenze).</span>
+        </div>
+      )}
+
       {/* Editor / Preview */}
       <div className="border border-gray-200 rounded-xl overflow-hidden">
         {mode === "edit" ? (
@@ -151,7 +159,12 @@ export default function PagineLegaliClient({
         ) : (
           <div
             className="w-full min-h-[520px] p-6 text-sm text-gray-700 leading-relaxed space-y-8 overflow-auto"
-            dangerouslySetInnerHTML={{ __html: contenuti[tab] }}
+            dangerouslySetInnerHTML={{
+              __html: contenuti[tab].replace(
+                "{{TABELLA_COOKIE}}",
+                "<div class='p-4 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-xs italic'>[ Tabella cookie tecnici generata automaticamente dal sistema ]</div>"
+              )
+            }}
           />
         )}
       </div>
