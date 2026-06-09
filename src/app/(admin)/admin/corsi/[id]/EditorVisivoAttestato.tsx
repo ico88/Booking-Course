@@ -48,6 +48,28 @@ interface Props {
 // A4 landscape at 96 dpi ≈ 1123 × 794 px
 const A4_W_PX = 1123;
 
+// Resize and compress the background image to a data URL that fits comfortably in a DB TEXT field.
+// Target: 1600px wide, JPEG at 0.75 quality ≈ 150-400 KB base64.
+function comprimiSfondo(file: File, maxWidth = 1600): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      const ratio = Math.min(1, maxWidth / img.naturalWidth);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.naturalWidth * ratio);
+      canvas.height = Math.round(img.naturalHeight * ratio);
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { reject(new Error("canvas context unavailable")); return; }
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(objectUrl);
+      resolve(canvas.toDataURL("image/jpeg", 0.75));
+    };
+    img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error("image load failed")); };
+    img.src = objectUrl;
+  });
+}
+
 export default function EditorVisivoAttestato({ onSalva, salvando }: Props) {
   const [sfondoFile, setSfondoFile] = useState<File | null>(null);
   const [sfondoUrl, setSfondoUrl] = useState<string | null>(null);
@@ -153,9 +175,12 @@ export default function EditorVisivoAttestato({ onSalva, salvando }: Props) {
   }
 
   async function handleSalva() {
-    const bgStyle = sfondoFile
-      ? `background-image:url('##SFONDO_URL##');background-size:cover;background-position:center;`
-      : "background:#fff;";
+    let bgStyle = "background:#fff;";
+    if (sfondoFile) {
+      // Compress and embed as base64 data URL so the template is self-contained
+      const base64 = await comprimiSfondo(sfondoFile);
+      bgStyle = `background-image:url('${base64}');background-size:cover;background-position:center;`;
+    }
 
     const spans = elementi
       .map(
@@ -165,7 +190,7 @@ export default function EditorVisivoAttestato({ onSalva, salvando }: Props) {
       .join("\n");
 
     const html = `<div style="width:297mm;height:210mm;position:relative;${bgStyle}print-color-adjust:exact;-webkit-print-color-adjust:exact;overflow:hidden;">\n${spans}\n</div>`;
-    onSalva(html, sfondoFile);
+    onSalva(html, null);
   }
 
   const elSel = elementi.find((el) => el.id === selezionato);

@@ -40,20 +40,9 @@ export async function POST(
     return NextResponse.json({ message: "Impostazione aggiornata" });
   }
 
-  // Salvataggio template HTML
+  // Salvataggio template HTML (lo sfondo è già embedded come base64 data URL dal client)
   if (htmlTemplate !== null && !file) {
-    let finalHtml = htmlTemplate || null;
-
-    const sfondo = formData.get("sfondo") as File | null;
-    if (sfondo && finalHtml && sfondo.size > 0) {
-      const sfondoDir = path.join(process.cwd(), "public", "uploads", "attestati-sfondo");
-      await mkdir(sfondoDir, { recursive: true });
-      const ext = sfondo.name.split(".").pop()?.toLowerCase() || "jpg";
-      const sfondoName = `sfondo_${id}.${ext}`;
-      const buffer = Buffer.from(await sfondo.arrayBuffer());
-      await writeFile(path.join(sfondoDir, sfondoName), buffer);
-      finalHtml = finalHtml.replace("##SFONDO_URL##", `/uploads/attestati-sfondo/${sfondoName}`);
-    }
+    const finalHtml = htmlTemplate || null;
 
     await prisma.corso.update({
       where: { id },
