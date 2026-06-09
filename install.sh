@@ -52,7 +52,7 @@ require_root() {
 
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_USER="${SUDO_USER:-$(logname 2>/dev/null || echo "ubuntu")}"
-NODE_MIN=18
+NODE_MIN=20   # Next.js 16 richiede Node.js >= 20.9.0
 
 # =============================================================================
 #  BANNER
@@ -140,10 +140,13 @@ ok "Pacchetti di base disponibili"
 # =============================================================================
 step "Node.js"
 
+NODE_UPGRADED=false
+
 install_node() {
   info "Installazione Node.js 20 LTS tramite NodeSource..."
   curl -fsSL https://deb.nodesource.com/setup_20.x | bash - >/dev/null 2>&1
   apt-get install -y -q nodejs
+  NODE_UPGRADED=true
 }
 
 if command -v node &>/dev/null; then
@@ -151,7 +154,8 @@ if command -v node &>/dev/null; then
   if (( NODE_VER >= NODE_MIN )); then
     ok "Node.js ${NODE_VER} già installato"
   else
-    warn "Node.js ${NODE_VER} trovato ma richiede almeno v${NODE_MIN}."
+    warn "Node.js ${NODE_VER} trovato ma Next.js 16 richiede almeno v${NODE_MIN} (ABI incompatibile)."
+    warn "Con una versione precedente i binari nativi (SWC) causano bus error durante la build."
     ask_yn "Aggiornare a Node.js 20 LTS?" && install_node || err "Node.js insufficiente. Installazione annullata."
   fi
 else
@@ -197,6 +201,15 @@ fi
 step "Installazione dipendenze Node.js"
 
 cd "$APP_DIR"
+
+# Se Node.js è stato appena aggiornato, elimina node_modules per reinstallare
+# i binari nativi (SWC, ecc.) compilati per la versione corretta di Node.js.
+# Installare con la versione sbagliata causa bus error durante la build.
+if [[ "$NODE_UPGRADED" == "true" && -d node_modules ]]; then
+  warn "Node.js aggiornato — elimino node_modules per reinstallare i binari nativi..."
+  rm -rf node_modules
+fi
+
 info "Esecuzione npm install (ci vorrà qualche minuto)..."
 sudo -u "$APP_USER" \
   NODE_OPTIONS="--max-old-space-size=${NODE_MEM}" \
