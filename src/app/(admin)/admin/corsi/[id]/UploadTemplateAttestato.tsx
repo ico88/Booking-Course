@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import Alert from "@/components/ui/Alert";
-import { Upload, FileText, Trash2, Download, Code, Info } from "lucide-react";
+import DropZone from "@/components/ui/DropZone";
+import { Upload, FileText, Trash2, Download, Code, Info, X } from "lucide-react";
 
 interface Props {
   corsoId: string;
@@ -67,7 +68,6 @@ export default function UploadTemplateAttestato({
   abilitato,
 }: Props) {
   const router = useRouter();
-  const inputRef = useRef<HTMLInputElement>(null);
   const [tab, setTab] = useState<"file" | "html">(htmlTemplate ? "html" : "file");
   const [file, setFile] = useState<File | null>(null);
   const [htmlText, setHtmlText] = useState(htmlTemplate ?? "");
@@ -98,7 +98,6 @@ export default function UploadTemplateAttestato({
       if (!res.ok) { setErrore(json.error || "Errore"); return; }
 
       setFile(null);
-      if (inputRef.current) inputRef.current.value = "";
       router.refresh();
     } catch {
       setErrore("Errore di rete. Riprova.");
@@ -155,19 +154,25 @@ export default function UploadTemplateAttestato({
               </div>
             </div>
           )}
-          <div
-            onClick={() => inputRef.current?.click()}
-            className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center cursor-pointer hover:border-purple-400 hover:bg-purple-50 transition-colors"
-          >
-            <Upload className="h-6 w-6 text-gray-400 mx-auto mb-2" />
-            <p className="text-sm font-medium text-gray-700">
-              {templateAttuale ? "Carica nuovo template" : "Carica template attestato"}
-            </p>
-            <p className="text-xs text-gray-400 mt-1">PDF, JPG o PNG · max 20 MB</p>
-            {file && <p className="text-sm text-purple-600 font-medium mt-2">Selezionato: {file.name}</p>}
-            <input ref={inputRef} type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) setFile(f); }} />
-          </div>
+          {file ? (
+            <div className="flex items-center justify-between bg-purple-50 border border-purple-200 rounded-xl p-4">
+              <div className="flex items-center gap-3">
+                <FileText className="h-5 w-5 text-purple-600 shrink-0" />
+                <p className="text-sm font-medium text-purple-900">{file.name}</p>
+              </div>
+              <button onClick={() => setFile(null)} className="text-gray-400 hover:text-gray-700 p-1">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <DropZone
+              onFile={setFile}
+              accept="application/pdf,image/jpeg,image/png"
+              maxMB={20}
+              label={templateAttuale ? "Carica nuovo template" : "Carica template attestato"}
+              sublabel="PDF, JPG o PNG · max 20 MB"
+            />
+          )}
         </>
       )}
 

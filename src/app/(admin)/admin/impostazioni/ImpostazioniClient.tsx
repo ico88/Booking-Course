@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Button from "@/components/ui/Button";
 import Alert from "@/components/ui/Alert";
 import { Card } from "@/components/ui/Card";
+import DropZone from "@/components/ui/DropZone";
 import { Save, Eye, EyeOff, Mail, MessageSquare, Send, Settings, ImagePlus, Trash2, BookOpen, CreditCard, FlaskConical, CheckCircle, XCircle, Shield, Users } from "lucide-react";
 
 interface Impostazione {
@@ -105,7 +106,6 @@ export default function ImpostazioniClient() {
   const [messaggioLogo, setMessaggioLogo] = useState<{ tipo: "success" | "error"; testo: string } | null>(null);
   const [testandoEmail, setTestandoEmail] = useState(false);
   const [risultatoTestEmail, setRisultatoTestEmail] = useState<{ tipo: "success" | "error"; testo: string } | null>(null);
-  const inputLogoRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetch("/api/admin/impostazioni")
@@ -143,7 +143,6 @@ export default function ImpostazioniClient() {
     if (res.ok) {
       setImpostazioni((prev) => { const n = { ...prev }; delete n.logo_url; return n; });
       setMessaggioLogo({ tipo: "success", testo: "Logo rimosso. Verrà usato il logo predefinito." });
-      if (inputLogoRef.current) inputLogoRef.current.value = "";
     } else {
       setMessaggioLogo({ tipo: "error", testo: "Errore durante la rimozione." });
     }
@@ -259,28 +258,17 @@ export default function ImpostazioniClient() {
           </Alert>
         )}
 
-        <div className="flex flex-wrap items-center gap-3">
-          <label className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-colors ${
-            caricandoLogo
-              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-              : "bg-red-600 text-white hover:bg-red-700"
-          }`}>
-            <ImagePlus className="h-4 w-4" />
-            {caricandoLogo ? "Caricamento…" : "Seleziona e carica logo"}
-            <input
-              ref={inputLogoRef}
-              type="file"
-              accept="image/png,image/jpeg,image/webp,image/svg+xml"
-              disabled={caricandoLogo}
-              className="sr-only"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) caricaLogo(f);
-              }}
-            />
-          </label>
+        <DropZone
+          onFile={caricaLogo}
+          accept="image/png,image/jpeg,image/webp,image/svg+xml"
+          maxMB={2}
+          label="Trascina il logo qui o clicca per selezionare"
+          sublabel="PNG, JPG, WebP o SVG · max 2 MB"
+          disabled={caricandoLogo}
+        />
 
-          {impostazioni.logo_url && (
+        {impostazioni.logo_url && (
+          <div className="mt-3">
             <button
               onClick={rimuoviLogo}
               disabled={caricandoLogo}
@@ -289,8 +277,8 @@ export default function ImpostazioniClient() {
               <Trash2 className="h-4 w-4" />
               Rimuovi logo
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </Card>
 
       {/* Card Pagamenti */}
