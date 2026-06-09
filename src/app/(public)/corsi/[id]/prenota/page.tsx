@@ -17,9 +17,13 @@ export default async function PaginaPrenota({
     redirect(`/auth/login?redirect=/corsi/${id}/prenota`);
   }
 
-  const corso = await prisma.corso.findUnique({
-    where: { id, pubblicato: true },
-  });
+  const [corso, utente] = await Promise.all([
+    prisma.corso.findUnique({ where: { id, pubblicato: true } }),
+    prisma.utente.findUnique({
+      where: { id: session.user.id },
+      select: { nome: true, cognome: true, email: true, telefono: true },
+    }),
+  ]);
 
   if (!corso) notFound();
 
@@ -59,6 +63,7 @@ export default async function PaginaPrenota({
         postiLiberi={postiLiberi}
         costoPerPosto={Number(corso.costo)}
         timeoutOre={corso.timeoutPagamentoOre}
+        utente={utente ?? undefined}
       />
     </div>
   );

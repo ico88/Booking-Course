@@ -30,6 +30,7 @@ interface Props {
   postiLiberi: number;
   costoPerPosto: number;
   timeoutOre: number;
+  utente?: { nome: string; cognome: string; email: string; telefono?: string | null };
 }
 
 export default function FormPrenotazione({
@@ -37,6 +38,7 @@ export default function FormPrenotazione({
   postiLiberi,
   costoPerPosto,
   timeoutOre,
+  utente,
 }: Props) {
   const router = useRouter();
   const [errore, setErrore] = useState<string | null>(null);
@@ -50,7 +52,12 @@ export default function FormPrenotazione({
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      partecipanti: [{ nome: "", cognome: "", email: "", telefono: "" }],
+      partecipanti: [{
+        nome: utente?.nome ?? "",
+        cognome: utente?.cognome ?? "",
+        email: utente?.email ?? "",
+        telefono: utente?.telefono ?? "",
+      }],
       note: "",
     },
   });
