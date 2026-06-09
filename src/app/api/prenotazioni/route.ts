@@ -72,12 +72,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Corso non trovato" }, { status: 404 });
     }
 
-    const postiDisponibili = corso.postiTotali - corso.postiOccupati;
+    // Controlla prenotazione attiva esistente per questo utente e corso
+    const prenotazioneAttiva = await prisma.prenotazione.findFirst({
+      where: {
+        utenteId: session.user.id,
+        corsoId: data.corsoId,
+        stato: { in: ["IN_ATTESA_PAGAMENTO", "PAGAMENTO_CARICATO", "CONFERMATA"] },
+      },
+    });
+    if (prenotazioneAttiva) {
+      return NextResponse.json(
+        { error: "Hai già una prenotazione attiva per questo corso", prenotazioneId: prenotazioneAttiva.id },
+        { status: 409 }
+      );
+    }
+
+    // Calcola posti disponibili in tempo reale (esclude prenotazioni scadute/annullate)
+    const aggPosti = await prisma.prenotazione.aggregate({
+      where: {
+        corsoId: data.corsoId,
+        stato: { in: ["IN_ATTESA_PAGAMENTO", "PAGAMENTO_CARICATO", "CONFERMATA"] },
+      },
+      _sum: { numeroPosti: true },
+    });
+    const postiDisponibili = corso.postiTotali - (aggPosti._sum.numeroPosti ?? 0);
     if (postiDisponibili < data.numeroPosti) {
       return NextResponse.json(
-        {
-          error: `Posti insufficienti. Disponibili: ${postiDisponibili}`,
-        },
+        { error: `Posti insufficienti. Disponibili: ${postiDisponibili}` },
         { status: 400 }
       );
     }

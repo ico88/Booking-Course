@@ -17,17 +17,38 @@ export default async function PaginaPrenota({
     redirect(`/auth/login?redirect=/corsi/${id}/prenota`);
   }
 
-  const [corso, utente] = await Promise.all([
+  const [corso, utente, prenotazioneAttiva] = await Promise.all([
     prisma.corso.findUnique({ where: { id, pubblicato: true } }),
     prisma.utente.findUnique({
       where: { id: session.user.id },
       select: { nome: true, cognome: true, email: true, telefono: true, codiceFiscale: true },
     }),
+    prisma.prenotazione.findFirst({
+      where: {
+        utenteId: session.user.id,
+        corsoId: id,
+        stato: { in: ["IN_ATTESA_PAGAMENTO", "PAGAMENTO_CARICATO", "CONFERMATA"] },
+      },
+      select: { id: true },
+    }),
   ]);
 
   if (!corso) notFound();
 
-  const postiLiberi = corso.postiTotali - corso.postiOccupati;
+  // Reindirizza alla prenotazione esistente se attiva
+  if (prenotazioneAttiva) {
+    redirect(`/dashboard/prenotazioni/${prenotazioneAttiva.id}`);
+  }
+
+  // Calcola posti disponibili in tempo reale (esclude prenotazioni scadute/annullate)
+  const aggPosti = await prisma.prenotazione.aggregate({
+    where: {
+      corsoId: id,
+      stato: { in: ["IN_ATTESA_PAGAMENTO", "PAGAMENTO_CARICATO", "CONFERMATA"] },
+    },
+    _sum: { numeroPosti: true },
+  });
+  const postiLiberi = corso.postiTotali - (aggPosti._sum.numeroPosti ?? 0);
 
   if (postiLiberi <= 0) {
     redirect(`/corsi/${id}`);

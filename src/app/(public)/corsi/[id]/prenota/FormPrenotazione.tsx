@@ -91,6 +91,11 @@ export default function FormPrenotazione({
       const json = await res.json();
 
       if (!res.ok) {
+        // Prenotazione attiva già esistente → redirect alla prenotazione
+        if (res.status === 409 && json.prenotazioneId) {
+          router.push(`/dashboard/prenotazioni/${json.prenotazioneId}`);
+          return;
+        }
         setErrore(json.error || "Errore durante la prenotazione");
         return;
       }
