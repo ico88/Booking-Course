@@ -1,0 +1,92 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Marketing Leads{% endblock %}
+
+{% block admin_content %}
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-bold">Marketing Leads</h1>
+  <div class="flex gap-2">
+    <label class="bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg text-sm cursor-pointer">
+      📥 Importa CSV
+      <input type="file" class="hidden" id="csv-input" accept=".csv" onchange="importCsv(this)">
+    </label>
+    <button onclick="document.getElementById('modal-notifica').classList.remove('hidden')"
+            class="bg-blue-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-800">
+      📧 Invia notifica
+    </button>
+  </div>
+</div>
+
+<div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+      <tr>
+        <th class="px-5 py-3 text-left">Email</th>
+        <th class="px-5 py-3 text-left">Nome</th>
+        <th class="px-5 py-3 text-left">Verificato</th>
+        <th class="px-5 py-3 text-left">Attivo</th>
+        <th class="px-5 py-3 text-left">Iscritto</th>
+        <th class="px-5 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {% for lead in leads %}
+      <tr class="hover:bg-gray-50">
+        <td class="px-5 py-3">{{ lead.email }}</td>
+        <td class="px-5 py-3 text-gray-600">{{ ((lead.nome or '') + ' ' + (lead.cognome or '')).strip() or '—' }}</td>
+        <td class="px-5 py-3">
+          <span class="text-{{ 'green' if lead.verificato else 'gray' }}-600 text-xs">{{ '✓' if lead.verificato else '✗' }}</span>
+        </td>
+        <td class="px-5 py-3">
+          <span class="text-{{ 'green' if lead.attivo else 'red' }}-600 text-xs">{{ 'Sì' if lead.attivo else 'No' }}</span>
+        </td>
+        <td class="px-5 py-3 text-gray-400">{{ format_date(lead.created_at) }}</td>
+        <td class="px-5 py-3">
+          <form method="POST" action="{{ url_for('admin.lead_elimina', lead_id=lead.id) }}" onsubmit="return confirm('Eliminare?')">
+            <button class="text-red-500 hover:text-red-700 text-xs">Elimina</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{# Modal invio notifica #}
+<div id="modal-notifica" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-xl p-6 w-full max-w-sm shadow-xl">
+    <h2 class="font-bold text-lg mb-4">Invia notifica corso</h2>
+    <form method="POST" action="{{ url_for('admin.marketing_notifica') }}" class="space-y-3">
+      <div>
+        <label class="block text-xs font-medium mb-1">Corso</label>
+        <select name="corso_id" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+          {% for corso in corsi_pubblicati %}
+          <option value="{{ corso.id }}">{{ corso.titolo }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button type="submit" class="flex-1 bg-blue-700 text-white py-2 rounded-lg text-sm hover:bg-blue-800">Invia</button>
+        <button type="button" onclick="document.getElementById('modal-notifica').classList.add('hidden')" class="flex-1 bg-gray-100 py-2 rounded-lg text-sm">Annulla</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function importCsv(input) {
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = '{{ url_for("admin.marketing_importa") }}';
+  form.enctype = 'multipart/form-data';
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.name = 'csv';
+  const dt = new DataTransfer();
+  dt.items.add(input.files[0]);
+  fileInput.files = dt.files;
+  form.appendChild(fileInput);
+  document.body.appendChild(form);
+  form.submit();
+}
+</script>
+{% endblock %}

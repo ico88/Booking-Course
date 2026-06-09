@@ -1,0 +1,84 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Utenti{% endblock %}
+
+{% block admin_content %}
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-bold">Utenti</h1>
+  <button onclick="document.getElementById('modal-nuovo-utente').classList.remove('hidden')"
+          class="bg-blue-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-800">+ Nuovo utente</button>
+</div>
+
+<div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+      <tr>
+        <th class="px-5 py-3 text-left">Nome</th>
+        <th class="px-5 py-3 text-left">Email</th>
+        <th class="px-5 py-3 text-left">Ruolo</th>
+        <th class="px-5 py-3 text-left">Registrato</th>
+        <th class="px-5 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {% for u in utenti %}
+      <tr class="hover:bg-gray-50">
+        <td class="px-5 py-3 font-medium">{{ u.nome_completo }}</td>
+        <td class="px-5 py-3 text-gray-500">{{ u.email }}</td>
+        <td class="px-5 py-3">
+          <span class="px-2 py-0.5 rounded text-xs {{ 'bg-red-100 text-red-700' if u.ruolo.value == 'ADMIN' else 'bg-blue-100 text-blue-700' if u.ruolo.value == 'SEGRETERIA' else 'bg-gray-100 text-gray-600' }}">
+            {{ u.ruolo.value }}
+          </span>
+        </td>
+        <td class="px-5 py-3 text-gray-400">{{ format_date(u.created_at) }}</td>
+        <td class="px-5 py-3">
+          {% if u.id != current_user.id %}
+          <form method="POST" action="{{ url_for('admin.utente_elimina', utente_id=u.id) }}" onsubmit="return confirm('Eliminare questo utente?')">
+            <button class="text-red-500 hover:text-red-700 text-xs">Elimina</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{# Modal nuovo utente #}
+<div id="modal-nuovo-utente" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
+    <h2 class="font-bold text-lg mb-4">Nuovo utente</h2>
+    <form method="POST" action="{{ url_for('admin.utente_nuovo') }}" class="space-y-3">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-medium mb-1">Nome</label>
+          <input type="text" name="nome" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs font-medium mb-1">Cognome</label>
+          <input type="text" name="cognome" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-medium mb-1">Email</label>
+        <input type="email" name="email" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div>
+        <label class="block text-xs font-medium mb-1">Password</label>
+        <input type="password" name="password" required minlength="8" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div>
+        <label class="block text-xs font-medium mb-1">Ruolo</label>
+        <select name="ruolo" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+          <option value="UTENTE">Utente</option>
+          <option value="SEGRETERIA">Segreteria</option>
+          <option value="ADMIN">Admin</option>
+        </select>
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button type="submit" class="flex-1 bg-blue-700 text-white py-2 rounded-lg text-sm hover:bg-blue-800">Crea</button>
+        <button type="button" onclick="document.getElementById('modal-nuovo-utente').classList.add('hidden')" class="flex-1 bg-gray-100 py-2 rounded-lg text-sm hover:bg-gray-200">Annulla</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

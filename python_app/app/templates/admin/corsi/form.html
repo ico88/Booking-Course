@@ -1,0 +1,124 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}{{ 'Modifica' if corso else 'Nuovo' }} corso{% endblock %}
+
+{% block admin_content %}
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <a href="{{ url_for('admin.corsi') }}" class="text-sm text-blue-600 hover:underline">← Corsi</a>
+    <h1 class="text-2xl font-bold mt-1">{{ 'Modifica corso' if corso else 'Nuovo corso' }}</h1>
+  </div>
+  {% if corso %}
+  <div class="flex gap-2">
+    <form method="POST" action="{{ url_for('admin.corso_duplica', corso_id=corso.id) }}">
+      <button type="submit" class="bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg text-sm">Duplica</button>
+    </form>
+    <form method="POST">
+      <input type="hidden" name="_action" value="delete">
+      <button type="submit" onclick="return confirm('Eliminare il corso?')" class="bg-red-50 text-red-700 hover:bg-red-100 px-3 py-2 rounded-lg text-sm">Elimina</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="lg:col-span-2">
+    <form method="POST" class="space-y-5">
+      <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1">Titolo *</label>
+          <input type="text" name="titolo" value="{{ corso.titolo if corso else '' }}" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Descrizione</label>
+          <textarea name="descrizione" rows="6" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">{{ corso.descrizione if corso else '' }}</textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">Data inizio</label>
+            <input type="datetime-local" name="data_inizio"
+                   value="{{ corso.data_inizio.strftime('%Y-%m-%dT%H:%M') if corso and corso.data_inizio else '' }}"
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Data fine</label>
+            <input type="datetime-local" name="data_fine"
+                   value="{{ corso.data_fine.strftime('%Y-%m-%dT%H:%M') if corso and corso.data_fine else '' }}"
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">Luogo</label>
+            <input type="text" name="luogo" value="{{ corso.luogo if corso else '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Orario</label>
+            <input type="text" name="orario" value="{{ corso.orario if corso else '' }}" placeholder="es. 9:00-13:00" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Durata</label>
+            <input type="text" name="durata" value="{{ corso.durata if corso else '' }}" placeholder="es. 8 ore" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">Costo (€)</label>
+            <input type="number" name="costo" step="0.01" min="0" value="{{ corso.costo if corso else '0' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Posti totali</label>
+            <input type="number" name="posti_totali" min="0" value="{{ corso.posti_totali if corso else '0' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Timeout pagamento (ore)</label>
+            <input type="number" name="timeout_pagamento_ore" min="1" value="{{ corso.timeout_pagamento_ore if corso else '24' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Coordinate bancarie</label>
+          <textarea name="coordinate_bancarie" rows="4" placeholder="IBAN, intestatario, causale suggerita..." class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">{{ corso.coordinate_bancarie if corso else '' }}</textarea>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Tag (separati da virgola)</label>
+          <input type="text" name="tags" value="{{ (corso.tags | join(', ')) if corso and corso.tags else '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div class="flex gap-6">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" name="pubblicato" {{ 'checked' if corso and corso.pubblicato }}>
+            <span class="text-sm font-medium">Pubblicato</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" name="attestato_abilitato" {{ 'checked' if corso and corso.attestato_abilitato }}>
+            <span class="text-sm font-medium">Attestato abilitato</span>
+          </label>
+        </div>
+      </div>
+      <button type="submit" class="w-full bg-blue-700 text-white py-2.5 rounded-lg font-medium hover:bg-blue-800">
+        Salva corso
+      </button>
+    </form>
+  </div>
+
+  {% if corso %}
+  <div class="space-y-4">
+    <div class="bg-white border border-gray-200 rounded-xl p-5">
+      <h3 class="font-semibold mb-3">Immagine corso</h3>
+      {% if corso.immagine_url %}
+        <img src="{{ corso.immagine_url }}" class="w-full h-32 object-cover rounded-lg mb-3">
+      {% endif %}
+      <form method="POST" action="{{ url_for('admin.corso_upload_immagine', corso_id=corso.id) }}" enctype="multipart/form-data">
+        <input type="file" name="immagine" accept="image/*" class="w-full text-sm mb-2">
+        <button type="submit" class="w-full bg-gray-100 hover:bg-gray-200 py-2 rounded-lg text-sm">Carica immagine</button>
+      </form>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-xl p-5">
+      <h3 class="font-semibold mb-2">Azioni rapide</h3>
+      <div class="space-y-2">
+        <a href="{{ url_for('admin.corso_partecipanti', corso_id=corso.id) }}" class="block w-full text-center bg-gray-100 hover:bg-gray-200 py-2 rounded-lg text-sm">Lista partecipanti</a>
+        <a href="{{ url_for('public.corso_dettaglio', corso_id=corso.id) }}" target="_blank" class="block w-full text-center bg-gray-100 hover:bg-gray-200 py-2 rounded-lg text-sm">Vedi pagina pubblica</a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Notifiche corsi{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto text-center py-12">
+  <h1 class="text-2xl font-bold mb-2">Ricevi notifiche sui corsi</h1>
+  <p class="text-gray-600 mb-8">Inserisci la tua email per ricevere aggiornamenti sui nuovi corsi disponibili.</p>
+  <form method="POST" class="space-y-4 text-left">
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="block text-sm font-medium mb-1">Nome</label>
+        <input type="text" name="nome" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Cognome</label>
+        <input type="text" name="cognome" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">Email *</label>
+      <input type="email" name="email" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+    </div>
+    <button type="submit" class="w-full bg-blue-700 text-white py-2.5 rounded-lg font-medium hover:bg-blue-800">Iscrivimi</button>
+  </form>
+</div>
+{% endblock %}

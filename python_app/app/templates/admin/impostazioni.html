@@ -1,0 +1,93 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Impostazioni{% endblock %}
+
+{% block admin_content %}
+<h1 class="text-2xl font-bold mb-6">Impostazioni</h1>
+
+<form method="POST" class="space-y-6 max-w-2xl">
+  <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+    <h2 class="font-semibold">Generale</h2>
+    <div>
+      <label class="block text-sm font-medium mb-1">Nome applicazione</label>
+      <input type="text" name="app_name" value="{{ settings.get('app_name', '') }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+    </div>
+  </div>
+
+  <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+    <h2 class="font-semibold">Email SMTP</h2>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium mb-1">Server SMTP</label>
+        <input type="text" name="smtp_host" value="{{ settings.get('smtp_host', '') }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Porta</label>
+        <input type="number" name="smtp_port" value="{{ settings.get('smtp_port', '587') }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Utente</label>
+        <input type="email" name="smtp_user" value="{{ settings.get('smtp_user', '') }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Password</label>
+        <input type="password" name="smtp_password" value="{{ settings.get('smtp_password', '') }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div class="col-span-2">
+        <label class="block text-sm font-medium mb-1">Nome mittente</label>
+        <input type="text" name="smtp_from_name" value="{{ settings.get('smtp_from_name', '') }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+      </div>
+    </div>
+    <form method="POST" action="{{ url_for('admin.test_email') }}" class="inline">
+      <button type="submit" class="text-sm bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg">Invia email di test</button>
+    </form>
+  </div>
+
+  <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+    <h2 class="font-semibold">Stripe</h2>
+    <div>
+      <label class="block text-sm font-medium mb-1">Chiave pubblica (pk_...)</label>
+      <input type="text" name="stripe_publishable_key" value="{{ settings.get('stripe_publishable_key', '') }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 font-mono text-sm">
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">Chiave segreta (sk_...)</label>
+      <input type="password" name="stripe_secret_key" value="{{ settings.get('stripe_secret_key', '') }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+    </div>
+  </div>
+
+  <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+    <h2 class="font-semibold">PayPal</h2>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium mb-1">Client ID</label>
+        <input type="text" name="paypal_client_id" value="{{ settings.get('paypal_client_id', '') }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Client Secret</label>
+        <input type="password" name="paypal_client_secret" value="{{ settings.get('paypal_client_secret', '') }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div class="col-span-2">
+        <label class="block text-sm font-medium mb-1">Modalità</label>
+        <select name="paypal_mode" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+          <option value="sandbox" {{ 'selected' if settings.get('paypal_mode') == 'sandbox' }}>Sandbox (test)</option>
+          <option value="live" {{ 'selected' if settings.get('paypal_mode') == 'live' }}>Live (produzione)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <button type="submit" class="w-full bg-blue-700 text-white py-2.5 rounded-xl font-medium hover:bg-blue-800">
+    Salva impostazioni
+  </button>
+</form>
+
+<div class="mt-6 max-w-2xl bg-white border border-gray-200 rounded-xl p-6">
+  <h2 class="font-semibold mb-3">Logo</h2>
+  {% if settings.get('logo_url') %}
+    <img src="{{ settings.get('logo_url') }}" alt="Logo" class="h-12 mb-3">
+  {% endif %}
+  <form method="POST" action="{{ url_for('admin.upload_logo') }}" enctype="multipart/form-data" class="flex gap-3">
+    <input type="file" name="logo" accept="image/*" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm">
+    <button type="submit" class="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-900">Carica</button>
+  </form>
+</div>
+{% endblock %}

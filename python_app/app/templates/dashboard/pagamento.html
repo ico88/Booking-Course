@@ -1,0 +1,173 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Pagamento{% endblock %}
+
+{% block dashboard_content %}
+{% set p = prenotazione %}
+<div class="mb-4"><a href="{{ url_for('dashboard.prenotazione_dettaglio', prenotazione_id=p.id) }}" class="text-sm text-blue-700 hover:underline">← Torna alla prenotazione</a></div>
+<h1 class="text-2xl font-bold mb-2">Scegli il metodo di pagamento</h1>
+<div class="text-gray-600 mb-6">{{ p.corso.titolo }} — <span class="font-semibold text-gray-900">{{ format_currency(p.importo_totale) }}</span></div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+
+  {# Bonifico #}
+  <div class="bg-white border-2 border-gray-200 rounded-xl p-5 cursor-pointer hover:border-blue-400 transition-colors" onclick="showSection('bonifico')">
+    <div class="font-semibold mb-1">Bonifico bancario</div>
+    <div class="text-sm text-gray-500">Carica la ricevuta dopo il pagamento</div>
+  </div>
+
+  {% if stripe_publishable_key %}
+  <div class="bg-white border-2 border-gray-200 rounded-xl p-5 cursor-pointer hover:border-blue-400 transition-colors" onclick="showSection('stripe')">
+    <div class="font-semibold mb-1">Carta di credito</div>
+    <div class="text-sm text-gray-500">Pagamento sicuro via Stripe</div>
+  </div>
+  {% endif %}
+
+  {% if paypal_client_id %}
+  <div class="bg-white border-2 border-gray-200 rounded-xl p-5 cursor-pointer hover:border-blue-400 transition-colors" onclick="showSection('paypal')">
+    <div class="font-semibold mb-1">PayPal</div>
+    <div class="text-sm text-gray-500">Paga con il tuo account PayPal</div>
+  </div>
+  {% endif %}
+</div>
+
+{# Bonifico section #}
+<div id="section-bonifico" class="hidden bg-white border border-gray-200 rounded-xl p-6">
+  <h3 class="font-semibold mb-3">Dati per il bonifico</h3>
+  {% if p.corso.coordinate_bancarie %}
+    <pre class="bg-gray-50 rounded-lg p-4 text-sm whitespace-pre-wrap">{{ p.corso.coordinate_bancarie }}</pre>
+  {% else %}
+    <p class="text-gray-500 text-sm">Coordinate bancarie non configurate. Contatta la segreteria.</p>
+  {% endif %}
+  <div class="mt-4">
+    <h4 class="font-medium mb-2">Carica la ricevuta</h4>
+    <form method="POST" action="{{ url_for('dashboard.upload_contabile', prenotazione_id=p.id) }}" enctype="multipart/form-data">
+      <div class="flex gap-3">
+        <input type="file" name="file" accept=".pdf,.jpg,.jpeg,.png" required class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm">
+        <button type="submit" class="bg-blue-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-800">Carica</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{# Stripe section #}
+{% if stripe_publishable_key %}
+<div id="section-stripe" class="hidden bg-white border border-gray-200 rounded-xl p-6">
+  <h3 class="font-semibold mb-4">Pagamento con carta</h3>
+  <div id="stripe-element" class="border border-gray-300 rounded-lg px-3 py-3 mb-4"></div>
+  <div id="stripe-error" class="text-red-600 text-sm mb-3 hidden"></div>
+  <button id="stripe-btn" onclick="payWithStripe()"
+          class="w-full bg-blue-700 text-white py-2.5 rounded-lg font-medium hover:bg-blue-800">
+    Paga {{ format_currency(p.importo_totale) }}
+  </button>
+</div>
+{% endif %}
+
+{# PayPal section #}
+{% if paypal_client_id %}
+<div id="section-paypal" class="hidden bg-white border border-gray-200 rounded-xl p-6">
+  <h3 class="font-semibold mb-4">Pagamento con PayPal</h3>
+  <div id="paypal-button-container"></div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+{% if stripe_publishable_key %}
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+const stripe = Stripe('{{ stripe_publishable_key }}');
+const elements = stripe.elements();
+let cardElement;
+
+function showSection(id) {
+  ['bonifico','stripe','paypal'].forEach(s => {
+    const el = document.getElementById('section-'+s);
+    if (el) el.classList.add('hidden');
+  });
+  document.getElementById('section-'+id)?.classList.remove('hidden');
+  if (id === 'stripe' && !cardElement) {
+    cardElement = elements.create('card');
+    cardElement.mount('#stripe-element');
+  }
+}
+
+async function payWithStripe() {
+  const btn = document.getElementById('stripe-btn');
+  btn.disabled = true;
+  btn.textContent = 'Elaborazione...';
+  try {
+    const resp = await fetch('/api/pagamento/stripe/crea-intento', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({prenotazione_id: '{{ p.id }}'})
+    });
+    const data = await resp.json();
+    const {error, paymentIntent} = await stripe.confirmCardPayment(data.client_secret, {
+      payment_method: {card: cardElement}
+    });
+    if (error) {
+      document.getElementById('stripe-error').textContent = error.message;
+      document.getElementById('stripe-error').classList.remove('hidden');
+      btn.disabled = false;
+      btn.textContent = 'Riprova';
+      return;
+    }
+    await fetch('/api/pagamento/stripe/conferma', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({prenotazione_id: '{{ p.id }}', payment_intent_id: paymentIntent.id})
+    });
+    window.location.href = '{{ url_for("dashboard.prenotazione_dettaglio", prenotazione_id=p.id) }}';
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = 'Errore, riprova';
+  }
+}
+</script>
+{% endif %}
+
+{% if paypal_client_id %}
+<script src="https://www.paypal.com/sdk/js?client-id={{ paypal_client_id }}&currency=EUR"></script>
+<script>
+function showSection(id) {
+  ['bonifico','stripe','paypal'].forEach(s => {
+    const el = document.getElementById('section-'+s);
+    if (el) el.classList.add('hidden');
+  });
+  document.getElementById('section-'+id)?.classList.remove('hidden');
+}
+
+paypal.Buttons({
+  createOrder: async () => {
+    const r = await fetch('/api/pagamento/paypal/crea-ordine', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({prenotazione_id: '{{ p.id }}'})
+    });
+    const d = await r.json();
+    return d.order_id;
+  },
+  onApprove: async (data) => {
+    await fetch('/api/pagamento/paypal/cattura', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({prenotazione_id: '{{ p.id }}', order_id: data.orderID})
+    });
+    window.location.href = '{{ url_for("dashboard.prenotazione_dettaglio", prenotazione_id=p.id) }}';
+  }
+}).render('#paypal-button-container');
+</script>
+{% endif %}
+
+{% if not stripe_publishable_key and not paypal_client_id %}
+<script>
+function showSection(id) {
+  ['bonifico','stripe','paypal'].forEach(s => {
+    const el = document.getElementById('section-'+s);
+    if (el) el.classList.add('hidden');
+  });
+  document.getElementById('section-'+id)?.classList.remove('hidden');
+}
+document.addEventListener('DOMContentLoaded', () => showSection('bonifico'));
+</script>
+{% endif %}
+{% endblock %}

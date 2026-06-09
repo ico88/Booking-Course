@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}{{ corso.titolo }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl">
+  <a href="{{ url_for('public.index') }}" class="text-sm text-blue-700 hover:underline mb-4 inline-flex items-center gap-1">
+    ← Tutti i corsi
+  </a>
+
+  {% if corso.immagine_url %}
+    <img src="{{ corso.immagine_url }}" alt="{{ corso.titolo }}" class="w-full rounded-xl mb-6 h-64 object-cover">
+  {% endif %}
+
+  <h1 class="text-3xl font-bold mb-4">{{ corso.titolo }}</h1>
+
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    {% if corso.data_inizio %}
+    <div class="bg-white border border-gray-200 rounded-lg p-3 text-center">
+      <div class="text-xs text-gray-500 mb-1">Data inizio</div>
+      <div class="font-semibold text-sm">{{ format_date(corso.data_inizio) }}</div>
+    </div>
+    {% endif %}
+    {% if corso.luogo %}
+    <div class="bg-white border border-gray-200 rounded-lg p-3 text-center">
+      <div class="text-xs text-gray-500 mb-1">Luogo</div>
+      <div class="font-semibold text-sm">{{ corso.luogo }}</div>
+    </div>
+    {% endif %}
+    {% if corso.durata %}
+    <div class="bg-white border border-gray-200 rounded-lg p-3 text-center">
+      <div class="text-xs text-gray-500 mb-1">Durata</div>
+      <div class="font-semibold text-sm">{{ corso.durata }}</div>
+    </div>
+    {% endif %}
+    <div class="bg-white border border-gray-200 rounded-lg p-3 text-center">
+      <div class="text-xs text-gray-500 mb-1">Posti</div>
+      <div class="font-semibold text-sm">
+        {% if corso.posti_totali %}{{ corso.posti_disponibili }} / {{ corso.posti_totali }}{% else %}Illimitati{% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% if corso.descrizione %}
+  <div class="bg-white border border-gray-200 rounded-xl p-6 mb-6 prose max-w-none">
+    {{ corso.descrizione | safe }}
+  </div>
+  {% endif %}
+
+  <div class="bg-blue-50 border border-blue-100 rounded-xl p-6 flex items-center justify-between">
+    <div>
+      <div class="text-sm text-blue-600">Quota di partecipazione</div>
+      <div class="text-3xl font-bold text-blue-800">{{ corso.costo_formattato }}</div>
+    </div>
+    {% if corso.posti_disponibili > 0 or not corso.posti_totali %}
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('public.prenota', corso_id=corso.id) }}"
+           class="bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-800 text-lg">
+          Prenota ora
+        </a>
+      {% else %}
+        <a href="{{ url_for('auth.login', next=request.url) }}"
+           class="bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-800 text-lg">
+          Accedi per prenotare
+        </a>
+      {% endif %}
+    {% else %}
+      <span class="bg-gray-200 text-gray-500 px-6 py-3 rounded-xl font-semibold">Posti esauriti</span>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

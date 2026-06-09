@@ -1,0 +1,16 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Pagine legali{% endblock %}
+
+{% block admin_content %}
+<h1 class="text-2xl font-bold mb-6">Pagine legali</h1>
+<form method="POST" class="space-y-6 max-w-3xl">
+  {% for key, label in [('pagina_privacy', 'Privacy Policy'), ('pagina_cookie', 'Cookie Policy'), ('pagina_termini', 'Termini e Condizioni')] %}
+  <div class="bg-white border border-gray-200 rounded-xl p-6">
+    <label class="block font-semibold mb-2">{{ label }}</label>
+    <textarea name="{{ key }}" rows="10" class="w-full border border-gray-300 rounded-lg px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-blue-500">{{ settings.get(key, '') }}</textarea>
+    <p class="text-xs text-gray-400 mt-1">Puoi usare HTML per la formattazione</p>
+  </div>
+  {% endfor %}
+  <button type="submit" class="w-full bg-blue-700 text-white py-2.5 rounded-xl font-medium hover:bg-blue-800">Salva pagine</button>
+</form>
+{% endblock %}

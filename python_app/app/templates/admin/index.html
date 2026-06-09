@@ -1,0 +1,52 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block admin_content %}
+<h1 class="text-2xl font-bold mb-6">Dashboard</h1>
+
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+  {% for label, value, color in [
+    ('Corsi totali', stats.corsi, 'blue'),
+    ('Corsi pubblicati', stats.corsi_pubblicati, 'green'),
+    ('Prenotazioni', stats.prenotazioni, 'purple'),
+    ('Confermate', stats.prenotazioni_confermate, 'green'),
+    ('Utenti', stats.utenti, 'gray'),
+    ('Leads attivi', stats.leads, 'orange'),
+  ] %}
+  <div class="bg-white border border-gray-200 rounded-xl p-4 text-center">
+    <div class="text-2xl font-bold text-{{ color }}-600">{{ value }}</div>
+    <div class="text-xs text-gray-500 mt-1">{{ label }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+  <div class="px-5 py-4 border-b border-gray-100 font-semibold">Ultime prenotazioni</div>
+  <table class="w-full text-sm">
+    <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+      <tr>
+        <th class="px-5 py-3 text-left">Utente</th>
+        <th class="px-5 py-3 text-left">Corso</th>
+        <th class="px-5 py-3 text-left">Stato</th>
+        <th class="px-5 py-3 text-left">Importo</th>
+        <th class="px-5 py-3 text-left">Data</th>
+        <th class="px-5 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {% for p in ultime_prenotazioni %}
+      {% set color_map = {'CONFERMATA': 'green', 'IN_ATTESA_PAGAMENTO': 'yellow', 'PAGAMENTO_CARICATO': 'blue', 'ANNULLATA': 'red', 'SCADUTA': 'gray'} %}
+      {% set color = color_map.get(p.stato.value, 'gray') %}
+      <tr class="hover:bg-gray-50">
+        <td class="px-5 py-3">{{ p.utente.nome_completo }}</td>
+        <td class="px-5 py-3">{{ p.corso.titolo }}</td>
+        <td class="px-5 py-3"><span class="px-2 py-0.5 rounded text-xs bg-{{ color }}-100 text-{{ color }}-700">{{ p.stato_label }}</span></td>
+        <td class="px-5 py-3 font-medium">{{ format_currency(p.importo_totale) }}</td>
+        <td class="px-5 py-3 text-gray-400">{{ format_date(p.created_at) }}</td>
+        <td class="px-5 py-3"><a href="{{ url_for('admin.prenotazione_dettaglio', prenotazione_id=p.id) }}" class="text-blue-600 hover:underline">→</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

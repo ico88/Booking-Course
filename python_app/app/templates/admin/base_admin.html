@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block main_class %}{% endblock %}
+
+{% block content %}
+<div class="flex min-h-screen">
+  <aside class="w-56 bg-gray-900 text-gray-300 min-h-screen px-3 py-6 shrink-0">
+    <div class="px-3 mb-6 font-bold text-white text-sm">{{ app_name }} Admin</div>
+    <nav class="space-y-0.5 text-sm">
+      {% set menu = [
+        ('admin.index', 'Dashboard', 'M3 7h18M3 12h18M3 17h18'),
+        ('admin.corsi', 'Corsi', 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253'),
+        ('admin.prenotazioni', 'Prenotazioni', 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'),
+        ('admin.utenti', 'Utenti', 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z'),
+        ('admin.marketing', 'Marketing', 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z'),
+        ('admin.impostazioni', 'Impostazioni', 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z'),
+        ('admin.pagine_legali', 'Pagine legali', 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'),
+        ('admin.backup', 'Backup', 'M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4'),
+      ] %}
+      {% for endpoint, label, icon_path in menu %}
+      <a href="{{ url_for(endpoint) }}"
+         class="flex items-center gap-2 px-3 py-2 rounded-lg {{ 'bg-blue-600 text-white' if request.endpoint == endpoint else 'hover:bg-gray-800' }}">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ icon_path }}"/>
+        </svg>
+        {{ label }}
+      </a>
+      {% endfor %}
+      <div class="border-t border-gray-700 my-3"></div>
+      <a href="{{ url_for('public.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-800">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+        Sito pubblico
+      </a>
+    </nav>
+  </aside>
+
+  <main class="flex-1 p-8 overflow-auto bg-gray-50">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="mb-6 space-y-2">
+          {% for category, message in messages %}
+            {% set colors = {'success': 'bg-green-50 border-green-400 text-green-800', 'error': 'bg-red-50 border-red-400 text-red-800', 'info': 'bg-blue-50 border-blue-400 text-blue-800'} %}
+            <div class="border-l-4 px-4 py-3 rounded-r {{ colors.get(category, 'bg-gray-50 border-gray-400 text-gray-800') }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    {% block admin_content %}{% endblock %}
+  </main>
+</div>
+{% endblock %}

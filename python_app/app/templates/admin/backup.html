@@ -1,0 +1,12 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Backup{% endblock %}
+
+{% block admin_content %}
+<h1 class="text-2xl font-bold mb-6">Backup Database</h1>
+<div class="max-w-lg bg-white border border-gray-200 rounded-xl p-6">
+  <p class="text-gray-600 mb-4">Scarica un backup completo del database PostgreSQL in formato SQL.</p>
+  <a href="{{ url_for('admin.backup_scarica') }}" class="bg-blue-700 text-white px-5 py-2.5 rounded-lg hover:bg-blue-800 inline-block font-medium">
+    📥 Scarica backup
+  </a>
+</div>
+{% endblock %}
