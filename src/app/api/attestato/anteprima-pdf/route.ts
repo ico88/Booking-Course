@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { generaPdfDaHtml } from "@/lib/pdf";
 
+export const runtime = "nodejs";
+
 // POST: genera un PDF da HTML inviato dal client (usato dall'editor visivo per l'anteprima)
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
