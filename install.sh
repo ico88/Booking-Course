@@ -61,7 +61,7 @@ clear
 echo -e "${BLUE}${BOLD}"
 cat <<'BANNER'
   ╔═══════════════════════════════════════════════════════╗
-  ║          GESTIONE CORSI — Installer v1.0              ║
+  ║          GESTIONE CORSI — Installer v2.0              ║
   ║     Installazione guidata per Ubuntu Server           ║
   ╚═══════════════════════════════════════════════════════╝
 BANNER
@@ -214,6 +214,11 @@ if [[ "${goto_db_setup:-false}" != "true" ]]; then
   ok "NEXTAUTH_SECRET generato"
   ok "CRON_SECRET generato"
 
+  divider
+  echo -e "  ${BOLD}── Backup automatico ──${NC}"
+  BACKUP_DIR_VAL=$(ask "Directory backup database e file" "/var/backups/gestione-corsi")
+  RETENTION_DAYS_VAL=$(ask "Giorni di conservazione backup" "30")
+
   # Scrivi .env
   cat > "$APP_DIR/.env" <<ENVFILE
 # ── Database ──────────────────────────────────────────────
@@ -230,11 +235,16 @@ PORT=${APP_PORT}
 NODE_ENV="production"
 
 # ── Email SMTP ─────────────────────────────────────────────
+# Nota: configurabile anche dal pannello Admin → Impostazioni → Email (SMTP)
 SMTP_HOST="${SMTP_HOST}"
 SMTP_PORT="${SMTP_PORT}"
 SMTP_USER="${SMTP_USER}"
 SMTP_PASS="${SMTP_PASS}"
 SMTP_FROM="${SMTP_FROM}"
+
+# ── Backup ─────────────────────────────────────────────────
+BACKUP_DIR="${BACKUP_DIR_VAL}"
+RETENTION_DAYS=${RETENTION_DAYS_VAL}
 
 # ── Cron ───────────────────────────────────────────────────
 CRON_SECRET="${CRON_SECRET}"
@@ -478,9 +488,41 @@ else
 fi
 
 # =============================================================================
-#  STEP 14 — FIREWALL (ufw)
+#  STEP 14 — BACKUP AUTOMATICO NOTTURNO
 # =============================================================================
-step "Firewall (ufw)"
+step "Backup automatico notturno (cron)"
+
+chmod +x "$APP_DIR/backup.sh" 2>/dev/null || true
+
+BACKUP_DIR_ACTUAL="${BACKUP_DIR_VAL:-/var/backups/gestione-corsi}"
+mkdir -p "$BACKUP_DIR_ACTUAL"
+chown "$APP_USER":"$APP_USER" "$BACKUP_DIR_ACTUAL"
+
+# Installa pg_dump se non presente
+if ! command -v pg_dump &>/dev/null; then
+  info "Installazione client postgresql..."
+  apt-get install -y -q postgresql-client
+fi
+
+BACKUP_CRON_CMD="${APP_DIR}/backup.sh >> /var/log/gestione-corsi-backup.log 2>&1"
+BACKUP_CRON_ENTRY="0 2 * * * ${BACKUP_CRON_CMD} # gestione-corsi-backup"
+CURRENT_CRON_2=$(crontab -u "$APP_USER" -l 2>/dev/null || true)
+
+if echo "$CURRENT_CRON_2" | grep -q "gestione-corsi-backup"; then
+  ok "Cron backup già presente nel crontab di ${APP_USER}"
+else
+  if ask_yn "Vuoi abilitare il backup automatico ogni notte alle 02:00?"; then
+    (echo "$CURRENT_CRON_2"; echo "$BACKUP_CRON_ENTRY") | crontab -u "$APP_USER" -
+    ok "Cron backup aggiunto: ogni notte alle 02:00 → ${BACKUP_DIR_ACTUAL}"
+  else
+    info "Cron backup saltato. Puoi attivarlo manualmente o dal pannello Admin → Backup."
+  fi
+fi
+
+# =============================================================================
+#  STEP 15 — FIREWALL (ufw)
+# =============================================================================
+step "Firewall (ufw)"  # step 15
 
 if command -v ufw &>/dev/null; then
   UFW_STATUS=$(ufw status | head -1)
@@ -517,11 +559,13 @@ echo -e "    ${CYAN}pm2 restart ${APP_NAME_PM2}${NC} — riavvia l'app"
 echo -e "    ${CYAN}bash ${APP_DIR}/update.sh${NC}    — aggiorna l'app"
 echo -e ""
 
-if grep -q "SMTP_USER=\"\"" "$APP_DIR/.env" 2>/dev/null || grep -qE "SMTP_USER=$" "$APP_DIR/.env" 2>/dev/null; then
-  echo -e "  ${YELLOW}⚠  SMTP non configurato. Le email non verranno inviate.${NC}"
-  echo -e "     Modifica ${APP_DIR}/.env e poi: pm2 restart ${APP_NAME_PM2}"
-  echo ""
-fi
+echo -e "  ${BOLD}Prossimi passi dal pannello Admin${NC}"
+echo -e "    ${CYAN}${RE_APP_URL}/admin/impostazioni${NC}"
+echo -e "    • Email SMTP — configura e testa il server di posta"
+echo -e "    • Metodi di pagamento — abilita Stripe e/o PayPal"
+echo -e "    • CAPTCHA — inserisci chiavi Cloudflare Turnstile (opzionale)"
+echo -e "    • Backup — configura backup manuale o verifica cron"
+echo ""
 
 if [[ -f "$APP_DIR/prisma/seed.ts" ]]; then
   echo -e "  ${BOLD}Credenziali di test (se hai eseguito il seed)${NC}"

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Button from "@/components/ui/Button";
 import Alert from "@/components/ui/Alert";
 import { Card } from "@/components/ui/Card";
-import { Save, Eye, EyeOff, Mail, MessageSquare, Send, Settings, ImagePlus, Trash2, BookOpen, CreditCard, FlaskConical, CheckCircle, XCircle } from "lucide-react";
+import { Save, Eye, EyeOff, Mail, MessageSquare, Send, Settings, ImagePlus, Trash2, BookOpen, CreditCard, FlaskConical, CheckCircle, XCircle, Shield } from "lucide-react";
 
 interface Impostazione {
   id: string;
@@ -49,6 +49,16 @@ const STRUTTURA_IMPOSTAZIONI = [
       { chiave: "telegram_abilitato", label: "Abilita notifiche Telegram", placeholder: "false", tipo: "select", opzioni: ["false", "true"] },
       { chiave: "telegram_bot_token", label: "Token Bot Telegram", placeholder: "••••••••", tipo: "password" },
       { chiave: "telegram_chat_id_segreteria", label: "Chat ID segreteria", placeholder: "-1001234567890", tipo: "text" },
+    ],
+  },
+  {
+    gruppo: "sicurezza",
+    icona: Shield,
+    titolo: "CAPTCHA (Cloudflare Turnstile)",
+    descrizione: "Proteggi il modulo di registrazione con il CAPTCHA anti-bot di Cloudflare. Lascia vuoto per disabilitare. Ottieni le chiavi su dash.cloudflare.com → Turnstile.",
+    campi: [
+      { chiave: "turnstile_site_key", label: "Site Key (pubblica, inizia con 0x...)", placeholder: "0x4AAAAAAA...", tipo: "text" },
+      { chiave: "turnstile_secret_key", label: "Secret Key (privata)", placeholder: "••••••••", tipo: "password" },
     ],
   },
   {

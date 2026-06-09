@@ -19,7 +19,11 @@ const schema = z.object({
 });
 
 async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
-  const secret = process.env.TURNSTILE_SECRET_KEY;
+  let secret = process.env.TURNSTILE_SECRET_KEY;
+  if (!secret) {
+    const row = await prisma.impostazione.findUnique({ where: { chiave: "turnstile_secret_key" } });
+    secret = row?.valore || "";
+  }
   if (!secret) return true; // CAPTCHA not configured — skip verification
 
   const res = await fetch(

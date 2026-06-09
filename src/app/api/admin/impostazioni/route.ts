@@ -16,7 +16,7 @@ export async function GET(_request: NextRequest) {
   });
 
   // Maschera i valori sensibili nella risposta
-  const CHIAVI_SENSIBILI = ["smtp_password", "whatsapp_token", "telegram_token", "nextauth_secret"];
+  const CHIAVI_SENSIBILI = ["smtp_password", "whatsapp_token", "telegram_token", "nextauth_secret", "turnstile_secret_key"];
   const dati = impostazioni.map((i) => ({
     ...i,
     valore: CHIAVI_SENSIBILI.includes(i.chiave) && i.valore
