@@ -10,10 +10,11 @@ import {
 } from "@/lib/email";
 
 const schemaPartecipante = z.object({
-  nome: z.string().min(1),
-  cognome: z.string().min(1),
-  email: z.string().email().optional().nullable(),
-  telefono: z.string().optional().nullable(),
+  nome: z.string().min(1, "Nome richiesto"),
+  cognome: z.string().min(1, "Cognome richiesto"),
+  email: z.string().email("Email non valida"),
+  telefono: z.string().min(1, "Telefono richiesto"),
+  codiceFiscale: z.string().nullish(),
 });
 
 const schemaPrenotazione = z.object({
@@ -118,6 +119,16 @@ export async function POST(request: NextRequest) {
       });
 
       return p;
+    });
+
+    // Aggiorna anagrafica utente con i dati del primo partecipante
+    const primoPartecipante = data.partecipanti[0];
+    await prisma.utente.update({
+      where: { id: session.user.id },
+      data: {
+        telefono: primoPartecipante.telefono || undefined,
+        codiceFiscale: primoPartecipante.codiceFiscale || undefined,
+      },
     });
 
     const utente = await prisma.utente.findUnique({

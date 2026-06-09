@@ -14,8 +14,9 @@ import { Plus, Minus, Users } from "lucide-react";
 const schemaPartecipante = z.object({
   nome: z.string().min(1, "Nome richiesto"),
   cognome: z.string().min(1, "Cognome richiesto"),
-  email: z.string().email("Email non valida").optional().or(z.literal("")),
-  telefono: z.string().optional(),
+  email: z.string().email("Email non valida"),
+  telefono: z.string().min(1, "Telefono richiesto"),
+  codiceFiscale: z.string().optional(),
 });
 
 const schema = z.object({
@@ -30,7 +31,7 @@ interface Props {
   postiLiberi: number;
   costoPerPosto: number;
   timeoutOre: number;
-  utente?: { nome: string; cognome: string; email: string; telefono?: string | null };
+  utente?: { nome: string; cognome: string; email: string; telefono?: string | null; codiceFiscale?: string | null };
 }
 
 export default function FormPrenotazione({
@@ -57,6 +58,7 @@ export default function FormPrenotazione({
         cognome: utente?.cognome ?? "",
         email: utente?.email ?? "",
         telefono: utente?.telefono ?? "",
+        codiceFiscale: utente?.codiceFiscale ?? "",
       }],
       note: "",
     },
@@ -129,7 +131,7 @@ export default function FormPrenotazione({
             <button
               type="button"
               onClick={() =>
-                append({ nome: "", cognome: "", email: "", telefono: "" })
+                append({ nome: "", cognome: "", email: "", telefono: "", codiceFiscale: "" })
               }
               disabled={numeroPosti >= postiLiberi || numeroPosti >= 10}
               className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
@@ -169,14 +171,25 @@ export default function FormPrenotazione({
                 <Input
                   label="Email"
                   type="email"
-                  placeholder="opzionale"
+                  required
                   {...register(`partecipanti.${index}.email`)}
                   error={errors.partecipanti?.[index]?.email?.message}
                 />
                 <Input
                   label="Telefono"
-                  placeholder="opzionale"
+                  type="tel"
+                  required
                   {...register(`partecipanti.${index}.telefono`)}
+                  error={errors.partecipanti?.[index]?.telefono?.message}
+                />
+                <Input
+                  label="Codice Fiscale"
+                  placeholder="RSSMRA80A01H501U"
+                  className="uppercase"
+                  {...register(`partecipanti.${index}.codiceFiscale`, {
+                    setValueAs: (v: string) => v?.toUpperCase(),
+                  })}
+                  error={errors.partecipanti?.[index]?.codiceFiscale?.message}
                 />
               </div>
             </div>

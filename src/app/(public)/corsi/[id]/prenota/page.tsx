@@ -21,7 +21,7 @@ export default async function PaginaPrenota({
     prisma.corso.findUnique({ where: { id, pubblicato: true } }),
     prisma.utente.findUnique({
       where: { id: session.user.id },
-      select: { nome: true, cognome: true, email: true, telefono: true },
+      select: { nome: true, cognome: true, email: true, telefono: true, codiceFiscale: true },
     }),
   ]);
 
