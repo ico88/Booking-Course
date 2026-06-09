@@ -205,9 +205,14 @@ export default function UploadTemplateAttestato({
         </>
       )}
 
-      {tab === "visivo" && (
-        <EditorVisivoAttestato onSalva={salvaHtmlDiretto} salvando={caricamento} />
-      )}
+      {/* Always mounted so the editor state survives tab switches */}
+      <div className={tab !== "visivo" ? "hidden" : ""}>
+        <EditorVisivoAttestato
+          onSalva={salvaHtmlDiretto}
+          salvando={caricamento}
+          htmlTemplate={htmlTemplate}
+        />
+      </div>
 
       {tab === "html" && (
         <div className="space-y-3">

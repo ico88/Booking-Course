@@ -43,6 +43,7 @@ type Elemento = {
 interface Props {
   onSalva: (html: string, sfondoFile: File | null) => void;
   salvando: boolean;
+  htmlTemplate?: string | null;
 }
 
 // A4 landscape at 96 dpi ≈ 1123 × 794 px
@@ -70,9 +71,46 @@ function comprimiSfondo(file: File, maxWidth = 1600): Promise<string> {
   });
 }
 
-export default function EditorVisivoAttestato({ onSalva, salvando }: Props) {
+// Parse a previously saved template HTML back into editor state.
+// Returns null if the HTML doesn't look like a visual-editor template.
+function parseTemplateSalvato(html: string): { sfondoDataUrl: string | null; elementi: Elemento[] } | null {
+  if (typeof window === "undefined") return null;
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const container = doc.querySelector<HTMLDivElement>("div[style*='297mm']");
+  if (!container) return null;
+
+  const style = container.getAttribute("style") ?? "";
+  const bgMatch = style.match(/background-image:\s*url\(['"]?(data:[^'")\s]+)['"]?\)/);
+  const sfondoDataUrl = bgMatch ? bgMatch[1] : null;
+
+  const elementi: Elemento[] = [];
+  container.querySelectorAll<HTMLSpanElement>("span[style]").forEach((span) => {
+    const s = span.getAttribute("style") ?? "";
+    const left = s.match(/left:([\d.]+)%/)?.[1];
+    const top = s.match(/top:([\d.]+)%/)?.[1];
+    const testo = span.textContent?.trim() ?? "";
+    if (!left || !top || !testo) return;
+    elementi.push({
+      id: Math.random().toString(36).slice(2),
+      testo,
+      x: parseFloat(left),
+      y: parseFloat(top),
+      fontSize: parseFloat(s.match(/font-size:([\d.]+)pt/)?.[1] ?? "14"),
+      fontWeight: (s.match(/font-weight:(normal|bold)/)?.[1] ?? "normal") as "normal" | "bold",
+      fontStyle: (s.match(/font-style:(normal|italic)/)?.[1] ?? "normal") as "normal" | "italic",
+      color: s.match(/color:(#[0-9a-fA-F]{3,8})/)?.[1] ?? "#000000",
+      fontFamily: s.match(/font-family:([^;]+)/)?.[1]?.trim() ?? "Georgia, serif",
+    });
+  });
+
+  return { sfondoDataUrl, elementi };
+}
+
+export default function EditorVisivoAttestato({ onSalva, salvando, htmlTemplate }: Props) {
   const [sfondoFile, setSfondoFile] = useState<File | null>(null);
   const [sfondoUrl, setSfondoUrl] = useState<string | null>(null);
+  // Holds the already-compressed base64 when restoring from a saved template
+  const [sfondoDataUrl, setSfondoDataUrl] = useState<string | null>(null);
   const [elementi, setElementi] = useState<Elemento[]>([]);
   const [variabileAttiva, setVariabileAttiva] = useState<string | null>(null);
   const [selezionato, setSelezionato] = useState<string | null>(null);
@@ -80,6 +118,19 @@ export default function EditorVisivoAttestato({ onSalva, salvando }: Props) {
   const [canvasWidth, setCanvasWidth] = useState(0);
   const dragStart = useRef<{ mouseX: number; mouseY: number; origX: number; origY: number } | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
+
+  // Restore state from a previously saved template (runs once on mount)
+  useEffect(() => {
+    if (!htmlTemplate) return;
+    const parsed = parseTemplateSalvato(htmlTemplate);
+    if (!parsed) return;
+    if (parsed.sfondoDataUrl) {
+      setSfondoDataUrl(parsed.sfondoDataUrl);
+      setSfondoUrl(parsed.sfondoDataUrl);
+    }
+    if (parsed.elementi.length > 0) setElementi(parsed.elementi);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Track canvas width for accurate font-size preview scaling
   useEffect(() => {
@@ -126,6 +177,7 @@ export default function EditorVisivoAttestato({ onSalva, salvando }: Props) {
 
   function handleSfondo(file: File) {
     setSfondoFile(file);
+    setSfondoDataUrl(null); // new file supersedes any restored data URL
     setSfondoUrl(URL.createObjectURL(file));
   }
 
@@ -177,9 +229,12 @@ export default function EditorVisivoAttestato({ onSalva, salvando }: Props) {
   async function handleSalva() {
     let bgStyle = "background:#fff;";
     if (sfondoFile) {
-      // Compress and embed as base64 data URL so the template is self-contained
+      // New file uploaded: compress and embed
       const base64 = await comprimiSfondo(sfondoFile);
       bgStyle = `background-image:url('${base64}');background-size:cover;background-position:center;`;
+    } else if (sfondoDataUrl) {
+      // Restored from existing template: reuse as-is (already compressed)
+      bgStyle = `background-image:url('${sfondoDataUrl}');background-size:cover;background-position:center;`;
     }
 
     const spans = elementi
@@ -294,7 +349,7 @@ export default function EditorVisivoAttestato({ onSalva, salvando }: Props) {
             <p className="text-sm text-green-800 font-medium">Sfondo: {sfondoFile?.name}</p>
           </div>
           <button
-            onClick={() => { setSfondoUrl(null); setSfondoFile(null); }}
+            onClick={() => { setSfondoUrl(null); setSfondoFile(null); setSfondoDataUrl(null); }}
             className="text-xs text-gray-500 hover:text-red-600 flex items-center gap-1"
           >
             <X className="h-3.5 w-3.5" /> Cambia
