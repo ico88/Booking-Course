@@ -321,9 +321,10 @@ DB_PASS_X="${DB_PASS_X:-${DB_PASS:-}}"
 DB_NAME_X="${DB_NAME_X:-${DB_NAME:-gestione_corsi}}"
 
 if [[ "${DB_HOST_X:-localhost}" == "localhost" || "${DB_HOST_X:-127.0.0.1}" == "127.0.0.1" ]]; then
-  # Crea utente DB se non esiste
+  # Crea utente DB se non esiste, altrimenti aggiorna la password
   if sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='${DB_USER_X}'" | grep -q 1; then
-    ok "Utente DB '${DB_USER_X}' già esistente"
+    sudo -u postgres psql -c "ALTER USER \"${DB_USER_X}\" WITH PASSWORD '${DB_PASS_X}';" >/dev/null \
+      && ok "Utente DB '${DB_USER_X}' già esistente — password aggiornata"
   else
     sudo -u postgres psql -c "CREATE USER \"${DB_USER_X}\" WITH PASSWORD '${DB_PASS_X}';" \
       && ok "Utente DB '${DB_USER_X}' creato"
