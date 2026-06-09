@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/Card";
 
 export default function PaginaNuovoCorso() {
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-3xl mx-auto">
       <Link
         href="/admin/corsi"
         className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-6"

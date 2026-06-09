@@ -13,7 +13,7 @@ export default async function PaginaImpostazioni() {
   }
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-3xl mx-auto">
       <h1 className="text-2xl font-bold text-gray-900 mb-2">
         Impostazioni di sistema
       </h1>

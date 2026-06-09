@@ -35,7 +35,7 @@ export default async function PaginaPagineLegali() {
   }
 
   return (
-    <div className="max-w-4xl">
+    <div className="max-w-4xl mx-auto">
       <h1 className="text-2xl font-bold text-gray-900 mb-2">Pagine Legali</h1>
       <p className="text-gray-500 mb-8">
         Personalizza il contenuto di Privacy Policy, Cookie Policy e Termini e

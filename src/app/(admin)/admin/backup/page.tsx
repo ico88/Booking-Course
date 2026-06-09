@@ -10,7 +10,7 @@ export default async function PaginaBackup() {
   if (!session || session.user.ruolo !== "ADMIN") redirect("/admin");
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-3xl mx-auto">
       <h1 className="text-2xl font-bold text-gray-900 mb-2">Backup</h1>
       <p className="text-gray-500 mb-8">
         Esegui backup manuali del database e dei file, oppure configura il backup

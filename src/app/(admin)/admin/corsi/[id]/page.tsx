@@ -37,7 +37,7 @@ export default async function PaginaModificaCorso({
   if (!corso) notFound();
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <Link
           href="/admin/corsi"
