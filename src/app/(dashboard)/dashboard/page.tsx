@@ -22,7 +22,6 @@ export default async function PaginaDashboard() {
         select: {
           titolo: true,
           dataInizio: true,
-          orario: true,
           luogo: true,
           costo: true,
           attestatoAbilitato: true,
@@ -198,7 +197,6 @@ function CardPrenotazione({
     corso: {
       titolo: string;
       dataInizio: Date;
-      orario: string;
       luogo: string | null;
       costo: unknown;
     };
@@ -232,7 +230,7 @@ function CardPrenotazione({
           )}
         </div>
         <p className="text-sm text-gray-500 mt-0.5">
-          {formatDate(prenotazione.corso.dataInizio)} · {prenotazione.corso.orario}
+          {formatDate(prenotazione.corso.dataInizio)}
           {prenotazione.corso.luogo && ` · ${prenotazione.corso.luogo}`}
         </p>
         <p className="text-xs text-gray-400 mt-0.5">

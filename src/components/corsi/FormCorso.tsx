@@ -14,7 +14,6 @@ type FormData = {
   descrizione: string;
   dataInizio: string;
   dataFine: string;
-  orario: string;
   durata: string;
   luogo: string;
   costo: string;
@@ -30,7 +29,6 @@ interface ValoriIniziali {
   descrizione?: string;
   dataInizio?: string | Date;
   dataFine?: string | Date | null;
-  orario?: string;
   durata?: string;
   luogo?: string;
   costo?: number;
@@ -78,7 +76,6 @@ export default function FormCorso({ corsoId, valoriIniziali, modalita }: Props) 
       dataFine: valoriIniziali?.dataFine
         ? new Date(valoriIniziali.dataFine).toISOString().slice(0, 16)
         : "",
-      orario: valoriIniziali?.orario ?? "",
       durata: valoriIniziali?.durata ?? "",
       luogo: valoriIniziali?.luogo ?? "",
       costo: valoriIniziali?.costo != null ? String(valoriIniziali.costo) : "",
@@ -161,13 +158,7 @@ export default function FormCorso({ corsoId, valoriIniziali, modalita }: Props) 
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Input
-            label="Orario (opzionale per corsi multi-giorno)"
-            placeholder="es. 09:00 - 18:00"
-            {...register("orario")}
-            error={errors.orario?.message}
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
             label="Durata"
             placeholder="es. 8 ore"

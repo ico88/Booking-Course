@@ -102,7 +102,7 @@ export default async function PaginaAdminCorsi() {
                     <p className="text-sm text-gray-700">
                       {formatDate(corso.dataInizio)}
                     </p>
-                    <p className="text-xs text-gray-400">{corso.orario}</p>
+                    {corso.durata && <p className="text-xs text-gray-400">{corso.durata}</p>}
                   </td>
                   <td className="px-4 py-4 hidden lg:table-cell">
                     <div>

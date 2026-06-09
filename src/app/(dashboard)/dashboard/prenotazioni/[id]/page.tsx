@@ -77,8 +77,7 @@ export default async function PaginaPrenotazione({
             {prenotazione.corso.titolo}
           </h1>
           <p className="text-gray-500 mt-1">
-            {formatDate(prenotazione.corso.dataInizio)} ·{" "}
-            {prenotazione.corso.orario}
+            {formatDate(prenotazione.corso.dataInizio)}
             {prenotazione.corso.luogo && ` · ${prenotazione.corso.luogo}`}
           </p>
         </div>

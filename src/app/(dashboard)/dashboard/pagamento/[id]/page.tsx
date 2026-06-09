@@ -25,7 +25,6 @@ export default async function PaginaPagamento({
         select: {
           titolo: true,
           dataInizio: true,
-          orario: true,
           costo: true,
         },
       },

@@ -349,7 +349,6 @@ export async function inviaEmailMarketing(
     descrizione: string;
     dataInizio: Date;
     dataFine: Date | null;
-    orario: string;
     luogo: string | null;
     costo: string;
     postiDisponibili: number;
@@ -433,16 +432,6 @@ export async function inviaEmailMarketing(
                         <tr>
                           <td style="color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;width:40%;">📅 Data</td>
                           <td style="color:#111827;font-weight:bold;font-size:14px;">${dataLabel}</td>
-                        </tr>
-                      </table>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style="padding:16px 20px;border-bottom:1px solid #e2e8f0;">
-                      <table width="100%" cellpadding="0" cellspacing="0">
-                        <tr>
-                          <td style="color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;width:40%;">🕐 Orario</td>
-                          <td style="color:#111827;font-weight:bold;font-size:14px;">${corso.orario}</td>
                         </tr>
                       </table>
                     </td>
@@ -561,7 +550,6 @@ export async function inviaEmailCorsoLead(
     descrizione: string;
     dataInizio: Date;
     dataFine: Date | null;
-    orario: string;
     luogo: string | null;
     costo: { toString(): string };
     postiTotali: number;
@@ -611,12 +599,6 @@ ${immagineHtml}
       <table width="100%"><tr>
         <td style="color:#6b7280;font-size:12px;text-transform:uppercase;width:40%;">📅 Data</td>
         <td style="color:#111827;font-weight:bold;font-size:14px;">${dataLabel}</td>
-      </tr></table>
-    </td></tr>
-    <tr><td style="padding:14px 20px;border-bottom:1px solid #e2e8f0;">
-      <table width="100%"><tr>
-        <td style="color:#6b7280;font-size:12px;text-transform:uppercase;width:40%;">🕐 Orario</td>
-        <td style="color:#111827;font-weight:bold;font-size:14px;">${corso.orario}</td>
       </tr></table>
     </td></tr>
     ${corso.luogo ? `<tr><td style="padding:14px 20px;border-bottom:1px solid #e2e8f0;"><table width="100%"><tr><td style="color:#6b7280;font-size:12px;text-transform:uppercase;width:40%;">📍 Sede</td><td style="color:#111827;font-weight:bold;font-size:14px;">${corso.luogo}</td></tr></table></td></tr>` : ""}

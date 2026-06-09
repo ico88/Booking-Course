@@ -10,7 +10,6 @@ const schemaAggiornamento = z.object({
   descrizione: z.string().min(10).optional(),
   dataInizio: z.string().optional(),
   dataFine: z.string().optional().nullable(),
-  orario: z.string().optional(),
   durata: z.string().optional().nullable(),
   luogo: z.string().optional().nullable(),
   costo: z.number().min(0).optional(),

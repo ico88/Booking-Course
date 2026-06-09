@@ -51,8 +51,8 @@ export default async function PaginaModificaCorso({
 
       {duplicato === "1" && (
         <Alert variant="warning" className="mb-6">
-          <strong>Corso duplicato come bozza.</strong> Aggiorna le date, l'orario
-          e il titolo se necessario, poi pubblica il corso.
+          <strong>Corso duplicato come bozza.</strong> Aggiorna le date e il titolo
+          se necessario, poi pubblica il corso.
         </Alert>
       )}
 
@@ -75,7 +75,6 @@ export default async function PaginaModificaCorso({
               descrizione: corso.descrizione,
               dataInizio: corso.dataInizio,
               dataFine: corso.dataFine,
-              orario: corso.orario,
               durata: corso.durata ?? "",
               luogo: corso.luogo ?? "",
               costo: Number(corso.costo),

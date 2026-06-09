@@ -143,11 +143,13 @@ export default async function PaginaCorso({
                   value={formatDate(corso.dataFine)}
                 />
               )}
-              <InfoRiga
-                icon={<Clock className="h-4 w-4" />}
-                label="Orario"
-                value={`${corso.orario}${corso.durata ? ` (${corso.durata})` : ""}`}
-              />
+              {corso.durata && (
+                <InfoRiga
+                  icon={<Clock className="h-4 w-4" />}
+                  label="Durata"
+                  value={corso.durata}
+                />
+              )}
               {corso.luogo && (
                 <InfoRiga
                   icon={<MapPin className="h-4 w-4" />}

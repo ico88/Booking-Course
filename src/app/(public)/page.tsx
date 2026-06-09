@@ -128,7 +128,6 @@ function CardCorso({
     descrizione: string;
     dataInizio: Date;
     dataFine: Date | null;
-    orario: string;
     durata: string | null;
     luogo: string | null;
     costo: unknown;
@@ -189,10 +188,12 @@ function CardCorso({
             <Calendar className="h-4 w-4 text-gray-400 shrink-0" />
             <span>{formatDate(corso.dataInizio)}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-gray-400 shrink-0" />
-            <span>{corso.orario}{corso.durata ? ` • ${corso.durata}` : ""}</span>
-          </div>
+          {corso.durata && (
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-gray-400 shrink-0" />
+              <span>{corso.durata}</span>
+            </div>
+          )}
           {corso.luogo && (
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-gray-400 shrink-0" />

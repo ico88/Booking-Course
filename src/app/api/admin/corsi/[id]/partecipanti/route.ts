@@ -38,7 +38,7 @@ export async function GET(
       titolo: true,
       dataInizio: true,
       dataFine: true,
-      orario: true,
+      durata: true,
       luogo: true,
       postiTotali: true,
     },
@@ -213,7 +213,7 @@ export async function GET(
   <h1>${esc(corso.titolo)}</h1>
   <div class="meta">
     <span>📅 <strong>${esc(dataCorso)}${corso.dataFine ? " – " + new Intl.DateTimeFormat("it-IT", { day: "2-digit", month: "long", year: "numeric" }).format(corso.dataFine) : ""}</strong></span>
-    <span>🕐 <strong>${esc(corso.orario)}</strong></span>
+    ${corso.durata ? `<span>🕐 <strong>${esc(corso.durata)}</strong></span>` : ""}
     ${corso.luogo ? `<span>📍 <strong>${esc(corso.luogo)}</strong></span>` : ""}
   </div>
 </header>

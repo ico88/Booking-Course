@@ -97,7 +97,7 @@ model Corso {
   descrizione          String   @db.Text
   dataInizio           DateTime
   dataFine             DateTime?
-  orario               String
+  orario               String?
   durata               String?
   luogo                String?
   costo                Decimal  @db.Decimal(10, 2)

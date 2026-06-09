@@ -9,7 +9,6 @@ const schemaCorso = z.object({
   descrizione: z.string().min(10),
   dataInizio: z.string(),
   dataFine: z.string().optional().nullable(),
-  orario: z.string().optional().nullable(),
   durata: z.string().optional().nullable(),
   luogo: z.string().optional().nullable(),
   costo: z.number().min(0),
@@ -35,7 +34,6 @@ export async function GET(request: NextRequest) {
       descrizione: true,
       dataInizio: true,
       dataFine: true,
-      orario: true,
       durata: true,
       luogo: true,
       costo: true,
@@ -66,7 +64,6 @@ export async function POST(request: NextRequest) {
     const corso = await prisma.corso.create({
       data: {
         ...data,
-        orario: data.orario ?? "",
         costo: data.costo,
         dataInizio: new Date(data.dataInizio),
         dataFine: data.dataFine ? new Date(data.dataFine) : null,

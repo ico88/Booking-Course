@@ -60,8 +60,7 @@ export default async function PaginaPrenota({
         <h2 className="font-semibold text-red-900 text-lg">{corso.titolo}</h2>
         <div className="flex flex-wrap gap-4 mt-2 text-sm text-red-700">
           <span>{formatDate(corso.dataInizio)}</span>
-          <span>•</span>
-          <span>{corso.orario}</span>
+          {corso.durata && <><span>•</span><span>{corso.durata}</span></>}
           {corso.luogo && (
             <>
               <span>•</span>

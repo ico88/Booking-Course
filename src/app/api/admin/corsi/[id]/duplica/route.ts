@@ -29,7 +29,7 @@ export async function POST(
       descrizione: originale.descrizione,
       dataInizio: originale.dataInizio,
       dataFine: originale.dataFine,
-      orario: originale.orario,
+
       durata: originale.durata,
       luogo: originale.luogo,
       costo: originale.costo,

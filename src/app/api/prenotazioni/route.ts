@@ -39,7 +39,6 @@ export async function GET(_request: NextRequest) {
         select: {
           titolo: true,
           dataInizio: true,
-          orario: true,
           luogo: true,
           attestatoAbilitato: true,
         },

@@ -60,7 +60,6 @@ export async function POST(
     descrizione: corso.descrizione,
     dataInizio: corso.dataInizio,
     dataFine: corso.dataFine,
-    orario: corso.orario,
     luogo: corso.luogo,
     costo: Number(corso.costo).toFixed(2),
     postiDisponibili: corso.postiTotali - corso.postiOccupati,
