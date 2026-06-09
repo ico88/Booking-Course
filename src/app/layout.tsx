@@ -11,10 +11,6 @@ const geist = Geist({
 });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const logoSetting = await prisma.impostazione
-    .findUnique({ where: { chiave: "logo_url" } })
-    .catch(() => null);
-
   const appNameSetting = await prisma.impostazione
     .findUnique({ where: { chiave: "app_name" } })
     .catch(() => null);
@@ -24,13 +20,6 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: titolo,
     description: "Piattaforma per la gestione e prenotazione di corsi formativi",
-    ...(logoSetting?.valore && {
-      icons: {
-        icon: logoSetting.valore,
-        shortcut: logoSetting.valore,
-        apple: logoSetting.valore,
-      },
-    }),
   };
 }
 
