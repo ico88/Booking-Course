@@ -75,6 +75,17 @@ export async function GET(
 
   let html = sostituisciVariabiliAttestato(template, variabili);
 
+  // Move base64 background-image from inline style to a <style> class
+  // so Chrome's print renderer doesn't silently drop it.
+  const bgMatch = html.match(/background-image:\s*url\(['"]?(data:[^'")\s]+)['"]?\)/);
+  let bgClass = "";
+  if (bgMatch) {
+    bgClass = `.attestato-page{background-image:url('${bgMatch[1]}');background-size:cover;background-position:center;}`;
+    html = html
+      .replace(bgMatch[0], "")
+      .replace(/<div /, '<div class="attestato-page" ');
+  }
+
   if (!html.includes("<html")) {
     html = `<!DOCTYPE html>
 <html lang="it">
@@ -84,6 +95,8 @@ export async function GET(
   <title>Attestato — ${nome} ${cognome}</title>
   <style>
     @page { size: A4 landscape; margin: 0; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+    ${bgClass}
     body { margin: 0; padding: 0; font-family: serif; }
     @media print { .no-print { display: none !important; } }
   </style>

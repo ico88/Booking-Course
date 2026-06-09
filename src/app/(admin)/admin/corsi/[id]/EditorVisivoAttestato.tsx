@@ -248,8 +248,17 @@ export default function EditorVisivoAttestato({ onSalva, salvando, htmlTemplate 
     onSalva(html, null);
   }
 
-  function handleAnteprima() {
+  async function handleAnteprima() {
     if (elementi.length === 0) return;
+
+    // blob: URLs are inaccessible to the browser's print renderer — always use base64.
+    // If we already have a compressed data URL (restored or cached), reuse it;
+    // otherwise compress the newly uploaded file now and cache for next time.
+    let bgDataUrl = sfondoDataUrl;
+    if (!bgDataUrl && sfondoFile) {
+      bgDataUrl = await comprimiSfondo(sfondoFile);
+      setSfondoDataUrl(bgDataUrl);
+    }
 
     const oggi = new Date();
     const valoriEsempio: Record<string, string> = {
@@ -269,10 +278,12 @@ export default function EditorVisivoAttestato({ onSalva, salvando, htmlTemplate 
       codiceAttestato: "ABCD1234",
     };
 
-    // Use the object URL directly for preview (no re-compression needed)
-    const bgStyle = sfondoUrl
-      ? `background-image:url('${sfondoUrl}');background-size:cover;background-position:center;`
-      : "background:#fff;";
+    // Move background-image to a <style> class — inline base64 backgrounds are
+    // sometimes silently dropped by Chrome's print renderer.
+    const bgClass = bgDataUrl
+      ? `.attestato-page{background-image:url('${bgDataUrl}');background-size:cover;background-position:center;}`
+      : "";
+    const bgInline = bgDataUrl ? "" : "background:#fff;";
 
     const spans = elementi
       .map(
@@ -281,7 +292,7 @@ export default function EditorVisivoAttestato({ onSalva, salvando, htmlTemplate 
       )
       .join("\n");
 
-    const divHtml = `<div style="width:297mm;height:210mm;position:relative;${bgStyle}print-color-adjust:exact;-webkit-print-color-adjust:exact;overflow:hidden;">\n${spans}\n</div>`;
+    const divHtml = `<div class="attestato-page" style="width:297mm;height:210mm;position:relative;${bgInline}overflow:hidden;">\n${spans}\n</div>`;
 
     const fullHtml = sostituisciVariabiliAttestato(
       `<!DOCTYPE html>
@@ -291,8 +302,10 @@ export default function EditorVisivoAttestato({ onSalva, salvando, htmlTemplate 
   <title>Anteprima attestato</title>
   <style>
     @page { size: A4 landscape; margin: 0; }
-    body { margin: 0; padding: 0; background: #e5e7eb; display: flex; justify-content: center; padding: 24px; }
-    @media print { body { background: none; padding: 0; } .no-print { display: none !important; } }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+    ${bgClass}
+    body { margin: 0; padding: 24px; background: #e5e7eb; display: flex; justify-content: center; font-family: serif; }
+    @media print { body { background: none; padding: 0; display: block; } .no-print { display: none !important; } }
   </style>
 </head>
 <body>
@@ -313,8 +326,7 @@ export default function EditorVisivoAttestato({ onSalva, salvando, htmlTemplate 
     const blob = new Blob([fullHtml], { type: "text/html" });
     const url = URL.createObjectURL(blob);
     window.open(url, "_blank");
-    // Release the blob URL after the new tab has had time to load it
-    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    setTimeout(() => URL.revokeObjectURL(url), 15_000);
   }
 
   const elSel = elementi.find((el) => el.id === selezionato);
