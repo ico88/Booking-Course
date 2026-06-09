@@ -163,9 +163,8 @@ export default function FormCorso({ corsoId, valoriIniziali, modalita }: Props) 
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Input
-            label="Orario"
+            label="Orario (opzionale per corsi multi-giorno)"
             placeholder="es. 09:00 - 18:00"
-            required
             {...register("orario")}
             error={errors.orario?.message}
           />
