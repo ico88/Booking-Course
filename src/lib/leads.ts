@@ -1,18 +1,8 @@
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
+import { TAG_DEFAULT, parseTags, serializeTags, etichettaTag } from "@/lib/leads-shared";
 
-// ── Tag catalogue ─────────────────────────────────────────────────────────────
-
-export const TAG_DEFAULT: { valore: string; etichetta: string }[] = [
-  { valore: "fulld-sanitario", etichetta: "FULLD Sanitario" },
-  { valore: "fulld-laico", etichetta: "FULLD Laico" },
-  { valore: "msp", etichetta: "MSP" },
-  { valore: "corsi-avanzati", etichetta: "Corsi Avanzati" },
-  { valore: "bls-d", etichetta: "BLS-D" },
-  { valore: "primo-soccorso", etichetta: "Primo Soccorso" },
-  { valore: "disostruzione-pediatrica", etichetta: "Disostruzione Pediatrica" },
-  { valore: "manovre-salva-vita", etichetta: "Manovre Salva Vita" },
-];
+export { TAG_DEFAULT, parseTags, serializeTags, etichettaTag };
 
 export async function getTagsDisponibili(): Promise<{ valore: string; etichetta: string }[]> {
   try {
@@ -20,20 +10,6 @@ export async function getTagsDisponibili(): Promise<{ valore: string; etichetta:
     if (row?.valore) return JSON.parse(row.valore) as { valore: string; etichetta: string }[];
   } catch { /* fallback */ }
   return TAG_DEFAULT;
-}
-
-export function etichettaTag(valore: string, disponibili: { valore: string; etichetta: string }[]): string {
-  return disponibili.find((t) => t.valore === valore)?.etichetta ?? valore;
-}
-
-// ── Serialization ────────────────────────────────────────────────────────────
-
-export function parseTags(json: string): string[] {
-  try { return JSON.parse(json) as string[]; } catch { return []; }
-}
-
-export function serializeTags(tags: string[]): string {
-  return JSON.stringify([...new Set(tags.filter(Boolean))]);
 }
 
 // ── Token ────────────────────────────────────────────────────────────────────

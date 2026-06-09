@@ -7,7 +7,7 @@ import Input from "@/components/ui/Input";
 import Textarea from "@/components/ui/Textarea";
 import Button from "@/components/ui/Button";
 import Alert from "@/components/ui/Alert";
-import { parseTags, serializeTags, TAG_DEFAULT } from "@/lib/leads";
+import { parseTags, serializeTags, TAG_DEFAULT } from "@/lib/leads-shared";
 
 type FormData = {
   titolo: string;
