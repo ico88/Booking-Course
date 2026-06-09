@@ -9,7 +9,7 @@ const schema = z.object({
   nome: z.string().min(2, "Il nome deve avere almeno 2 caratteri"),
   cognome: z.string().min(2, "Il cognome deve avere almeno 2 caratteri"),
   email: z.string().email("Email non valida"),
-  telefono: z.string().optional(),
+  telefono: z.string().nullish(),
   password: z.string().min(8, "La password deve avere almeno 8 caratteri"),
   consensoPrivacy: z.boolean().refine((v) => v === true, {
     message: "È necessario accettare la Privacy Policy per registrarsi",

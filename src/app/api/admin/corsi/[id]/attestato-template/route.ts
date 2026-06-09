@@ -29,14 +29,31 @@ export async function POST(
   const formData = await request.formData();
   const file = formData.get("file") as File | null;
   const abilita = formData.get("abilita") === "true";
+  const htmlTemplate = formData.get("htmlTemplate") as string | null;
 
-  if (!file) {
+  if (!file && !htmlTemplate) {
     // Solo aggiornamento flag senza file
     await prisma.corso.update({
       where: { id },
       data: { attestatoAbilitato: abilita },
     });
     return NextResponse.json({ message: "Impostazione aggiornata" });
+  }
+
+  // Salvataggio template HTML
+  if (htmlTemplate !== null && !file) {
+    await prisma.corso.update({
+      where: { id },
+      data: {
+        attestatoHtmlTemplate: htmlTemplate || null,
+        attestatoAbilitato: abilita,
+      },
+    });
+    return NextResponse.json({ message: "Template HTML salvato" });
+  }
+
+  if (!file) {
+    return NextResponse.json({ error: "Nessun file fornito" }, { status: 400 });
   }
 
   if (file.size > MAX_SIZE) {
@@ -100,6 +117,7 @@ export async function DELETE(
     data: {
       attestatoTemplateUrl: null,
       attestatoNomeFile: null,
+      attestatoHtmlTemplate: null,
       attestatoAbilitato: false,
     },
   });

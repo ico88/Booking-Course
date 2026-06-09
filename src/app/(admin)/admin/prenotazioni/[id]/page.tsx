@@ -104,6 +104,25 @@ export default async function PaginaAdminPrenotazione({
               Attestato
             </h2>
 
+            {/* Template HTML: bottoni genera per ogni partecipante */}
+            {prenotazione.corso.attestatoHtmlTemplate && prenotazione.partecipanti.length > 0 && (
+              <div className="mb-4 p-4 bg-purple-50 border border-purple-200 rounded-xl space-y-2">
+                <p className="text-sm font-medium text-purple-800">Genera da template HTML</p>
+                {prenotazione.partecipanti.map((p) => (
+                  <a
+                    key={p.id}
+                    href={`/api/admin/prenotazioni/${prenotazione.id}/attestato/genera?partecipante=${p.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-600 text-white rounded-lg text-sm hover:bg-purple-700 mr-2"
+                  >
+                    <GraduationCap className="h-4 w-4" />
+                    {p.nome} {p.cognome}
+                  </a>
+                ))}
+              </div>
+            )}
+
             {prenotazione.attestatoEmesso && prenotazione.attestatoUrl ? (
               <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-4">
                 <div>

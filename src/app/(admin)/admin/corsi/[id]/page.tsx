@@ -136,6 +136,7 @@ export default async function PaginaModificaCorso({
             corsoId={corso.id}
             templateAttuale={corso.attestatoTemplateUrl}
             nomeFile={corso.attestatoNomeFile}
+            htmlTemplate={corso.attestatoHtmlTemplate ?? null}
             abilitato={corso.attestatoAbilitato}
           />
         </Card>

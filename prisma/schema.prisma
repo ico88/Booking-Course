@@ -107,10 +107,11 @@ model Corso {
   immagineUrl          String?
   pubblicato           Boolean  @default(false)
   tags                 String   @default("[]")  // JSON: ["fulld-sanitario","msp"]
-  // Attestato: template caricato dalla segreteria (PDF o immagine)
-  attestatoTemplateUrl String?
-  attestatoNomeFile    String?
-  attestatoAbilitato      Boolean   @default(false)
+  // Attestato: template caricato dalla segreteria (PDF o immagine) oppure HTML con variabili
+  attestatoTemplateUrl  String?
+  attestatoNomeFile     String?
+  attestatoHtmlTemplate String?   @db.Text
+  attestatoAbilitato    Boolean   @default(false)
   ultimaNotificaMarketing DateTime?
   ultimaNotificaLeads     DateTime?
   createdAt               DateTime  @default(now())
@@ -185,6 +186,7 @@ model Partecipante {
   cognome        String
   email          String?
   telefono       String?
+  codiceFiscale  String?
 
   prenotazione   Prenotazione @relation(fields: [prenotazioneId], references: [id], onDelete: Cascade)
 
