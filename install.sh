@@ -370,13 +370,31 @@ fi
 # =============================================================================
 step "Build produzione (npm run build)"
 
+# Rimuove cache e build precedenti per evitare bus error da file corrotti
+info "Pulizia cache build precedente..."
+rm -rf "$APP_DIR/.next"
+sudo -u "$APP_USER" npm cache clean --force 2>/dev/null || true
+
+# Correggi i permessi su tutta la directory app (potrebbero essersi rotti
+# se un passo precedente ha girato come root)
+chown -R "$APP_USER":"$APP_USER" "$APP_DIR"
+
 info "Questo passaggio può richiedere 3-8 minuti (RAM: ${RAM_MB} MB, swap: ${SWAP_MB} MB)..."
 sudo -u "$APP_USER" \
   NODE_OPTIONS="--max-old-space-size=${NODE_MEM}" \
-  npm run build 2>&1 | tail -15
+  npm run build 2>&1
 
-if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
-  err "Build fallita. Controlla i log sopra. Causa più comune: RAM insufficiente (attuale: ${TOTAL_MB} MB totale)."
+BUILD_EXIT=${PIPESTATUS[0]}
+if [[ $BUILD_EXIT -ne 0 ]]; then
+  echo ""
+  warn "Build fallita (exit ${BUILD_EXIT}). Tenativo con worker singolo..."
+  sudo -u "$APP_USER" \
+    NODE_OPTIONS="--max-old-space-size=${NODE_MEM}" \
+    NEXT_TELEMETRY_DISABLED=1 \
+    npm run build -- --no-lint 2>&1
+  if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
+    err "Build fallita. Controlla i log sopra."
+  fi
 fi
 ok "Build completata"
 
