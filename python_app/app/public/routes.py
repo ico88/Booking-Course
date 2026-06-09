@@ -1,39 +1,22 @@
 import secrets
+import logging
 from datetime import datetime, timezone, timedelta
-
-from flask import (
-    Blueprint, render_template, redirect, url_for,
-    request, flash, current_app, abort,
-)
+from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app, abort
 from flask_login import current_user, login_required
-
 from ..models import db, Corso, Prenotazione, Partecipante, Utente, LeadMarketing, Impostazione, StatoPrenotazione, MetodoPagamento
-from ..email_service import (
-    invia_email_prenotazione, invia_email_notifica_segreteria,
-    invia_email_verifica_lead,
-)
+from ..email_service import invia_email_prenotazione, invia_email_notifica_segreteria, invia_email_verifica_lead
+from ..utils import validate_email_address, verify_unsubscribe_token, validate_int_range, sanitize_html
+from .. import limiter
 
 public_bp = Blueprint("public", __name__)
+logger = logging.getLogger(__name__)
 
-
-# ---------------------------------------------------------------------------
-# Homepage
-# ---------------------------------------------------------------------------
 
 @public_bp.route("/")
 def index():
-    corsi = (
-        Corso.query
-        .filter_by(pubblicato=True)
-        .order_by(Corso.data_inizio.asc())
-        .all()
-    )
+    corsi = Corso.query.filter_by(pubblicato=True).order_by(Corso.data_inizio.asc()).all()
     return render_template("public/index.html", corsi=corsi)
 
-
-# ---------------------------------------------------------------------------
-# Corso dettaglio
-# ---------------------------------------------------------------------------
 
 @public_bp.route("/corsi/<string:corso_id>")
 def corso_dettaglio(corso_id):
@@ -41,28 +24,25 @@ def corso_dettaglio(corso_id):
     return render_template("public/corso_dettaglio.html", corso=corso)
 
 
-# ---------------------------------------------------------------------------
-# Prenota corso
-# ---------------------------------------------------------------------------
-
 @public_bp.route("/corsi/<string:corso_id>/prenota", methods=["GET", "POST"])
 @login_required
+@limiter.limit("10 per hour")
 def prenota(corso_id):
     corso = Corso.query.filter_by(id=corso_id, pubblicato=True).first_or_404()
 
     if request.method == "POST":
-        numero_posti = int(request.form.get("numero_posti", 1))
-        note = request.form.get("note", "").strip()
-
-        # Validate seats
-        if numero_posti < 1:
+        max_posti = corso.posti_disponibili if corso.posti_totali else 50
+        numero_posti = validate_int_range(request.form.get("numero_posti", 1), 1, max_posti)
+        if numero_posti is None:
             flash("Numero posti non valido.", "error")
             return render_template("public/prenota.html", corso=corso)
-        if corso.posti_disponibili < numero_posti:
+
+        note = (request.form.get("note") or "").strip()[:1000]
+
+        if corso.posti_totali and corso.posti_disponibili < numero_posti:
             flash("Posti insufficienti disponibili.", "error")
             return render_template("public/prenota.html", corso=corso)
 
-        # Check existing active booking
         existing = Prenotazione.query.filter(
             Prenotazione.utente_id == current_user.id,
             Prenotazione.corso_id == corso_id,
@@ -73,31 +53,26 @@ def prenota(corso_id):
             return redirect(url_for("dashboard.prenotazione_dettaglio", prenotazione_id=existing.id))
 
         scadenza = datetime.now(timezone.utc) + timedelta(hours=corso.timeout_pagamento_ore or 24)
-
         prenotazione = Prenotazione(
-            utente_id=current_user.id,
-            corso_id=corso_id,
-            numero_posti=numero_posti,
-            note=note,
-            scadenza_pagamento=scadenza,
-            stato=StatoPrenotazione.IN_ATTESA_PAGAMENTO,
+            utente_id=current_user.id, corso_id=corso_id, numero_posti=numero_posti,
+            note=note, scadenza_pagamento=scadenza, stato=StatoPrenotazione.IN_ATTESA_PAGAMENTO,
         )
         db.session.add(prenotazione)
         corso.posti_occupati = (corso.posti_occupati or 0) + numero_posti
         db.session.commit()
 
-        # Partecipanti
         for i in range(numero_posti):
-            nome_p = request.form.get(f"partecipante_{i}_nome", "").strip()
-            cognome_p = request.form.get(f"partecipante_{i}_cognome", "").strip()
+            nome_p = (request.form.get(f"partecipante_{i}_nome") or "").strip()[:100]
+            cognome_p = (request.form.get(f"partecipante_{i}_cognome") or "").strip()[:100]
+            email_p = validate_email_address((request.form.get(f"partecipante_{i}_email") or "").strip()) or ""
             if nome_p or cognome_p:
                 p = Partecipante(
                     prenotazione_id=prenotazione.id,
                     nome=nome_p or current_user.nome,
                     cognome=cognome_p or current_user.cognome,
-                    email=request.form.get(f"partecipante_{i}_email", "").strip(),
-                    telefono=request.form.get(f"partecipante_{i}_telefono", "").strip(),
-                    codice_fiscale=request.form.get(f"partecipante_{i}_cf", "").strip(),
+                    email=email_p,
+                    telefono=(request.form.get(f"partecipante_{i}_telefono") or "").strip()[:30],
+                    codice_fiscale=(request.form.get(f"partecipante_{i}_cf") or "").strip()[:20].upper(),
                 )
                 db.session.add(p)
         db.session.commit()
@@ -108,8 +83,8 @@ def prenota(corso_id):
                 f"Nuova prenotazione - {corso.titolo}",
                 f"{current_user.nome_completo} ha prenotato {numero_posti} posto/i per {corso.titolo}.",
             )
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.error("Errore email prenotazione: %s", exc)
 
         flash("Prenotazione effettuata con successo!", "success")
         return redirect(url_for("dashboard.pagamento", prenotazione_id=prenotazione.id))
@@ -117,28 +92,23 @@ def prenota(corso_id):
     return render_template("public/prenota.html", corso=corso)
 
 
-# ---------------------------------------------------------------------------
-# Marketing - notifiche corsi
-# ---------------------------------------------------------------------------
-
 @public_bp.route("/notifiche-corsi", methods=["GET", "POST"])
+@limiter.limit("10 per hour")
 def notifiche_corsi():
     if request.method == "POST":
-        email = request.form.get("email", "").strip().lower()
-        nome = request.form.get("nome", "").strip()
-        cognome = request.form.get("cognome", "").strip()
-
-        if not email or "@" not in email:
+        email = validate_email_address((request.form.get("email") or "").strip())
+        if not email:
             flash("Email non valida.", "error")
             return render_template("public/notifiche_corsi.html")
+
+        nome = (request.form.get("nome") or "").strip()[:100]
+        cognome = (request.form.get("cognome") or "").strip()[:100]
 
         lead = LeadMarketing.query.filter_by(email=email).first()
         if not lead:
             token = secrets.token_urlsafe(32)
             lead = LeadMarketing(
-                email=email,
-                nome=nome,
-                cognome=cognome,
+                email=email, nome=nome, cognome=cognome,
                 token_verifica=token,
                 token_scadenza=datetime.now(timezone.utc) + timedelta(days=7),
             )
@@ -147,8 +117,9 @@ def notifiche_corsi():
             verifica_url = f"{current_app.config['APP_URL']}/conferma-iscrizione?token={token}"
             try:
                 invia_email_verifica_lead(lead, verifica_url)
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.error("Errore email verifica lead: %s", exc)
+
         flash("Controlla la tua email per confermare l'iscrizione.", "info")
         return redirect(url_for("public.index"))
 
@@ -157,9 +128,9 @@ def notifiche_corsi():
 
 @public_bp.route("/conferma-iscrizione")
 def conferma_iscrizione():
-    token = request.args.get("token")
+    token = request.args.get("token") or ""
     lead = LeadMarketing.query.filter_by(token_verifica=token).first()
-    if not lead or not lead.token_scadenza or lead.token_scadenza < datetime.now(timezone.utc):
+    if not token or not lead or not lead.token_scadenza or lead.token_scadenza < datetime.now(timezone.utc):
         flash("Link non valido o scaduto.", "error")
         return redirect(url_for("public.index"))
     lead.verificato = True
@@ -172,34 +143,34 @@ def conferma_iscrizione():
 
 @public_bp.route("/disiscrivi")
 def disiscrivi():
-    email = request.args.get("email", "").strip().lower()
-    token = request.args.get("token", "")
+    email = (request.args.get("email") or "").strip().lower()
+    token = request.args.get("token") or ""
+    secret = current_app.config.get("SECRET_KEY", "")
+
+    if not verify_unsubscribe_token(email, token, secret):
+        logger.warning("Tentativo disiscrizione con token non valido per %s", email)
+        return render_template("public/disiscrivi.html", unsubscribed=False)
+
     lead = LeadMarketing.query.filter_by(email=email).first()
-    unsubscribed = False
     if lead:
         lead.attivo = False
         db.session.commit()
-        unsubscribed = True
-    return render_template("public/disiscrivi.html", unsubscribed=unsubscribed)
+    return render_template("public/disiscrivi.html", unsubscribed=bool(lead))
 
-
-# ---------------------------------------------------------------------------
-# Pagine legali
-# ---------------------------------------------------------------------------
 
 @public_bp.route("/privacy-policy")
 def privacy_policy():
-    content = Impostazione.get("pagina_privacy") or "<p>Privacy policy non ancora configurata.</p>"
+    content = sanitize_html(Impostazione.get("pagina_privacy") or "<p>Privacy policy non ancora configurata.</p>")
     return render_template("public/pagina_legale.html", titolo="Privacy Policy", content=content)
 
 
 @public_bp.route("/cookie-policy")
 def cookie_policy():
-    content = Impostazione.get("pagina_cookie") or "<p>Cookie policy non ancora configurata.</p>"
+    content = sanitize_html(Impostazione.get("pagina_cookie") or "<p>Cookie policy non ancora configurata.</p>")
     return render_template("public/pagina_legale.html", titolo="Cookie Policy", content=content)
 
 
 @public_bp.route("/termini-condizioni")
 def termini_condizioni():
-    content = Impostazione.get("pagina_termini") or "<p>Termini e condizioni non ancora configurati.</p>"
+    content = sanitize_html(Impostazione.get("pagina_termini") or "<p>Termini e condizioni non ancora configurati.</p>")
     return render_template("public/pagina_legale.html", titolo="Termini e Condizioni", content=content)

@@ -1,13 +1,18 @@
 import os
-from flask import Flask
+import logging
+from flask import Flask, request
 from flask_login import LoginManager
 from flask_migrate import Migrate
+from flask_wtf.csrf import CSRFProtect
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from .models import db, Utente
 from config import config
 
-
 login_manager = LoginManager()
 migrate = Migrate()
+csrf = CSRFProtect()
+limiter = Limiter(key_func=get_remote_address, default_limits=[], storage_uri="memory://")
 
 
 def create_app(config_name=None):
@@ -19,8 +24,13 @@ def create_app(config_name=None):
 
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
+    if not app.debug:
+        logging.basicConfig(level=logging.INFO)
+
     db.init_app(app)
     migrate.init_app(app, db)
+    csrf.init_app(app)
+    limiter.init_app(app)
     login_manager.init_app(app)
     login_manager.login_view = "auth.login"
     login_manager.login_message = "Accedi per continuare."
@@ -30,7 +40,6 @@ def create_app(config_name=None):
     def load_user(user_id):
         return Utente.query.get(user_id)
 
-    # Blueprints
     from .auth.routes import auth_bp
     from .public.routes import public_bp
     from .dashboard.routes import dashboard_bp
@@ -43,7 +52,32 @@ def create_app(config_name=None):
     app.register_blueprint(admin_bp)
     app.register_blueprint(api_bp)
 
-    # Jinja globals
+    # API uses JSON + login_required, exempt from CSRF cookie check
+    csrf.exempt(api_bp)
+
+    @app.after_request
+    def set_security_headers(response):
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        if request.is_secure or not app.debug:
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        csp = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' cdn.tailwindcss.com js.stripe.com "
+            "www.paypal.com www.paypalobjects.com; "
+            "style-src 'self' 'unsafe-inline' fonts.googleapis.com cdn.tailwindcss.com; "
+            "font-src 'self' fonts.gstatic.com; "
+            "img-src 'self' data: https:; "
+            "frame-src js.stripe.com www.paypal.com; "
+            "connect-src 'self' api.stripe.com www.paypal.com "
+            "api-m.paypal.com api-m.sandbox.paypal.com;"
+        )
+        response.headers["Content-Security-Policy"] = csp
+        return response
+
     from .utils import format_currency, format_date, format_datetime
     app.jinja_env.globals["format_currency"] = format_currency
     app.jinja_env.globals["format_date"] = format_date
@@ -55,7 +89,6 @@ def create_app(config_name=None):
         try:
             app_name = Impostazione.get("app_name") or app.config.get("APP_NAME", "Gestione Corsi")
             logo_url = Impostazione.get("logo_url")
-            # For marketing modal
             try:
                 corsi_pubblicati = Corso.query.filter_by(pubblicato=True).order_by(Corso.data_inizio.asc()).all()
             except Exception:
