@@ -30,7 +30,7 @@ export default async function PaginaDatiPersonali() {
   if (!utente) redirect("/auth/login");
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-2xl mx-auto">
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-1">
           <Shield className="h-6 w-6 text-red-600" />

@@ -55,7 +55,7 @@ export default async function PaginaPrenotazione({
     Number(prenotazione.corso.costo) * prenotazione.numeroPosti;
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-3xl mx-auto">
       <Link
         href="/dashboard"
         className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-6"
