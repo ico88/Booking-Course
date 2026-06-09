@@ -7,7 +7,7 @@ import {
   formatCurrency,
   STATI_PRENOTAZIONE,
 } from "@/lib/utils";
-import { ArrowLeft, Download, Users, GraduationCap, Eye } from "lucide-react";
+import { ArrowLeft, Download, Users, GraduationCap } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import AzioniPrenotazione from "./AzioniPrenotazione";
 import EmettiAttestato from "./EmettiAttestato";
@@ -104,52 +104,25 @@ export default async function PaginaAdminPrenotazione({
               Attestato
             </h2>
 
-            {/* Anteprima attestato HTML per ogni partecipante */}
-            {prenotazione.corso.attestatoHtmlTemplate && prenotazione.partecipanti.length > 0 && (
-              <div className="mb-4 p-4 bg-gray-50 border border-gray-200 rounded-xl">
-                <div className="flex items-center gap-2 mb-3">
-                  <Eye className="h-4 w-4 text-gray-500" />
-                  <p className="text-sm font-semibold text-gray-700">Anteprima attestato</p>
-                  <span className="text-xs text-gray-400 ml-1">— dati reali del partecipante, non emette</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {prenotazione.partecipanti.map((p) => (
-                    <a
-                      key={p.id}
-                      href={`/api/admin/prenotazioni/${prenotazione.id}/attestato/genera?partecipante=${p.id}&pdf=1`}
-                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-100 transition-colors"
-                    >
-                      <Eye className="h-3.5 w-3.5" />
-                      {p.nome} {p.cognome}
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {prenotazione.attestatoEmesso && (prenotazione.attestatoUrl || prenotazione.corso.attestatoHtmlTemplate) && (
+            {prenotazione.attestatoEmesso && prenotazione.attestatoUrl && (
               <div className="mb-4 flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-4">
                 <div>
                   <p className="text-sm font-medium text-green-800">
                     Attestato emesso il {formatDate(prenotazione.attestatoEmessoAt!)}
                   </p>
-                  {prenotazione.attestatoUrl && !prenotazione.corso.attestatoHtmlTemplate && (
-                    <a
-                      href={prenotazione.attestatoUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-green-700 hover:underline mt-1"
-                    >
-                      <Download className="h-3 w-3" /> Scarica file
-                    </a>
-                  )}
+                  <a
+                    href={prenotazione.attestatoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs text-green-700 hover:underline mt-1"
+                  >
+                    <Download className="h-3 w-3" /> Scarica file
+                  </a>
                 </div>
               </div>
             )}
             <EmettiAttestato
               prenotazioneId={prenotazione.id}
-              hasTemplate={!!prenotazione.corso.attestatoTemplateUrl}
-              hasHtmlTemplate={!!prenotazione.corso.attestatoHtmlTemplate}
               giaEmesso={prenotazione.attestatoEmesso}
             />
           </Card>

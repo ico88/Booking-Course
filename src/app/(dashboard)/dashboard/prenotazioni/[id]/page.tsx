@@ -91,7 +91,7 @@ export default async function PaginaPrenotazione({
 
       <div className="grid gap-4">
         {/* Attestato */}
-        {prenotazione.attestatoEmesso && (prenotazione.attestatoUrl || prenotazione.corso.attestatoHtmlTemplate) && (
+        {prenotazione.attestatoEmesso && prenotazione.attestatoUrl && (
           <Card className="border-purple-200 bg-purple-50">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -103,31 +103,16 @@ export default async function PaginaPrenotazione({
                   </p>
                 </div>
               </div>
-              {prenotazione.corso.attestatoHtmlTemplate ? (
-                <div className="flex flex-col gap-2 items-end">
-                  {prenotazione.partecipanti.map((p) => (
-                    <a
-                      key={p.id}
-                      href={`/api/prenotazioni/${prenotazione.id}/attestato/genera?partecipante=${p.id}&pdf=1`}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
-                    >
-                      <Download className="h-4 w-4" />
-                      {prenotazione.partecipanti.length > 1 ? `${p.nome} ${p.cognome}` : "Scarica PDF"}
-                    </a>
-                  ))}
-                </div>
-              ) : (
-                <a
-                  href={prenotazione.attestatoUrl!}
-                  download
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
-                >
-                  <Download className="h-4 w-4" />
-                  Scarica
-                </a>
-              )}
+              <a
+                href={prenotazione.attestatoUrl}
+                download
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
+              >
+                <Download className="h-4 w-4" />
+                Scarica attestato
+              </a>
             </div>
           </Card>
         )}
