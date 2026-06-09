@@ -3,8 +3,6 @@ import type { NextConfig } from "next";
 const isDev = process.env.NODE_ENV === "development";
 
 const nextConfig: NextConfig = {
-  // Prevent webpack from trying to bundle native-binary packages
-  serverExternalPackages: ["puppeteer", "puppeteer-core"],
   experimental: {
     serverActions: {
       bodySizeLimit: "20mb",
