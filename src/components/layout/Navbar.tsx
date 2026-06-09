@@ -48,7 +48,7 @@ export default function Navbar({ logoUrl }: { logoUrl?: string | null } = {}) {
 
             {session ? (
               <>
-                {session.user.ruolo === "SEGRETERIA" ? (
+                {["ADMIN", "SEGRETERIA"].includes(session.user.ruolo) ? (
                   <Link
                     href="/admin"
                     className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
@@ -132,7 +132,7 @@ export default function Navbar({ logoUrl }: { logoUrl?: string | null } = {}) {
             </Link>
             {session ? (
               <>
-                {session.user.ruolo === "SEGRETERIA" ? (
+                {["ADMIN", "SEGRETERIA"].includes(session.user.ruolo) ? (
                   <Link
                     href="/admin"
                     className="block px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100"
