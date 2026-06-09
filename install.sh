@@ -383,27 +383,48 @@ fi
 # =============================================================================
 step "Build produzione (npm run build)"
 
-# Rimuove cache e build precedenti per evitare bus error da file corrotti
+# Pulizia residui
 info "Pulizia cache build precedente..."
 rm -rf "$APP_DIR/.next"
 sudo -u "$APP_USER" npm cache clean --force 2>/dev/null || true
-
-# Correggi i permessi su tutta la directory app (potrebbero essersi rotti
-# se un passo precedente ha girato come root)
 chown -R "$APP_USER":"$APP_USER" "$APP_DIR"
 
 # Rigenera il client Prisma per allineare i tipi TypeScript allo schema attuale
 info "Rigenerazione client Prisma..."
 sudo -u "$APP_USER" npx prisma generate 2>&1 | tail -3
 
-info "Questo passaggio può richiedere 5-10 minuti (RAM: ${RAM_MB} MB, swap: ${SWAP_MB} MB)..."
-info "Bundler: Webpack (stabile su VPS — Turbopack disabilitato)"
+# ── Diagnosi SWC ─────────────────────────────────────────────────────────────
+# Il binario SWC nativo può causare bus error su alcune VPS (es. CPU virtuale
+# con set di istruzioni limitato). Proviamo a caricarlo e a chiamarlo: se crasha
+# (SIGBUS → exit 135, timeout → exit 124) attiviamo automaticamente la modalità
+# WASM che funziona su qualsiasi hardware.
+info "Verifica compatibilità SWC..."
+SWC_EXIT=0
+timeout 20 sudo -u "$APP_USER" node --max-old-space-size=256 -e "
+const swc = require('./node_modules/next/dist/build/swc');
+swc.loadBindings()
+  .then(b => b.transform('const x = 1;', {jsc:{parser:{syntax:'ecmascript'}}}))
+  .then(() => process.exit(0))
+  .catch(() => process.exit(1));
+" >/dev/null 2>&1 || SWC_EXIT=$?
+
+if [[ $SWC_EXIT -ne 0 ]]; then
+  warn "SWC nativo incompatibile (exit: ${SWC_EXIT})."
+  warn "Attivazione WASM SWC — download automatico ~12 MB, build più lenta ma funzionante."
+  SWC_ENV="NEXT_TEST_WASM=1"
+  ok "WASM mode attivato"
+else
+  ok "SWC nativo OK"
+  SWC_ENV=""
+fi
+
+info "Build in corso (5-15 minuti, RAM: ${RAM_MB} MB)..."
+info "Bundler: Webpack (Turbopack disabilitato per stabilità su VPS)"
 sudo -u "$APP_USER" \
-  NODE_OPTIONS="--max-old-space-size=${NODE_MEM}" \
-  NEXT_TELEMETRY_DISABLED=1 \
+  env NEXT_TELEMETRY_DISABLED=1 $SWC_ENV \
   npm run build 2>&1
 
-BUILD_EXIT=${PIPESTATUS[0]}
+BUILD_EXIT=$?
 if [[ $BUILD_EXIT -ne 0 ]]; then
   err "Build fallita (exit ${BUILD_EXIT}). Controlla i log sopra."
 fi
