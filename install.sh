@@ -379,22 +379,20 @@ sudo -u "$APP_USER" npm cache clean --force 2>/dev/null || true
 # se un passo precedente ha girato come root)
 chown -R "$APP_USER":"$APP_USER" "$APP_DIR"
 
-info "Questo passaggio può richiedere 3-8 minuti (RAM: ${RAM_MB} MB, swap: ${SWAP_MB} MB)..."
+# Rigenera il client Prisma per allineare i tipi TypeScript allo schema attuale
+info "Rigenerazione client Prisma..."
+sudo -u "$APP_USER" npx prisma generate 2>&1 | tail -3
+
+info "Questo passaggio può richiedere 5-10 minuti (RAM: ${RAM_MB} MB, swap: ${SWAP_MB} MB)..."
+info "Bundler: Webpack (stabile su VPS — Turbopack disabilitato)"
 sudo -u "$APP_USER" \
   NODE_OPTIONS="--max-old-space-size=${NODE_MEM}" \
+  NEXT_TELEMETRY_DISABLED=1 \
   npm run build 2>&1
 
 BUILD_EXIT=${PIPESTATUS[0]}
 if [[ $BUILD_EXIT -ne 0 ]]; then
-  echo ""
-  warn "Build fallita (exit ${BUILD_EXIT}). Tenativo con worker singolo..."
-  sudo -u "$APP_USER" \
-    NODE_OPTIONS="--max-old-space-size=${NODE_MEM}" \
-    NEXT_TELEMETRY_DISABLED=1 \
-    npm run build -- --no-lint 2>&1
-  if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
-    err "Build fallita. Controlla i log sopra."
-  fi
+  err "Build fallita (exit ${BUILD_EXIT}). Controlla i log sopra."
 fi
 ok "Build completata"
 
