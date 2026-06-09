@@ -14,7 +14,7 @@ const schemaPartecipante = z.object({
   cognome: z.string().min(1, "Cognome richiesto"),
   email: z.string().email("Email non valida"),
   telefono: z.string().min(1, "Telefono richiesto"),
-  codiceFiscale: z.string().nullish(),
+  codiceFiscale: z.string().min(1, "Codice fiscale richiesto"),
 });
 
 const schemaPrenotazione = z.object({

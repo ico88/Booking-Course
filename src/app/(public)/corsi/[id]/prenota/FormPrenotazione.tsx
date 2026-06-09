@@ -16,7 +16,7 @@ const schemaPartecipante = z.object({
   cognome: z.string().min(1, "Cognome richiesto"),
   email: z.string().email("Email non valida"),
   telefono: z.string().min(1, "Telefono richiesto"),
-  codiceFiscale: z.string().optional(),
+  codiceFiscale: z.string().min(16, "Codice fiscale richiesto").max(16, "Codice fiscale non valido"),
 });
 
 const schema = z.object({
@@ -169,6 +169,15 @@ export default function FormPrenotazione({
                   error={errors.partecipanti?.[index]?.cognome?.message}
                 />
                 <Input
+                  label="Codice Fiscale"
+                  required
+                  placeholder="RSSMRA80A01H501U"
+                  {...register(`partecipanti.${index}.codiceFiscale`, {
+                    setValueAs: (v: string) => v?.toUpperCase(),
+                  })}
+                  error={errors.partecipanti?.[index]?.codiceFiscale?.message}
+                />
+                <Input
                   label="Email"
                   type="email"
                   required
@@ -181,15 +190,6 @@ export default function FormPrenotazione({
                   required
                   {...register(`partecipanti.${index}.telefono`)}
                   error={errors.partecipanti?.[index]?.telefono?.message}
-                />
-                <Input
-                  label="Codice Fiscale"
-                  placeholder="RSSMRA80A01H501U"
-                  className="uppercase"
-                  {...register(`partecipanti.${index}.codiceFiscale`, {
-                    setValueAs: (v: string) => v?.toUpperCase(),
-                  })}
-                  error={errors.partecipanti?.[index]?.codiceFiscale?.message}
                 />
               </div>
             </div>
