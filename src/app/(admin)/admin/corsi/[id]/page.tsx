@@ -1,13 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Send } from "lucide-react";
+import { ArrowLeft, Send, Users } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import Alert from "@/components/ui/Alert";
 import FormCorso from "@/components/corsi/FormCorso";
 import UploadTemplateAttestato from "./UploadTemplateAttestato";
 import DuplicaCorsoButton from "../DuplicaCorsoButton";
 import NotificaMarketingButton from "./NotificaMarketingButton";
+import ElencoPartecipantiButton from "./ElencoPartecipantiButton";
 
 export default async function PaginaModificaCorso({
   params,
@@ -19,9 +20,17 @@ export default async function PaginaModificaCorso({
   const { id } = await params;
   const { duplicato } = await searchParams;
 
-  const [corso, contattiMarketing] = await Promise.all([
+  const [corso, contattiMarketing, statPartecipanti] = await Promise.all([
     prisma.corso.findUnique({ where: { id } }),
     prisma.utente.count({ where: { consensoMarketing: true, ruolo: "UTENTE" } }),
+    prisma.partecipante.count({
+      where: {
+        prenotazione: {
+          corsoId: id,
+          stato: { in: ["CONFERMATA", "PAGAMENTO_CARICATO"] },
+        },
+      },
+    }),
   ]);
 
   if (!corso) notFound();
@@ -95,6 +104,22 @@ export default async function PaginaModificaCorso({
             ultimaNotifica={corso.ultimaNotificaMarketing}
             pubblicato={corso.pubblicato}
           />
+        </Card>
+
+        <Card>
+          <div className="flex items-start justify-between gap-4 mb-1">
+            <div className="flex items-center gap-3">
+              <Users className="h-5 w-5 text-red-600 shrink-0" />
+              <h2 className="text-lg font-semibold text-gray-900">Elenco partecipanti</h2>
+            </div>
+            <span className="text-sm font-semibold text-red-600 bg-red-50 border border-red-100 rounded-full px-3 py-0.5 shrink-0">
+              {statPartecipanti} partecipanti
+            </span>
+          </div>
+          <p className="text-sm text-gray-500 mb-4">
+            Genera l&apos;elenco completo dei partecipanti confermati. Puoi stamparlo o scaricarlo in formato CSV per Excel.
+          </p>
+          <ElencoPartecipantiButton corsoId={corso.id} totalePartecipanti={statPartecipanti} />
         </Card>
 
         <Card>
