@@ -48,12 +48,16 @@ def format_currency(value) -> str:
         return "€ 0,00"
 
 
+_MESI_IT = ["", "gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno",
+            "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"]
+
+
 def format_date(dt: Optional[datetime]) -> str:
     if not dt:
         return ""
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
-    return dt.strftime("%-d %B %Y").lower().capitalize()
+    return f"{dt.day} {_MESI_IT[dt.month]} {dt.year}"
 
 
 def format_datetime(dt: Optional[datetime]) -> str:
@@ -61,7 +65,7 @@ def format_datetime(dt: Optional[datetime]) -> str:
         return ""
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
-    return dt.strftime("%-d %B %Y, %H:%M").lower().capitalize()
+    return f"{dt.day} {_MESI_IT[dt.month]} {dt.year}, {dt.strftime('%H:%M')}"
 
 
 def format_date_short(dt: Optional[datetime]) -> str:
