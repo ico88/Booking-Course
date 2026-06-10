@@ -1,70 +1,161 @@
 {% extends "admin/base_admin.html" %}
-{% block title %}Prenotazione{% endblock %}
+{% block title %}Prenotazione — {{ prenotazione.corso.titolo }}{% endblock %}
 
 {% block admin_content %}
 {% set p = prenotazione %}
-<div class="mb-4"><a href="{{ url_for('admin.prenotazioni') }}" class="text-sm text-blue-600 hover:underline">← Prenotazioni</a></div>
-<div class="flex items-start justify-between mb-6">
+
+<div class="mb-4">
+  <a href="{{ url_for('admin.prenotazioni') }}" class="text-sm text-blue-600 hover:underline">← Prenotazioni</a>
+</div>
+
+<div class="flex items-start justify-between mb-6 gap-4">
   <div>
     <h1 class="text-2xl font-bold">{{ p.corso.titolo }}</h1>
     <div class="text-gray-500 mt-1">{{ p.utente.nome_completo }} — {{ p.utente.email }}</div>
   </div>
-  {% set color_map = {'CONFERMATA': 'green', 'IN_ATTESA_PAGAMENTO': 'yellow', 'PAGAMENTO_CARICATO': 'blue', 'ANNULLATA': 'red', 'SCADUTA': 'gray'} %}
-  {% set color = color_map.get(p.stato.value, 'gray') %}
-  <span class="px-3 py-1 rounded-full text-sm bg-{{ color }}-100 text-{{ color }}-700 font-medium">{{ p.stato_label }}</span>
+  {% set badge_map = {
+    'CONFERMATA': ('bg-green-100 text-green-700', 'Confermata'),
+    'IN_ATTESA_PAGAMENTO': ('bg-amber-100 text-amber-700', 'In attesa di pagamento'),
+    'PAGAMENTO_CARICATO': ('bg-blue-100 text-blue-700', 'Ricevuta caricata'),
+    'ANNULLATA': ('bg-red-100 text-red-700', 'Annullata'),
+    'SCADUTA': ('bg-gray-100 text-gray-600', 'Scaduta'),
+  } %}
+  {% set bcls, blbl = badge_map.get(p.stato.value, ('bg-gray-100 text-gray-600', p.stato.value)) %}
+  <span class="px-3 py-1 rounded-full text-sm font-medium {{ bcls }} shrink-0">{{ blbl }}</span>
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
   <div class="lg:col-span-2 space-y-5">
 
-    {# Azioni #}
+    {# ── Azioni ── #}
     <div class="bg-white border border-gray-200 rounded-xl p-5">
       <h3 class="font-semibold mb-3">Azioni</h3>
       <div class="flex flex-wrap gap-2">
+
+        {# Conferma — solo se in attesa #}
         {% if p.stato.value in ('IN_ATTESA_PAGAMENTO', 'PAGAMENTO_CARICATO') %}
         <form method="POST" action="{{ url_for('admin.prenotazione_conferma', prenotazione_id=p.id) }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700">✓ Conferma</button>
         </form>
         {% endif %}
-        {% if p.stato.value not in ('ANNULLATA', 'SCADUTA') %}
-        <form method="POST" action="{{ url_for('admin.prenotazione_annulla', prenotazione_id=p.id) }}" onsubmit="return confirm('Annullare la prenotazione?')">
+
+        {# Annulla — nascosto se attestato già emesso #}
+        {% if p.stato.value not in ('ANNULLATA', 'SCADUTA') and not p.attestato_emesso %}
+        <form method="POST" action="{{ url_for('admin.prenotazione_annulla', prenotazione_id=p.id) }}"
+              onsubmit="return confirm('Annullare la prenotazione?')">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button class="bg-red-50 text-red-700 border border-red-200 px-4 py-2 rounded-lg text-sm hover:bg-red-100">✕ Annulla</button>
         </form>
         {% endif %}
-        {% if p.stato.value == 'CONFERMATA' and p.corso.attestato_abilitato %}
+
+        {# Emetti attestato — solo se non ancora emesso #}
+        {% if p.stato.value == 'CONFERMATA' and p.corso.attestato_abilitato and not p.attestato_emesso %}
         <form method="POST" action="{{ url_for('admin.emetti_attestato', prenotazione_id=p.id) }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button class="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-700">📄 Emetti attestato</button>
         </form>
         {% endif %}
+
+        {# Riemetti attestato — solo se già emesso #}
+        {% if p.stato.value == 'CONFERMATA' and p.corso.attestato_abilitato and p.attestato_emesso %}
+        <form method="POST" action="{{ url_for('admin.emetti_attestato', prenotazione_id=p.id) }}"
+              onsubmit="return confirm('Rigenerare e reinviare l\'attestato?')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="bg-purple-100 text-purple-700 border border-purple-300 px-4 py-2 rounded-lg text-sm hover:bg-purple-200">↺ Riemetti attestato</button>
+        </form>
+        {% endif %}
+
       </div>
     </div>
 
-    {# Ricevuta #}
+    {# ── Attestato — stato + caricamento PDF ── #}
+    {% if p.stato.value == 'CONFERMATA' and p.corso.attestato_abilitato %}
+    <div class="bg-white border border-gray-200 rounded-xl p-5">
+      <h3 class="font-semibold mb-4">Attestato</h3>
+
+      {% if p.attestato_emesso %}
+      <div class="flex items-center gap-3 bg-purple-50 border border-purple-200 rounded-xl p-4 mb-4">
+        <svg class="w-6 h-6 text-purple-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+        </svg>
+        <div>
+          <p class="font-semibold text-purple-900">Attestato emesso</p>
+          {% if p.attestato_emesso_at %}
+          <p class="text-sm text-purple-700">{{ format_datetime(p.attestato_emesso_at) }}</p>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      {# Upload PDF #}
+      <p class="text-sm text-gray-600 mb-3">
+        {{ 'Sostituisci l\'attestato caricando un nuovo PDF:' if p.attestato_emesso else 'Carica direttamente il PDF dell\'attestato:' }}
+      </p>
+      <form method="POST" action="{{ url_for('admin.upload_attestato_pdf', prenotazione_id=p.id) }}"
+            enctype="multipart/form-data" id="form-attestato-pdf">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div id="att-drop-zone"
+             class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center cursor-pointer hover:border-purple-400 hover:bg-purple-50 transition-colors"
+             onclick="document.getElementById('att-file-input').click()">
+          <svg class="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+          </svg>
+          <p class="text-sm font-medium text-gray-700">Trascina il PDF o <span class="text-purple-600">clicca per scegliere</span></p>
+          <p class="text-xs text-gray-400 mt-1">Solo PDF · max 20 MB</p>
+          <input type="file" name="attestato_pdf" id="att-file-input" accept=".pdf" class="hidden">
+        </div>
+
+        <div id="att-preview" class="hidden mt-3 flex items-center justify-between bg-purple-50 border border-purple-200 rounded-xl p-4">
+          <div class="flex items-center gap-3">
+            <svg class="w-6 h-6 text-purple-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <div>
+              <p class="text-sm font-medium text-purple-900" id="att-file-name"></p>
+              <p class="text-xs text-purple-600" id="att-file-size"></p>
+            </div>
+          </div>
+          <button type="button" id="att-btn-remove" class="text-gray-400 hover:text-gray-700 p-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <button type="submit" id="att-btn-upload"
+                class="hidden mt-3 w-full bg-purple-600 text-white py-2.5 rounded-xl font-semibold hover:bg-purple-700 transition-colors">
+          Carica PDF attestato
+        </button>
+      </form>
+    </div>
+    {% endif %}
+
+    {# ── Ricevuta di pagamento ── #}
     {% if p.url_contabile %}
     <div class="bg-white border border-gray-200 rounded-xl p-5">
       <h3 class="font-semibold mb-2">Ricevuta di pagamento</h3>
-      <div class="text-sm text-gray-600 mb-2">{{ p.nome_file_contabile }}</div>
+      <p class="text-sm text-gray-600 mb-2">{{ p.nome_file_contabile }}</p>
       <a href="{{ p.url_contabile }}" target="_blank" class="text-blue-600 hover:underline text-sm">Visualizza ricevuta →</a>
     </div>
     {% endif %}
 
-    {# Note segreteria #}
+    {# ── Note segreteria ── #}
     <form method="POST" class="bg-white border border-gray-200 rounded-xl p-5">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <h3 class="font-semibold mb-3">Note segreteria</h3>
-      <textarea name="note_segreteria" rows="4" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 mb-3">{{ p.note_segreteria or '' }}</textarea>
+      <textarea name="note_segreteria" rows="4"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 mb-3">{{ p.note_segreteria or '' }}</textarea>
       <button type="submit" class="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-900">Salva note</button>
     </form>
 
-    {# Partecipanti #}
+    {# ── Partecipanti ── #}
     {% if p.partecipanti %}
     <div class="bg-white border border-gray-200 rounded-xl p-5">
       <h3 class="font-semibold mb-3">Partecipanti</h3>
       {% for part in p.partecipanti %}
-      <div class="text-sm py-2 border-b border-gray-100 last:border-0 flex justify-between">
+      <div class="text-sm py-2 border-b border-gray-100 last:border-0 flex justify-between gap-2">
         <span class="font-medium">{{ part.nome }} {{ part.cognome }}</span>
         <span class="text-gray-500">{{ part.email or '' }}</span>
         <span class="text-gray-400 font-mono text-xs">{{ part.codice_fiscale or '' }}</span>
@@ -72,13 +163,14 @@
       {% endfor %}
     </div>
     {% endif %}
+
   </div>
 
+  {# ── Sidebar ── #}
   <div class="space-y-4">
     <div class="bg-white border border-gray-200 rounded-xl p-5 text-sm space-y-2">
       <div class="flex justify-between"><span class="text-gray-500">Posti</span><span>{{ p.numero_posti }}</span></div>
       <div class="flex justify-between"><span class="text-gray-500">Importo</span><span class="font-bold">{{ format_currency(p.importo_totale) }}</span></div>
-      {% if p.importo_pagato %}<div class="flex justify-between"><span class="text-gray-500">Pagato</span><span>{{ format_currency(p.importo_pagato) }}</span></div>{% endif %}
       {% if p.metodo_pagamento %}<div class="flex justify-between"><span class="text-gray-500">Metodo</span><span>{{ p.metodo_pagamento.value }}</span></div>{% endif %}
       {% if p.id_transazione %}<div class="flex justify-between"><span class="text-gray-500">Transazione</span><span class="font-mono text-xs">{{ p.id_transazione }}</span></div>{% endif %}
       <div class="flex justify-between"><span class="text-gray-500">Creata</span><span>{{ format_date(p.created_at) }}</span></div>
@@ -90,12 +182,47 @@
       <div class="text-sm">{{ p.note }}</div>
     </div>
     {% endif %}
-    {% if p.attestato_emesso %}
-    <div class="bg-green-50 border border-green-200 rounded-xl p-5">
-      <div class="text-sm text-green-700 font-medium">✓ Attestato emesso</div>
-      <div class="text-xs text-green-600 mt-1">{{ format_date(p.attestato_emesso_at) }}</div>
-    </div>
-    {% endif %}
   </div>
 </div>
+
+<script>
+(function () {
+  const dz = document.getElementById('att-drop-zone');
+  const fi = document.getElementById('att-file-input');
+  const pv = document.getElementById('att-preview');
+  const bu = document.getElementById('att-btn-upload');
+  const fn = document.getElementById('att-file-name');
+  const fs = document.getElementById('att-file-size');
+  const br = document.getElementById('att-btn-remove');
+  if (!dz) return;
+
+  function showFile(f) {
+    if (!f.name.toLowerCase().endsWith('.pdf')) { alert('Solo file PDF accettati.'); return; }
+    if (f.size > 20 * 1024 * 1024) { alert('File troppo grande (max 20 MB).'); return; }
+    fn.textContent = f.name;
+    fs.textContent = (f.size / 1024).toFixed(0) + ' KB';
+    dz.classList.add('hidden');
+    pv.classList.remove('hidden');
+    bu.classList.remove('hidden');
+  }
+
+  fi.addEventListener('change', function () { if (this.files[0]) showFile(this.files[0]); });
+
+  br.addEventListener('click', function () {
+    fi.value = '';
+    dz.classList.remove('hidden');
+    pv.classList.add('hidden');
+    bu.classList.add('hidden');
+  });
+
+  dz.addEventListener('dragover', function (e) { e.preventDefault(); this.classList.add('border-purple-400','bg-purple-50'); });
+  dz.addEventListener('dragleave', function () { this.classList.remove('border-purple-400','bg-purple-50'); });
+  dz.addEventListener('drop', function (e) {
+    e.preventDefault();
+    this.classList.remove('border-purple-400','bg-purple-50');
+    const f = e.dataTransfer.files[0];
+    if (f) { const dt = new DataTransfer(); dt.items.add(f); fi.files = dt.files; showFile(f); }
+  });
+})();
+</script>
 {% endblock %}
