@@ -51,7 +51,7 @@
     {% endif %}
 
     {# Upload ricevuta — drag & drop #}
-    {% if p.stato.value in ('IN_ATTESA_PAGAMENTO', 'PAGAMENTO_CARICATO') %}
+    {% if p.stato.value == 'IN_ATTESA_PAGAMENTO' %}
     <div class="bg-white border border-gray-200 rounded-xl p-5">
       <h3 class="font-semibold mb-4">Carica ricevuta di pagamento</h3>
 
