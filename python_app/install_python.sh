@@ -3,7 +3,7 @@ set -euo pipefail
 
 # ============================================================
 # install_python.sh — Installa l'app Python su VPS
-# Debian/Ubuntu, Python 3.11+, PostgreSQL, Nginx, Gunicorn
+# Debian/Ubuntu, Python 3.11+, SQLite, Nginx, Gunicorn
 # SSL Let's Encrypt via certbot
 # ============================================================
 
@@ -44,31 +44,7 @@ ok "Python OK: $(python3 --version)"
 # ── Dipendenze sistema ──────────────────────────────────────
 info "Installazione dipendenze sistema..."
 apt-get update -qq
-apt-get install -y -qq \
-  libpq-dev gcc build-essential \
-  postgresql postgresql-client \
-  nginx \
-  postgresql-client-common \
-  curl \
-  certbot \
-  python3-certbot-nginx
-
-# ── PostgreSQL ───────────────────────────────────────────────
-info "Configurazione PostgreSQL..."
-DB_NAME="${DB_NAME:-booking_corsi}"
-DB_USER="${DB_USER:-booking_user}"
-DB_PASS="${DB_PASS:-$(openssl rand -base64 16 | tr -d '/+=' | head -c 20)}"
-
-systemctl start postgresql || true
-systemctl enable postgresql
-
-sudo -u postgres psql -tc "SELECT 1 FROM pg_roles WHERE rolname='$DB_USER'" | grep -q 1 || \
-  sudo -u postgres psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASS';"
-
-sudo -u postgres psql -tc "SELECT 1 FROM pg_database WHERE datname='$DB_NAME'" | grep -q 1 || \
-  sudo -u postgres psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;"
-
-ok "PostgreSQL OK: $DB_NAME"
+apt-get install -y -qq gcc build-essential nginx curl certbot python3-certbot-nginx
 
 # ── Virtualenv e dipendenze Python ──────────────────────────
 info "Creazione virtualenv..."
@@ -89,7 +65,7 @@ if [[ ! -f "$APP_DIR/.env" ]]; then
   cat > "$APP_DIR/.env" <<EOF
 FLASK_ENV=production
 SECRET_KEY=$SECRET_KEY
-DATABASE_URL=postgresql://$DB_USER:$DB_PASS@localhost:5432/$DB_NAME
+DATABASE_URL=sqlite:///$APP_DIR/booking.db
 APP_URL=$APP_URL
 APP_NAME=Gestione Corsi
 PORT=$PORT
@@ -142,7 +118,7 @@ info "Configurazione servizio systemd..."
 cat > "/etc/systemd/system/${SERVICE_NAME}.service" <<EOF
 [Unit]
 Description=Booking Corsi (Python/Flask)
-After=network.target postgresql.service
+After=network.target
 
 [Service]
 User=$APP_USER
@@ -163,10 +139,9 @@ systemctl enable "$SERVICE_NAME"
 systemctl restart "$SERVICE_NAME"
 ok "Servizio $SERVICE_NAME avviato"
 
-# ── Nginx — configurazione iniziale HTTP ─────────────────────
+# ── Nginx ─────────────────────────────────────────────────────
 info "Configurazione Nginx..."
 NGINX_CONF="/etc/nginx/sites-available/$SERVICE_NAME"
-
 SERVER_NAME="${DOMAIN:-_}"
 
 cat > "$NGINX_CONF" <<EOF
@@ -201,20 +176,11 @@ ok "Nginx configurato (HTTP)"
 # ── Let's Encrypt SSL ─────────────────────────────────────────
 if [[ "$USE_SSL" == "true" ]]; then
   info "Richiesta certificato Let's Encrypt per $DOMAIN..."
-
-  # Obtain certificate using Nginx plugin (handles HTTP challenge automatically)
   if certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos \
       --email "admin@${DOMAIN}" --redirect 2>/dev/null; then
     ok "Certificato SSL installato per $DOMAIN"
-
-    # certbot --nginx rewrites the Nginx config automatically.
-    # Reload Nginx to apply the final SSL config.
     nginx -t && systemctl reload nginx
     ok "Nginx ricaricato con SSL"
-
-    # ── Auto-rinnovo ────────────────────────────────────────
-    # certbot installs a systemd timer or cron job automatically.
-    # Add an explicit cron fallback in case the timer is missing.
     if ! systemctl is-enabled certbot.timer &>/dev/null; then
       info "Aggiunta cron per rinnovo automatico certificato..."
       (crontab -l 2>/dev/null | grep -v "certbot renew"; \
@@ -223,9 +189,7 @@ if [[ "$USE_SSL" == "true" ]]; then
     fi
   else
     warn "Certbot non è riuscito a ottenere il certificato."
-    warn "Possibili cause:"
-    warn "  - Il dominio $DOMAIN non punta ancora a questo server IP"
-    warn "  - La porta 80 è bloccata dal firewall"
+    warn "Possibili cause: il dominio $DOMAIN non punta a questo IP, o la porta 80 è bloccata."
     warn "Puoi ritentare manualmente: certbot --nginx -d $DOMAIN"
     warn "L'app è raggiungibile su HTTP: http://$DOMAIN"
   fi
@@ -248,6 +212,7 @@ if [[ "$USE_SSL" == "true" ]]; then
 else
   echo "  App: http://$(hostname -I | awk '{print $1}')"
 fi
+echo "  Database: SQLite ($APP_DIR/booking.db)"
 echo "  Admin: admin@example.com / Admin1234!"
 echo "  CAMBIA LA PASSWORD ADMIN SUBITO!"
 echo "========================================================"
