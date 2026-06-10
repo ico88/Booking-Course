@@ -1,6 +1,15 @@
 {% extends "admin/base_admin.html" %}
 {% block title %}Pagine legali{% endblock %}
 
+{% block head %}
+<link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet">
+<style>
+  .ql-toolbar.ql-snow{border-radius:8px 8px 0 0;border-color:#e5e7eb;background:#f9fafb}
+  .ql-container.ql-snow{border-radius:0 0 12px 12px;border-color:#e5e7eb;font-size:0.925rem}
+  .ql-editor{min-height:420px}
+</style>
+{% endblock %}
+
 {% block admin_content %}
 <div class="flex items-center justify-between mb-6">
   <h1 class="text-2xl font-bold">Pagine legali</h1>
@@ -21,12 +30,14 @@
   {% endfor %}
 </div>
 
-<form method="POST">
+<form method="POST" id="legal-form">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   {% for tab_id, tab_label, key in [('privacy','Privacy Policy','pagina_privacy'),('cookie','Cookie Policy','pagina_cookie'),('termini','Termini e Condizioni','pagina_termini')] %}
   <div id="tab-{{ tab_id }}" class="tab-panel space-y-3 {{ 'hidden' if not loop.first }}">
     <div class="flex items-center justify-between">
-      <p class="text-sm text-gray-500">Puoi usare HTML. Usa <code class="bg-gray-100 px-1 rounded text-xs">&#123;&#123;TABELLA_COOKIE&#125;&#125;</code> nella cookie policy per la tabella automatica.</p>
+      <p class="text-sm text-gray-500">
+        {% if tab_id == 'cookie' %}Usa <code class="bg-gray-100 px-1 rounded text-xs">&#123;&#123;TABELLA_COOKIE&#125;&#125;</code> per inserire la tabella automatica dei cookie.{% else %}Formatta liberamente il testo con l'editor.{% endif %}
+      </p>
       <div class="flex gap-2">
         <button type="button" onclick="togglePreview('{{ tab_id }}')" id="preview-btn-{{ tab_id }}"
                 class="text-xs bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg">Anteprima</button>
@@ -34,9 +45,9 @@
                 class="text-xs text-orange-600 hover:text-orange-800 px-3 py-1.5">Ripristina default</button>
       </div>
     </div>
-    <div id="editor-{{ tab_id }}" class="bg-white border border-gray-200 rounded-xl overflow-hidden">
-      <textarea name="{{ key }}" id="textarea-{{ tab_id }}" rows="22"
-                class="w-full px-4 py-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y">{{ settings.get(key) or defaults[tab_id] }}</textarea>
+    <div id="editor-{{ tab_id }}" class="rounded-xl overflow-hidden">
+      <div id="quill-{{ tab_id }}"></div>
+      <textarea name="{{ key }}" id="textarea-{{ tab_id }}" class="hidden">{{ settings.get(key) or defaults[tab_id] }}</textarea>
     </div>
     <div id="preview-{{ tab_id }}" class="hidden bg-white border border-gray-200 rounded-xl p-6 prose max-w-none min-h-64"></div>
     <button type="submit" class="w-full bg-blue-700 text-white py-2.5 rounded-xl font-medium hover:bg-blue-800">Salva pagine legali</button>
@@ -44,12 +55,35 @@
   {% endfor %}
 </form>
 
+<script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
 <script>
 const defaults = {
   pagina_privacy: {{ defaults.privacy | tojson }},
-  pagina_cookie: {{ defaults.cookie | tojson }},
+  pagina_cookie:  {{ defaults.cookie | tojson }},
   pagina_termini: {{ defaults.termini | tojson }},
 };
+
+const toolbarOpts = [
+  [{ header: [2, 3, false] }],
+  ['bold', 'italic', 'underline'],
+  [{ list: 'ordered' }, { list: 'bullet' }],
+  ['link'],
+  ['clean']
+];
+
+const quills = {};
+['privacy', 'cookie', 'termini'].forEach(id => {
+  const q = new Quill('#quill-' + id, { theme: 'snow', modules: { toolbar: toolbarOpts } });
+  q.root.innerHTML = document.getElementById('textarea-' + id).value;
+  quills[id] = q;
+});
+
+document.getElementById('legal-form').addEventListener('submit', function() {
+  ['privacy', 'cookie', 'termini'].forEach(id => {
+    const html = quills[id].root.innerHTML;
+    document.getElementById('textarea-' + id).value = html === '<p><br></p>' ? '' : html;
+  });
+});
 
 function showTab(id) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
@@ -61,6 +95,7 @@ function showTab(id) {
   const btn = document.getElementById('tab-btn-' + id);
   btn.classList.add('bg-blue-600','text-white');
   btn.classList.remove('text-gray-600','hover:bg-gray-100');
+  quills[id].update();
 }
 
 function togglePreview(id) {
@@ -73,7 +108,7 @@ function togglePreview(id) {
     preview.classList.add('hidden');
     btn.textContent = 'Anteprima';
   } else {
-    preview.innerHTML = document.getElementById('textarea-' + id).value;
+    preview.innerHTML = quills[id].root.innerHTML;
     editor.classList.add('hidden');
     preview.classList.remove('hidden');
     btn.textContent = 'Modifica';
@@ -82,7 +117,7 @@ function togglePreview(id) {
 
 function ripristina(id, key) {
   if (!confirm('Ripristinare il testo predefinito? Il contenuto attuale verrà sovrascritto.')) return;
-  document.getElementById('textarea-' + id).value = defaults[key] || '';
+  quills[id].root.innerHTML = defaults[key] || '';
   const preview = document.getElementById('preview-' + id);
   if (!preview.classList.contains('hidden')) {
     preview.innerHTML = defaults[key] || '';
