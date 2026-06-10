@@ -59,32 +59,7 @@ DEFAULT_COOKIE_POLICY = """
 
 <h3>Cookie tecnici</h3>
 <p>Questo sito utilizza esclusivamente cookie tecnici, necessari al funzionamento della piattaforma:</p>
-<table style="width:100%;border-collapse:collapse;font-size:0.9em">
-  <thead>
-    <tr style="background:#f3f4f6">
-      <th style="text-align:left;padding:8px;border:1px solid #e5e7eb">Cookie</th>
-      <th style="text-align:left;padding:8px;border:1px solid #e5e7eb">Scopo</th>
-      <th style="text-align:left;padding:8px;border:1px solid #e5e7eb">Durata</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="padding:8px;border:1px solid #e5e7eb"><code>session</code></td>
-      <td style="padding:8px;border:1px solid #e5e7eb">Sessione autenticata dell'utente</td>
-      <td style="padding:8px;border:1px solid #e5e7eb">8 ore</td>
-    </tr>
-    <tr>
-      <td style="padding:8px;border:1px solid #e5e7eb"><code>csrf_token</code></td>
-      <td style="padding:8px;border:1px solid #e5e7eb">Protezione CSRF dei moduli</td>
-      <td style="padding:8px;border:1px solid #e5e7eb">Sessione</td>
-    </tr>
-    <tr>
-      <td style="padding:8px;border:1px solid #e5e7eb"><code>cookie_consenso</code></td>
-      <td style="padding:8px;border:1px solid #e5e7eb">Memorizza il consenso ai cookie</td>
-      <td style="padding:8px;border:1px solid #e5e7eb">1 anno</td>
-    </tr>
-  </tbody>
-</table>
+{{TABELLA_COOKIE}}
 
 <h3>Cookie di terze parti</h3>
 <p>Alcune funzionalità opzionali possono caricare script di terze parti (es. gateway di pagamento, CAPTCHA). In tal caso vengono visualizzate specifiche informative prima del caricamento.</p>
@@ -92,6 +67,35 @@ DEFAULT_COOKIE_POLICY = """
 <h3>Come disabilitare i cookie</h3>
 <p>È possibile disabilitare i cookie nelle impostazioni del proprio browser. Si noti che la disabilitazione dei cookie tecnici può compromettere il funzionamento del sito.</p>
 """
+
+
+def genera_tabella_cookie(app_name: str = "") -> str:
+    _s_hdr = "text-align:left;padding:8px 12px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:600"
+    _s_td = "padding:8px 12px;border:1px solid #e5e7eb"
+    _s_code = "background:#f3f4f6;padding:2px 6px;border-radius:4px;font-family:monospace"
+    rows = [
+        ("session", "Sessione autenticata dell'utente", "8 ore"),
+        ("csrf_token", "Protezione CSRF dei moduli", "Sessione"),
+        ("cookie_consenso", "Memorizza il consenso ai cookie", "1 anno"),
+    ]
+    tbody_rows = "".join(
+        f'<tr>'
+        f'<td style="{_s_td}"><span style="{_s_code}">{name}</span></td>'
+        f'<td style="{_s_td}">{scopo}</td>'
+        f'<td style="{_s_td}">{durata}</td>'
+        f'</tr>'
+        for name, scopo, durata in rows
+    )
+    return (
+        f'<table style="width:100%;border-collapse:collapse;font-size:0.9em">'
+        f'<thead><tr>'
+        f'<th style="{_s_hdr}">Cookie</th>'
+        f'<th style="{_s_hdr}">Scopo</th>'
+        f'<th style="{_s_hdr}">Durata</th>'
+        f'</tr></thead>'
+        f'<tbody>{tbody_rows}</tbody>'
+        f'</table>'
+    )
 
 DEFAULT_TERMINI = """
 <h2>Termini e Condizioni di Utilizzo</h2>

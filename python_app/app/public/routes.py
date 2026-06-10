@@ -199,9 +199,11 @@ def privacy_policy():
 
 @public_bp.route("/cookie-policy")
 def cookie_policy():
-    from ..pagine_legali_defaults import DEFAULT_COOKIE_POLICY
+    from ..pagine_legali_defaults import DEFAULT_COOKIE_POLICY, genera_tabella_cookie
+    tabella = genera_tabella_cookie(Impostazione.get("app_name") or current_app.config.get("APP_NAME", ""))
     stored = Impostazione.get("pagina_cookie")
     content = sanitize_html(stored) if stored else DEFAULT_COOKIE_POLICY
+    content = content.replace("{{TABELLA_COOKIE}}", tabella)
     return render_template("public/pagina_legale.html", titolo="Cookie Policy", content=content)
 
 
