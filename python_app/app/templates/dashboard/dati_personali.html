@@ -33,11 +33,26 @@
 
   <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
     <h3 class="font-semibold">Cambia password</h3>
-    <p class="text-sm text-gray-500">Lascia vuoto per non modificare</p>
+    <p class="text-sm text-gray-500">Lascia vuoto per non modificare la password</p>
+    <div>
+      <label class="block text-sm font-medium mb-1">Password attuale</label>
+      <input type="password" name="password_attuale" autocomplete="current-password" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+    </div>
     <div>
       <label class="block text-sm font-medium mb-1">Nuova password</label>
-      <input type="password" name="nuova_password" minlength="8" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+      <input type="password" name="nuova_password" minlength="8" autocomplete="new-password" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
     </div>
+  </div>
+
+  <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-3">
+    <h3 class="font-semibold">Privacy e comunicazioni</h3>
+    <label class="flex items-start gap-3 cursor-pointer">
+      <input type="checkbox" name="consenso_marketing" class="mt-0.5 accent-blue-600" {% if current_user.consenso_marketing %}checked{% endif %}>
+      <span class="text-sm text-gray-700">
+        Acconsento a ricevere comunicazioni di marketing, notifiche sui nuovi corsi e offerte promozionali.
+        Puoi revocare il consenso in qualsiasi momento.
+      </span>
+    </label>
   </div>
 
   <button type="submit" class="w-full bg-blue-700 text-white py-2.5 rounded-lg font-medium hover:bg-blue-800">

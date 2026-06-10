@@ -121,10 +121,22 @@ def dati_personali():
         current_user.codice_fiscale = (request.form.get("codice_fiscale") or "").strip()[:20].upper()
         nuova_pw = request.form.get("nuova_password") or ""
         if nuova_pw:
+            password_attuale = request.form.get("password_attuale") or ""
+            if not password_attuale:
+                flash("Inserisci la password attuale per cambiarla.", "error")
+                return render_template("dashboard/dati_personali.html")
+            if not current_user.check_password(password_attuale):
+                flash("La password attuale non è corretta.", "error")
+                return render_template("dashboard/dati_personali.html")
             if len(nuova_pw) < 8:
-                flash("La password deve avere almeno 8 caratteri.", "error")
+                flash("La nuova password deve avere almeno 8 caratteri.", "error")
                 return render_template("dashboard/dati_personali.html")
             current_user.set_password(nuova_pw)
+        consenso_marketing = request.form.get("consenso_marketing") == "on"
+        if consenso_marketing != current_user.consenso_marketing:
+            current_user.consenso_marketing = consenso_marketing
+            if consenso_marketing:
+                current_user.data_consenso = datetime.now(timezone.utc)
         db.session.commit()
         flash("Dati aggiornati con successo.", "success")
         return redirect(url_for("dashboard.dati_personali"))

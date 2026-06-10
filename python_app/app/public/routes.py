@@ -114,6 +114,19 @@ def prenota(corso_id):
 @public_bp.route("/notifiche-corsi", methods=["GET", "POST"])
 @limiter.limit("10 per hour")
 def notifiche_corsi():
+    # Se l'utente è loggato, gestisce l'iscrizione tramite il profilo
+    if current_user.is_authenticated:
+        if not current_user.consenso_marketing:
+            flash(
+                "Per ricevere notifiche sui corsi devi abilitare il consenso "
+                "alle comunicazioni di marketing nel tuo profilo. "
+                "Spunta la casella nella sezione 'Privacy e comunicazioni' e salva.",
+                "info",
+            )
+            return redirect(url_for("dashboard.dati_personali"))
+        flash("Il tuo profilo è già abilitato a ricevere notifiche sui corsi.", "success")
+        return redirect(url_for("dashboard.dati_personali"))
+
     # Gather unique tags from published courses to offer as interest categories
     corsi = Corso.query.filter_by(pubblicato=True).all()
     tag_disponibili = sorted({t for c in corsi for t in (c.tags or [])})
