@@ -3,7 +3,7 @@ set -euo pipefail
 
 # ============================================================
 # install_python.sh — Installa l'app Python su VPS
-# Debian/Ubuntu, Python 3.11+, SQLite, Nginx, Gunicorn
+# Debian/Ubuntu, Python 3.11-3.13, SQLite, Nginx, Gunicorn
 # SSL Let's Encrypt via certbot
 # ============================================================
 
@@ -13,11 +13,56 @@ VENV_DIR="$APP_DIR/.venv"
 SERVICE_NAME="booking-corsi"
 PORT="${PORT:-5000}"
 DOMAIN="${DOMAIN:-}"
+PYTHON_BIN="${PYTHON_BIN:-}"
 
 info()  { echo "[INFO]  $*"; }
 ok()    { echo "[OK]    $*"; }
 warn()  { echo "[WARN]  $*"; }
 error() { echo "[ERROR] $*" >&2; exit 1; }
+
+version_ok() {
+  "$1" - <<'PY'
+import sys
+major, minor = sys.version_info[:2]
+raise SystemExit(0 if major == 3 and 11 <= minor <= 13 else 1)
+PY
+}
+
+python_version() {
+  "$1" - <<'PY'
+import sys
+print(f"{sys.version_info.major}.{sys.version_info.minor}")
+PY
+}
+
+ensure_venv_support() {
+  local version
+  version="$(python_version "$1")"
+  if ! "$1" -m venv --help >/dev/null 2>&1; then
+    apt-get install -y -qq "python${version}-venv" "python${version}-dev" || \
+      error "Modulo venv non disponibile per Python $version. Installa python${version}-venv e rilancia."
+  fi
+}
+
+select_python() {
+  local candidate
+
+  if [[ -n "$PYTHON_BIN" ]]; then
+    command -v "$PYTHON_BIN" >/dev/null 2>&1 || error "PYTHON_BIN non trovato: $PYTHON_BIN"
+    version_ok "$PYTHON_BIN" || error "Python non supportato: $("$PYTHON_BIN" --version). Usa Python 3.11, 3.12 o 3.13."
+    echo "$PYTHON_BIN"
+    return
+  fi
+
+  for candidate in python3.12 python3.11 python3.13 python3; do
+    if command -v "$candidate" >/dev/null 2>&1 && version_ok "$candidate"; then
+      echo "$candidate"
+      return
+    fi
+  done
+
+  echo ""
+}
 
 [[ $EUID -eq 0 ]] || error "Esegui come root: sudo bash install_python.sh"
 
@@ -33,24 +78,40 @@ else
   USE_SSL=false
 fi
 
-# ── Python ──────────────────────────────────────────────────
-info "Verifica Python 3.11+..."
-if ! python3 --version 2>/dev/null | grep -qE '3\.(1[1-9]|[2-9][0-9])'; then
-  apt-get update -qq
-  apt-get install -y python3.11 python3.11-venv python3.11-dev python3-pip
-fi
-ok "Python OK: $(python3 --version)"
-
 # ── Dipendenze sistema ──────────────────────────────────────
 info "Installazione dipendenze sistema..."
 apt-get update -qq
-apt-get install -y -qq gcc build-essential nginx curl certbot python3-certbot-nginx
+apt-get install -y -qq \
+  gcc build-essential nginx curl certbot python3-certbot-nginx \
+  python3-pip python3-venv python3-dev \
+  libjpeg-dev zlib1g-dev libpng-dev libwebp-dev libfreetype6-dev liblcms2-dev
+
+# ── Python ──────────────────────────────────────────────────
+info "Verifica Python supportato (3.11, 3.12 o 3.13)..."
+SELECTED_PYTHON="$(select_python)"
+if [[ -z "$SELECTED_PYTHON" ]]; then
+  apt-get install -y -qq python3.12 python3.12-venv python3.12-dev || \
+    apt-get install -y -qq python3.11 python3.11-venv python3.11-dev || \
+    error "Installa Python 3.11, 3.12 o 3.13 e rilancia lo script. Python 3.14 non è ancora supportato dalle dipendenze."
+  SELECTED_PYTHON="$(select_python)"
+fi
+[[ -n "$SELECTED_PYTHON" ]] || error "Nessun Python supportato trovato. Usa PYTHON_BIN=/percorso/python3.12 sudo -E bash install_python.sh"
+ok "Python OK: $("$SELECTED_PYTHON" --version)"
+ensure_venv_support "$SELECTED_PYTHON"
 
 # ── Virtualenv e dipendenze Python ──────────────────────────
 info "Creazione virtualenv..."
-python3 -m venv "$VENV_DIR"
+if [[ -x "$VENV_DIR/bin/python" ]]; then
+  VENV_VERSION="$(python_version "$VENV_DIR/bin/python")"
+  SELECTED_VERSION="$(python_version "$SELECTED_PYTHON")"
+  if [[ "$VENV_VERSION" != "$SELECTED_VERSION" ]]; then
+    warn "Virtualenv esistente con Python $VENV_VERSION: verrà ricreata con Python $SELECTED_VERSION."
+    rm -rf "$VENV_DIR"
+  fi
+fi
+"$SELECTED_PYTHON" -m venv "$VENV_DIR"
 "$VENV_DIR/bin/pip" install --upgrade pip -q
-"$VENV_DIR/bin/pip" install -r "$APP_DIR/requirements.txt" -q
+"$VENV_DIR/bin/pip" install --only-binary=:all: -r "$APP_DIR/requirements.txt" -q
 ok "Virtualenv OK"
 
 # ── .env ─────────────────────────────────────────────────────
