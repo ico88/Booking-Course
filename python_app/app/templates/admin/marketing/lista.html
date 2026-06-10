@@ -17,21 +17,40 @@
 </div>
 
 <!-- Stats -->
-<div class="grid grid-cols-3 gap-4 mb-6">
+<div class="grid grid-cols-4 gap-4 mb-6">
   <div class="bg-white border border-gray-200 rounded-xl p-4 text-center">
-    <div class="text-2xl font-bold" id="stat-totale">{{ leads|length }}</div>
-    <div class="text-xs text-gray-500 mt-1">Totale lead</div>
+    <div class="text-2xl font-bold">{{ leads|length }}</div>
+    <div class="text-xs text-gray-500 mt-1">Lead esterni</div>
   </div>
   <div class="bg-white border border-gray-200 rounded-xl p-4 text-center">
-    <div class="text-2xl font-bold text-green-600" id="stat-attivi">{{ leads|selectattr('attivo')|list|length }}</div>
-    <div class="text-xs text-gray-500 mt-1">Attivi</div>
+    <div class="text-2xl font-bold text-green-600">{{ leads|selectattr('attivo')|list|length }}</div>
+    <div class="text-xs text-gray-500 mt-1">Lead attivi</div>
   </div>
   <div class="bg-white border border-gray-200 rounded-xl p-4 text-center">
-    <div class="text-2xl font-bold text-blue-600" id="stat-verificati">{{ leads|selectattr('verificato')|list|length }}</div>
-    <div class="text-xs text-gray-500 mt-1">Verificati</div>
+    <div class="text-2xl font-bold text-blue-600">{{ leads|selectattr('verificato')|list|length }}</div>
+    <div class="text-xs text-gray-500 mt-1">Lead verificati</div>
+  </div>
+  <div class="bg-white border border-gray-200 rounded-xl p-4 text-center">
+    <div class="text-2xl font-bold text-purple-600">{{ utenti_marketing|length }}</div>
+    <div class="text-xs text-gray-500 mt-1">Utenti registrati</div>
   </div>
 </div>
 
+<!-- Tab selector -->
+<div class="flex gap-1 mb-4 bg-gray-100 rounded-xl p-1 w-fit">
+  <button id="tab-lead" onclick="switchTab('lead')"
+          class="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-white text-gray-900 shadow-sm">
+    Lead esterni
+  </button>
+  <button id="tab-utenti" onclick="switchTab('utenti')"
+          class="px-4 py-2 rounded-lg text-sm font-medium transition-colors text-gray-600 hover:text-gray-900">
+    Utenti con consenso marketing
+    {% if utenti_marketing %}<span class="ml-1 bg-purple-100 text-purple-700 text-xs px-1.5 py-0.5 rounded-full">{{ utenti_marketing|length }}</span>{% endif %}
+  </button>
+</div>
+
+<!-- Pannello lead esterni -->
+<div id="panel-lead">
 <!-- Filtri -->
 <div class="bg-white border border-gray-200 rounded-xl p-4 mb-4 flex flex-wrap gap-3 items-end">
   <div class="flex-1 min-w-48">
@@ -112,6 +131,42 @@
   </table>
   <div id="no-results" class="hidden px-5 py-8 text-center text-gray-400 text-sm">Nessun lead trovato con i filtri selezionati.</div>
 </div>
+</div>{# end panel-lead #}
+
+<!-- Pannello utenti con consenso marketing -->
+<div id="panel-utenti" class="hidden">
+  <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+    {% if utenti_marketing %}
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+        <tr>
+          <th class="px-5 py-3 text-left">Nome</th>
+          <th class="px-5 py-3 text-left">Email</th>
+          <th class="px-5 py-3 text-left">Telefono</th>
+          <th class="px-5 py-3 text-left">Consenso dal</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        {% for u in utenti_marketing %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-5 py-3 font-medium">{{ u.nome_completo }}</td>
+          <td class="px-5 py-3 font-mono text-xs text-gray-600">{{ u.email }}</td>
+          <td class="px-5 py-3 text-gray-500">{{ u.telefono or '—' }}</td>
+          <td class="px-5 py-3 text-gray-400 text-xs">{{ format_date(u.data_consenso) if u.data_consenso else '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="px-5 py-12 text-center text-gray-400 text-sm">
+      Nessun utente registrato ha ancora dato il consenso al marketing.
+    </div>
+    {% endif %}
+  </div>
+  <p class="text-xs text-gray-400 mt-2">
+    Gli utenti in questa lista hanno spuntato "Acconsento a ricevere comunicazioni di marketing" nel loro profilo.
+  </p>
+</div>
 
 {# Modal invio notifica #}
 <div id="modal-notifica" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -137,6 +192,16 @@
 </div>
 
 <script>
+function switchTab(tab) {
+  const isLead = tab === 'lead';
+  document.getElementById('panel-lead').classList.toggle('hidden', !isLead);
+  document.getElementById('panel-utenti').classList.toggle('hidden', isLead);
+  const active = 'bg-white text-gray-900 shadow-sm';
+  const inactive = 'text-gray-600 hover:text-gray-900';
+  document.getElementById('tab-lead').className = `px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isLead ? active : inactive}`;
+  document.getElementById('tab-utenti').className = `px-4 py-2 rounded-lg text-sm font-medium transition-colors ${!isLead ? active : inactive}`;
+}
+
 function importCsv(input) {
   const form = document.createElement('form');
   form.method = 'POST';

@@ -1,61 +1,148 @@
 {% extends "base.html" %}
 {% block title %}Corsi disponibili{% endblock %}
 
-{% block content %}
-<div class="mb-8">
-  <h1 class="text-3xl font-bold text-gray-900">Corsi disponibili</h1>
-  <p class="mt-2 text-gray-600">Iscriviti ai nostri corsi di formazione</p>
-</div>
+{% macro badge(text, color) %}
+  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+    {% if color == 'green' %}bg-green-100 text-green-800
+    {% elif color == 'red' %}bg-red-100 text-red-800
+    {% elif color == 'amber' %}bg-amber-100 text-amber-800
+    {% elif color == 'gray' %}bg-gray-100 text-gray-600
+    {% endif %}">{{ text }}</span>
+{% endmacro %}
 
-{% if corsi %}
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    {% for corso in corsi %}
-    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-      {% if corso.immagine_url %}
-        <img src="{{ corso.immagine_url }}" alt="{{ corso.titolo }}" class="w-full h-48 object-cover">
+{% macro card_corso(corso, stato) %}
+{% set posti_liberi = corso.posti_disponibili if corso.posti_totali else None %}
+{% set perc = [100, ((corso.posti_occupati or 0) * 100 // corso.posti_totali)]|min if corso.posti_totali else 0 %}
+<a href="{{ url_for('public.corso_dettaglio', corso_id=corso.id) }}"
+   class="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all overflow-hidden flex flex-col {{ 'opacity-60' if stato == 'passato' }}">
+
+  {% if corso.immagine_url %}
+    <div class="h-44 overflow-hidden">
+      <img src="{{ corso.immagine_url }}" alt="{{ corso.titolo }}"
+           class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+    </div>
+  {% else %}
+    <div class="h-32 bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center shrink-0">
+      <svg class="w-12 h-12 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+      </svg>
+    </div>
+  {% endif %}
+
+  <div class="p-5 flex flex-col flex-1">
+    <div class="flex items-start justify-between gap-2 mb-2">
+      <h3 class="font-semibold text-gray-900 text-base leading-tight group-hover:text-blue-700 transition-colors">{{ corso.titolo }}</h3>
+      {% if stato == 'passato' %}
+        {{ badge('Terminato', 'gray') }}
+      {% elif stato == 'completo' %}
+        {{ badge('Completo', 'red') }}
+      {% elif posti_liberi is not none and posti_liberi <= 3 %}
+        {{ badge('Ultimi posti', 'amber') }}
       {% else %}
-        <div class="w-full h-48 bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
-          <svg class="w-16 h-16 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-          </svg>
-        </div>
+        {{ badge('Disponibile', 'green') }}
       {% endif %}
-      <div class="p-5">
-        <h2 class="font-semibold text-gray-900 text-lg mb-2">{{ corso.titolo }}</h2>
-        <div class="space-y-1 text-sm text-gray-600 mb-4">
-          {% if corso.data_inizio %}
-            <div class="flex items-center gap-1.5">
-              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-              {{ format_date(corso.data_inizio) }}
-            </div>
-          {% endif %}
-          {% if corso.luogo %}
-            <div class="flex items-center gap-1.5">
-              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-              {{ corso.luogo }}
-            </div>
-          {% endif %}
-          <div class="flex items-center gap-1.5">
-            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-            {% if corso.posti_totali %}{{ corso.posti_disponibili }} posti disponibili{% else %}Posti illimitati{% endif %}
-          </div>
-        </div>
-        <div class="flex items-center justify-between">
-          <span class="text-xl font-bold text-blue-700">{{ corso.costo_formattato }}</span>
-          <a href="{{ url_for('public.corso_dettaglio', corso_id=corso.id) }}"
-             class="bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors">
-            Scopri
-          </a>
-        </div>
+    </div>
+
+    <div class="space-y-1.5 text-sm text-gray-600 mb-4">
+      {% if corso.data_inizio %}
+      <div class="flex items-center gap-2">
+        <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        <span>{{ format_date(corso.data_inizio) }}</span>
+      </div>
+      {% endif %}
+      {% if corso.luogo %}
+      <div class="flex items-center gap-2">
+        <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <span>{{ corso.luogo }}</span>
+      </div>
+      {% endif %}
+      <div class="flex items-center gap-2">
+        <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <span>
+          {% if stato == 'completo' %}Tutti i posti occupati
+          {% elif posti_liberi is not none %}{{ posti_liberi }} posto{{ 'i' if posti_liberi != 1 }} disponibili
+          {% else %}Posti illimitati{% endif %}
+        </span>
       </div>
     </div>
-    {% endfor %}
+
+    {% if corso.posti_totali %}
+    <div class="mb-4">
+      <div class="flex justify-between text-xs text-gray-500 mb-1">
+        <span>{{ corso.posti_occupati or 0 }} / {{ corso.posti_totali }} iscritti</span>
+        <span>{{ perc }}%</span>
+      </div>
+      <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+        <div class="h-full rounded-full {{ 'bg-red-400' if perc >= 100 else ('bg-amber-400' if perc >= 75 else 'bg-green-400') }}"
+             style="width:{{ perc }}%"></div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="mt-auto flex items-center justify-between">
+      <span class="font-bold text-gray-900 text-lg">{{ corso.costo_formattato }}</span>
+      {% if corso.attestato_abilitato %}
+      <span class="flex items-center gap-1 text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded-full border border-purple-200">
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+        Attestato
+      </span>
+      {% endif %}
+    </div>
   </div>
+</a>
+{% endmacro %}
+
+{% block content %}
+
+{% set tot = corsi_aperti|length + corsi_completi|length + corsi_passati|length %}
+
+{% if tot == 0 %}
+<div class="text-center py-24 text-gray-400">
+  <svg class="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+  <p class="text-lg font-semibold text-gray-500">Nessun corso disponibile al momento</p>
+  <p class="text-sm mt-1">Torna presto, nuovi corsi saranno pubblicati a breve.</p>
+</div>
 {% else %}
-  <div class="text-center py-24 text-gray-400">
-    <svg class="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-    <p class="text-lg">Nessun corso disponibile al momento</p>
+
+{% if corsi_aperti %}
+<section class="mb-12">
+  <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+    <span class="w-2 h-7 bg-green-500 rounded-full"></span>
+    Iscrizioni aperte
+    <span class="text-sm font-normal text-gray-400">({{ corsi_aperti|length }})</span>
+  </h2>
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for corso in corsi_aperti %}{{ card_corso(corso, 'aperto') }}{% endfor %}
   </div>
+</section>
+{% endif %}
+
+{% if corsi_completi %}
+<section class="mb-12">
+  <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+    <span class="w-2 h-7 bg-red-400 rounded-full"></span>
+    Corsi al completo
+    <span class="text-sm font-normal text-gray-400">({{ corsi_completi|length }})</span>
+  </h2>
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for corso in corsi_completi %}{{ card_corso(corso, 'completo') }}{% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if corsi_passati %}
+<section>
+  <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+    <span class="w-2 h-7 bg-gray-300 rounded-full"></span>
+    Corsi passati
+    <span class="text-sm font-normal text-gray-400">({{ corsi_passati|length }})</span>
+  </h2>
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for corso in corsi_passati %}{{ card_corso(corso, 'passato') }}{% endfor %}
+  </div>
+</section>
+{% endif %}
+
 {% endif %}
 
 <div class="mt-16 bg-blue-50 border border-blue-100 rounded-xl p-8 text-center">

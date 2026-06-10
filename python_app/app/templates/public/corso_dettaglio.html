@@ -2,70 +2,182 @@
 {% block title %}{{ corso.titolo }}{% endblock %}
 
 {% block content %}
-<div class="max-w-3xl">
-  <a href="{{ url_for('public.index') }}" class="text-sm text-blue-700 hover:underline mb-4 inline-flex items-center gap-1">
-    ← Tutti i corsi
+<div class="max-w-5xl mx-auto">
+  <a href="{{ url_for('public.index') }}"
+     class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 mb-6 transition-colors">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+    </svg>
+    Tutti i corsi
   </a>
 
-  {% if corso.immagine_url %}
-    <img src="{{ corso.immagine_url }}" alt="{{ corso.titolo }}" class="w-full rounded-xl mb-6 h-64 object-cover">
-  {% endif %}
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-  <h1 class="text-3xl font-bold mb-4">{{ corso.titolo }}</h1>
+    {# Colonna principale #}
+    <div class="lg:col-span-2 space-y-6">
+      {% if corso.immagine_url %}
+        <img src="{{ corso.immagine_url }}" alt="{{ corso.titolo }}"
+             class="w-full h-64 object-cover rounded-xl">
+      {% endif %}
 
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-    {% if corso.data_inizio %}
-    <div class="bg-white border border-gray-200 rounded-lg p-3 text-center">
-      <div class="text-xs text-gray-500 mb-1">Data inizio</div>
-      <div class="font-semibold text-sm">{{ format_date(corso.data_inizio) }}</div>
-    </div>
-    {% endif %}
-    {% if corso.luogo %}
-    <div class="bg-white border border-gray-200 rounded-lg p-3 text-center">
-      <div class="text-xs text-gray-500 mb-1">Luogo</div>
-      <div class="font-semibold text-sm">{{ corso.luogo }}</div>
-    </div>
-    {% endif %}
-    {% if corso.durata %}
-    <div class="bg-white border border-gray-200 rounded-lg p-3 text-center">
-      <div class="text-xs text-gray-500 mb-1">Durata</div>
-      <div class="font-semibold text-sm">{{ corso.durata }}</div>
-    </div>
-    {% endif %}
-    <div class="bg-white border border-gray-200 rounded-lg p-3 text-center">
-      <div class="text-xs text-gray-500 mb-1">Posti</div>
-      <div class="font-semibold text-sm">
-        {% if corso.posti_totali %}{{ corso.posti_disponibili }} / {{ corso.posti_totali }}{% else %}Illimitati{% endif %}
+      <div>
+        {# Badges #}
+        <div class="flex flex-wrap items-center gap-2 mb-3">
+          {% if is_passato %}
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">Corso terminato</span>
+          {% elif is_completo %}
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">Posti esauriti</span>
+          {% elif posti_liberi is not none and posti_liberi <= 3 %}
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">Ultimi posti disponibili</span>
+          {% else %}
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">Iscrizioni aperte</span>
+          {% endif %}
+          {% if corso.attestato_abilitato %}
+            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+              Attestato incluso
+            </span>
+          {% endif %}
+        </div>
+
+        <h1 class="text-3xl font-bold text-gray-900 mb-4">{{ corso.titolo }}</h1>
+
+        {% if corso.descrizione %}
+        <div class="prose prose-gray max-w-none text-gray-700 leading-relaxed">
+          {{ corso.descrizione | safe }}
+        </div>
+        {% endif %}
+      </div>
+
+      {# Come funziona #}
+      <div class="bg-blue-50 rounded-xl p-6 border border-blue-100">
+        <h3 class="font-semibold text-blue-900 mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          Come funziona la prenotazione
+        </h3>
+        <ol class="space-y-3">
+          {% set steps = [
+            "Registrati o accedi al tuo account",
+            "Clicca su \"Prenota\" e inserisci i dati dei partecipanti",
+            "Ricevi le coordinate bancarie via email",
+            "Effettua il bonifico e carica la ricevuta nella tua area personale",
+            "La segreteria verifica il pagamento e conferma l'iscrizione"
+          ] %}
+          {% if corso.attestato_abilitato %}
+            {% set steps = steps + ["Dopo il corso, scarica il tuo attestato di partecipazione"] %}
+          {% endif %}
+          {% for step in steps %}
+          <li class="flex items-start gap-3 text-sm text-blue-800">
+            <span class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs">{{ loop.index }}</span>
+            {{ step }}
+          </li>
+          {% endfor %}
+        </ol>
       </div>
     </div>
-  </div>
 
-  {% if corso.descrizione %}
-  <div class="bg-white border border-gray-200 rounded-xl p-6 mb-6 prose max-w-none">
-    {{ corso.descrizione | safe }}
-  </div>
-  {% endif %}
-
-  <div class="bg-blue-50 border border-blue-100 rounded-xl p-6 flex items-center justify-between">
+    {# Sidebar prenotazione #}
     <div>
-      <div class="text-sm text-blue-600">Quota di partecipazione</div>
-      <div class="text-3xl font-bold text-blue-800">{{ corso.costo_formattato }}</div>
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 lg:sticky lg:top-24">
+        <div class="text-3xl font-bold text-gray-900 mb-1">{{ corso.costo_formattato }}</div>
+        <div class="text-sm text-gray-500 mb-6">a persona</div>
+
+        <div class="space-y-4 mb-6">
+          {% if corso.data_inizio %}
+          <div class="flex items-start gap-3">
+            <svg class="w-4 h-4 text-gray-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            <div>
+              <p class="text-xs text-gray-500 uppercase tracking-wide">Data inizio</p>
+              <p class="text-sm font-medium text-gray-900">{{ format_date(corso.data_inizio) }}</p>
+            </div>
+          </div>
+          {% endif %}
+          {% if corso.data_fine %}
+          <div class="flex items-start gap-3">
+            <svg class="w-4 h-4 text-gray-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            <div>
+              <p class="text-xs text-gray-500 uppercase tracking-wide">Data fine</p>
+              <p class="text-sm font-medium text-gray-900">{{ format_date(corso.data_fine) }}</p>
+            </div>
+          </div>
+          {% endif %}
+          {% if corso.durata %}
+          <div class="flex items-start gap-3">
+            <svg class="w-4 h-4 text-gray-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <div>
+              <p class="text-xs text-gray-500 uppercase tracking-wide">Durata</p>
+              <p class="text-sm font-medium text-gray-900">{{ corso.durata }}</p>
+            </div>
+          </div>
+          {% endif %}
+          {% if corso.luogo %}
+          <div class="flex items-start gap-3">
+            <svg class="w-4 h-4 text-gray-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <div>
+              <p class="text-xs text-gray-500 uppercase tracking-wide">Luogo</p>
+              <p class="text-sm font-medium text-gray-900">{{ corso.luogo }}</p>
+            </div>
+          </div>
+          {% endif %}
+          <div class="flex items-start gap-3">
+            <svg class="w-4 h-4 text-gray-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <div>
+              <p class="text-xs text-gray-500 uppercase tracking-wide">Posti disponibili</p>
+              <p class="text-sm font-medium text-gray-900">
+                {% if is_completo %}Nessun posto disponibile
+                {% elif posti_liberi is not none %}{{ posti_liberi }} di {{ corso.posti_totali }}
+                {% else %}Illimitati{% endif %}
+              </p>
+            </div>
+          </div>
+          <div class="flex items-start gap-3">
+            <svg class="w-4 h-4 text-gray-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+            <div>
+              <p class="text-xs text-gray-500 uppercase tracking-wide">Pagamento</p>
+              <p class="text-sm font-medium text-gray-900">Bonifico bancario</p>
+            </div>
+          </div>
+        </div>
+
+        {# Barra occupazione #}
+        {% if corso.posti_totali %}
+        <div class="mb-6">
+          <div class="flex justify-between text-xs text-gray-500 mb-1.5">
+            <span>{{ corso.posti_occupati or 0 }} iscritti</span>
+            <span>{{ corso.posti_totali }} totali</span>
+          </div>
+          <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div class="h-full rounded-full {{ 'bg-red-400' if perc_occupazione >= 100 else ('bg-amber-400' if perc_occupazione >= 75 else 'bg-green-400') }}"
+                 style="width:{{ perc_occupazione }}%"></div>
+          </div>
+        </div>
+        {% endif %}
+
+        {# CTA #}
+        {% if is_passato %}
+          <div class="w-full text-center bg-gray-100 text-gray-500 px-6 py-3 rounded-xl font-semibold">Corso terminato</div>
+        {% elif is_completo %}
+          <div class="w-full text-center bg-gray-100 text-gray-500 px-6 py-3 rounded-xl font-semibold">Posti esauriti</div>
+        {% elif current_user.is_authenticated %}
+          <a href="{{ url_for('public.prenota', corso_id=corso.id) }}"
+             class="block w-full text-center bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-800 transition-colors">
+            Prenota ora
+          </a>
+        {% else %}
+          <a href="{{ url_for('auth.registrazione') }}"
+             class="block w-full text-center bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-800 transition-colors mb-3">
+            Registrati per prenotare
+          </a>
+          <a href="{{ url_for('auth.login', next=url_for('public.prenota', corso_id=corso.id)) }}"
+             class="block w-full text-center bg-white border border-gray-300 text-gray-700 px-6 py-3 rounded-xl font-semibold hover:bg-gray-50 transition-colors">
+            Hai già un account? Accedi
+          </a>
+        {% endif %}
+      </div>
     </div>
-    {% if corso.posti_disponibili > 0 or not corso.posti_totali %}
-      {% if current_user.is_authenticated %}
-        <a href="{{ url_for('public.prenota', corso_id=corso.id) }}"
-           class="bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-800 text-lg">
-          Prenota ora
-        </a>
-      {% else %}
-        <a href="{{ url_for('auth.login', next=request.url) }}"
-           class="bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-800 text-lg">
-          Accedi per prenotare
-        </a>
-      {% endif %}
-    {% else %}
-      <span class="bg-gray-200 text-gray-500 px-6 py-3 rounded-xl font-semibold">Posti esauriti</span>
-    {% endif %}
+
   </div>
 </div>
 {% endblock %}

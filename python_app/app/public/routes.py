@@ -17,14 +17,36 @@ logger = logging.getLogger(__name__)
 
 @public_bp.route("/")
 def index():
+    now = datetime.now(timezone.utc)
     corsi = Corso.query.filter_by(pubblicato=True).order_by(Corso.data_inizio.asc()).all()
-    return render_template("public/index.html", corsi=corsi)
+
+    def _dt(d):
+        if d is None:
+            return None
+        return d if d.tzinfo else d.replace(tzinfo=timezone.utc)
+
+    corsi_aperti = [c for c in corsi if c.data_inizio and _dt(c.data_inizio) > now and (not c.posti_totali or c.posti_disponibili > 0)]
+    corsi_completi = [c for c in corsi if c.data_inizio and _dt(c.data_inizio) > now and c.posti_totali and c.posti_disponibili <= 0]
+    corsi_passati = [c for c in corsi if not c.data_inizio or _dt(c.data_inizio) <= now]
+    return render_template("public/index.html",
+                           corsi_aperti=corsi_aperti,
+                           corsi_completi=corsi_completi,
+                           corsi_passati=corsi_passati)
 
 
 @public_bp.route("/corsi/<string:corso_id>")
 def corso_dettaglio(corso_id):
     corso = Corso.query.filter_by(id=corso_id, pubblicato=True).first_or_404()
-    return render_template("public/corso_dettaglio.html", corso=corso)
+    now = datetime.now(timezone.utc)
+    di = corso.data_inizio
+    di_aware = di.replace(tzinfo=timezone.utc) if di and not di.tzinfo else di
+    is_passato = bool(di_aware and di_aware <= now)
+    is_completo = bool(corso.posti_totali and corso.posti_disponibili <= 0)
+    posti_liberi = corso.posti_disponibili if corso.posti_totali else None
+    perc = int(min(100, round((corso.posti_occupati or 0) / corso.posti_totali * 100))) if corso.posti_totali else 0
+    return render_template("public/corso_dettaglio.html", corso=corso,
+                           is_passato=is_passato, is_completo=is_completo,
+                           posti_liberi=posti_liberi, perc_occupazione=perc)
 
 
 @public_bp.route("/corsi/<string:corso_id>/prenota", methods=["GET", "POST"])
@@ -68,16 +90,24 @@ def prenota(corso_id):
             nome_p = (request.form.get(f"partecipante_{i}_nome") or "").strip()[:100]
             cognome_p = (request.form.get(f"partecipante_{i}_cognome") or "").strip()[:100]
             email_p = validate_email_address((request.form.get(f"partecipante_{i}_email") or "").strip()) or ""
+            telefono_p = (request.form.get(f"partecipante_{i}_telefono") or "").strip()[:30]
+            cf_p = (request.form.get(f"partecipante_{i}_cf") or "").strip()[:20].upper()
             if nome_p or cognome_p:
                 p = Partecipante(
                     prenotazione_id=prenotazione.id,
                     nome=nome_p or current_user.nome,
                     cognome=cognome_p or current_user.cognome,
                     email=email_p,
-                    telefono=(request.form.get(f"partecipante_{i}_telefono") or "").strip()[:30],
-                    codice_fiscale=(request.form.get(f"partecipante_{i}_cf") or "").strip()[:20].upper(),
+                    telefono=telefono_p,
+                    codice_fiscale=cf_p,
                 )
                 db.session.add(p)
+            # Aggiorna anagrafica utente dal primo partecipante se fornisce dati mancanti o aggiornati
+            if i == 0:
+                if cf_p and cf_p != (current_user.codice_fiscale or ""):
+                    current_user.codice_fiscale = cf_p
+                if telefono_p and telefono_p != (current_user.telefono or ""):
+                    current_user.telefono = telefono_p
         # Corsi gratuiti: conferma immediata senza passare per il pagamento
         if float(corso.costo or 0) == 0:
             prenotazione.stato = StatoPrenotazione.CONFERMATA
@@ -114,6 +144,19 @@ def prenota(corso_id):
 @public_bp.route("/notifiche-corsi", methods=["GET", "POST"])
 @limiter.limit("10 per hour")
 def notifiche_corsi():
+    # Se l'utente è loggato, gestisce l'iscrizione tramite il profilo
+    if current_user.is_authenticated:
+        if not current_user.consenso_marketing:
+            flash(
+                "Per ricevere notifiche sui corsi devi abilitare il consenso "
+                "alle comunicazioni di marketing nel tuo profilo. "
+                "Spunta la casella nella sezione 'Privacy e comunicazioni' e salva.",
+                "info",
+            )
+            return redirect(url_for("dashboard.dati_personali"))
+        flash("Il tuo profilo è già abilitato a ricevere notifiche sui corsi.", "success")
+        return redirect(url_for("dashboard.dati_personali"))
+
     # Gather unique tags from published courses to offer as interest categories
     corsi = Corso.query.filter_by(pubblicato=True).all()
     tag_disponibili = sorted({t for c in corsi for t in (c.tags or [])})

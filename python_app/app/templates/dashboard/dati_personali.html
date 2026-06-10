@@ -4,7 +4,7 @@
 {% block dashboard_content %}
 <h1 class="text-2xl font-bold mb-6">Dati personali</h1>
 
-<form method="POST" class="max-w-lg space-y-6">
+<form method="POST" class="space-y-6" id="form-dati">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
     <div class="grid grid-cols-2 gap-4">
@@ -33,11 +33,35 @@
 
   <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
     <h3 class="font-semibold">Cambia password</h3>
-    <p class="text-sm text-gray-500">Lascia vuoto per non modificare</p>
+    <p class="text-sm text-gray-500">Lascia vuoto per non modificare la password</p>
+    <div>
+      <label class="block text-sm font-medium mb-1">Password attuale</label>
+      <input type="password" name="password_attuale" autocomplete="current-password" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+    </div>
     <div>
       <label class="block text-sm font-medium mb-1">Nuova password</label>
-      <input type="password" name="nuova_password" minlength="8" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+      <input type="password" name="nuova_password" id="nuova_password" minlength="8" autocomplete="new-password" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+      <div id="strength-bar" class="mt-2 h-1.5 rounded-full bg-gray-200 overflow-hidden hidden">
+        <div id="strength-fill" class="h-full rounded-full transition-all duration-300 w-0"></div>
+      </div>
+      <p id="strength-label" class="text-xs mt-1 hidden"></p>
     </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">Conferma nuova password</label>
+      <input type="password" name="conferma_password" id="conferma_password" minlength="8" autocomplete="new-password" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+      <p id="match-msg" class="text-xs mt-1 hidden"></p>
+    </div>
+  </div>
+
+  <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-3">
+    <h3 class="font-semibold">Privacy e comunicazioni</h3>
+    <label class="flex items-start gap-3 cursor-pointer">
+      <input type="checkbox" name="consenso_marketing" class="mt-0.5 accent-blue-600" {% if current_user.consenso_marketing %}checked{% endif %}>
+      <span class="text-sm text-gray-700">
+        Acconsento a ricevere comunicazioni di marketing, notifiche sui nuovi corsi e offerte promozionali.
+        Puoi revocare il consenso in qualsiasi momento.
+      </span>
+    </label>
   </div>
 
   <button type="submit" class="w-full bg-blue-700 text-white py-2.5 rounded-lg font-medium hover:bg-blue-800">
@@ -45,7 +69,7 @@
   </button>
 </form>
 
-<div class="mt-12 max-w-lg">
+<div class="mt-12">
   <div class="border border-red-200 rounded-xl p-5">
     <h3 class="font-semibold text-red-700 mb-2">Elimina account</h3>
     <p class="text-sm text-gray-600 mb-3">Questa azione è irreversibile. Tutti i tuoi dati verranno eliminati.</p>
@@ -57,4 +81,69 @@
     </form>
   </div>
 </div>
+
+<script>
+(function () {
+  const pw = document.getElementById('nuova_password');
+  const conf = document.getElementById('conferma_password');
+  const bar = document.getElementById('strength-bar');
+  const fill = document.getElementById('strength-fill');
+  const lbl = document.getElementById('strength-label');
+  const matchMsg = document.getElementById('match-msg');
+
+  const levels = [
+    { label: 'Molto debole', color: '#ef4444', w: '20%' },
+    { label: 'Debole',       color: '#f97316', w: '40%' },
+    { label: 'Discreta',     color: '#eab308', w: '60%' },
+    { label: 'Buona',        color: '#84cc16', w: '80%' },
+    { label: 'Ottima',       color: '#22c55e', w: '100%' },
+  ];
+
+  function score(v) {
+    let s = 0;
+    if (v.length >= 8)  s++;
+    if (v.length >= 12) s++;
+    if (/[A-Z]/.test(v)) s++;
+    if (/[0-9]/.test(v)) s++;
+    if (/[^A-Za-z0-9]/.test(v)) s++;
+    return Math.min(s, 4);
+  }
+
+  pw.addEventListener('input', function () {
+    const v = this.value;
+    if (!v) { bar.classList.add('hidden'); lbl.classList.add('hidden'); return; }
+    bar.classList.remove('hidden'); lbl.classList.remove('hidden');
+    const lvl = levels[score(v)];
+    fill.style.width = lvl.w;
+    fill.style.backgroundColor = lvl.color;
+    lbl.textContent = lvl.label;
+    lbl.style.color = lvl.color;
+    checkMatch();
+  });
+
+  function checkMatch() {
+    if (!conf.value) { matchMsg.classList.add('hidden'); return; }
+    matchMsg.classList.remove('hidden');
+    if (pw.value === conf.value) {
+      matchMsg.textContent = 'Le password coincidono ✓';
+      matchMsg.style.color = '#16a34a';
+    } else {
+      matchMsg.textContent = 'Le password non coincidono';
+      matchMsg.style.color = '#dc2626';
+    }
+  }
+
+  conf.addEventListener('input', checkMatch);
+
+  document.getElementById('form-dati').addEventListener('submit', function (e) {
+    if (pw.value && pw.value !== conf.value) {
+      e.preventDefault();
+      conf.focus();
+      matchMsg.classList.remove('hidden');
+      matchMsg.textContent = 'Le password non coincidono';
+      matchMsg.style.color = '#dc2626';
+    }
+  });
+})();
+</script>
 {% endblock %}

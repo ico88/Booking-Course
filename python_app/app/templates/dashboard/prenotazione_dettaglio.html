@@ -1,84 +1,221 @@
 {% extends "dashboard/base_dashboard.html" %}
-{% block title %}Prenotazione{% endblock %}
+{% block title %}Prenotazione — {{ prenotazione.corso.titolo }}{% endblock %}
 
 {% block dashboard_content %}
 {% set p = prenotazione %}
-<div class="mb-4"><a href="{{ url_for('dashboard.index') }}" class="text-sm text-blue-700 hover:underline">← Le mie prenotazioni</a></div>
-<h1 class="text-2xl font-bold mb-6">{{ p.corso.titolo }}</h1>
+
+<div class="mb-6 flex items-center gap-2">
+  <a href="{{ url_for('dashboard.index') }}"
+     class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+    </svg>
+    Le mie prenotazioni
+  </a>
+</div>
+
+<div class="flex items-start justify-between gap-4 mb-6">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">{{ p.corso.titolo }}</h1>
+    <p class="text-gray-500 mt-1 text-sm">
+      {% if p.corso.data_inizio %}{{ format_date(p.corso.data_inizio) }}{% endif %}
+      {% if p.corso.data_inizio and p.corso.luogo %} · {% endif %}
+      {% if p.corso.luogo %}{{ p.corso.luogo }}{% endif %}
+    </p>
+  </div>
+  {% set stato_val = p.stato.value %}
+  {% set badge = {
+    'CONFERMATA': ('bg-green-100 text-green-700', 'Confermata'),
+    'IN_ATTESA_PAGAMENTO': ('bg-amber-100 text-amber-700', 'In attesa di pagamento'),
+    'PAGAMENTO_CARICATO': ('bg-blue-100 text-blue-700', 'Ricevuta caricata'),
+    'ANNULLATA': ('bg-red-100 text-red-700', 'Annullata'),
+    'SCADUTA': ('bg-gray-100 text-gray-600', 'Scaduta'),
+  } %}
+  {% set cls, lbl = badge.get(stato_val, ('bg-gray-100 text-gray-600', stato_val)) %}
+  <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ cls }} shrink-0">{{ lbl }}</span>
+</div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-  <div class="lg:col-span-2 space-y-6">
+  <div class="lg:col-span-2 space-y-5">
 
-    {# Stato #}
-    {% set color_map = {'CONFERMATA': 'green', 'IN_ATTESA_PAGAMENTO': 'yellow', 'PAGAMENTO_CARICATO': 'blue', 'ANNULLATA': 'red', 'SCADUTA': 'gray'} %}
-    {% set color = color_map.get(p.stato.value, 'gray') %}
-    <div class="bg-white border border-gray-200 rounded-xl p-5">
-      <div class="flex items-center justify-between">
-        <div>
-          <div class="text-sm text-gray-500">Stato</div>
-          <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-{{ color }}-100 text-{{ color }}-700 mt-1">
-            {{ p.stato_label }}
-          </span>
-        </div>
-        <div class="text-right">
-          <div class="text-sm text-gray-500">Importo</div>
-          <div class="text-2xl font-bold text-gray-900">{{ format_currency(p.importo_totale) }}</div>
-        </div>
-      </div>
-      {% if p.scadenza_pagamento and p.stato.value == 'IN_ATTESA_PAGAMENTO' %}
-      <div class="mt-3 text-sm text-yellow-700 bg-yellow-50 rounded-lg p-3">
-        ⚠️ Scadenza pagamento: {{ format_datetime(p.scadenza_pagamento) }}
-      </div>
-      {% endif %}
+    {# Scadenza pagamento #}
+    {% if p.stato.value == 'IN_ATTESA_PAGAMENTO' and p.scadenza_pagamento %}
+    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+      <p class="text-sm font-semibold text-amber-800 mb-1">
+        ⏰ Scadenza: {{ format_datetime(p.scadenza_pagamento) }}
+      </p>
+      <p class="text-sm text-amber-700">
+        Effettua il bonifico e carica la ricevuta entro questa data, altrimenti la prenotazione verrà annullata automaticamente.
+      </p>
     </div>
+    {% endif %}
 
-    {# Azioni pagamento #}
+    {# Upload ricevuta — drag & drop #}
     {% if p.stato.value == 'IN_ATTESA_PAGAMENTO' %}
     <div class="bg-white border border-gray-200 rounded-xl p-5">
-      <h3 class="font-semibold mb-3">Completa il pagamento</h3>
-      <a href="{{ url_for('dashboard.pagamento', prenotazione_id=p.id) }}"
-         class="bg-blue-700 text-white px-5 py-2.5 rounded-lg hover:bg-blue-800 inline-block font-medium">
-        Vai al pagamento →
-      </a>
-    </div>
-    {% endif %}
+      <h3 class="font-semibold mb-4">Carica ricevuta di pagamento</h3>
 
-    {# Upload ricevuta bonifico #}
-    {% if p.stato.value in ('IN_ATTESA_PAGAMENTO', 'PAGAMENTO_CARICATO') %}
-    <div class="bg-white border border-gray-200 rounded-xl p-5">
-      <h3 class="font-semibold mb-3">Carica ricevuta bonifico</h3>
-      {% if p.url_contabile %}
-        <div class="text-sm text-green-700 bg-green-50 rounded-lg p-3 mb-3">✓ Ricevuta caricata: {{ p.nome_file_contabile }}</div>
+      {% if p.corso.coordinate_bancarie %}
+      <div class="mb-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Coordinate bancarie</p>
+        <pre class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-800 whitespace-pre-wrap font-mono">{{ p.corso.coordinate_bancarie }}</pre>
+      </div>
+      <p class="text-sm font-medium text-gray-700 mb-4">
+        Importo da versare: <span class="font-bold text-gray-900">{{ format_currency(p.importo_totale) }}</span>
+      </p>
       {% endif %}
-      <form method="POST" action="{{ url_for('dashboard.upload_contabile', prenotazione_id=p.id) }}" enctype="multipart/form-data">
-        <div class="flex gap-3">
-          <input type="file" name="file" accept=".pdf,.jpg,.jpeg,.png" required class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm">
-          <button type="submit" class="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-900">Carica</button>
+
+      <form method="POST" action="{{ url_for('dashboard.upload_contabile', prenotazione_id=p.id) }}"
+            enctype="multipart/form-data" id="form-upload">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        {# Drop zone #}
+        <div id="drop-zone"
+             class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors"
+             onclick="document.getElementById('file-input').click()">
+          <svg class="w-10 h-10 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+          </svg>
+          <p class="text-sm font-medium text-gray-700">Trascina qui la ricevuta o <span class="text-blue-600">clicca per scegliere</span></p>
+          <p class="text-xs text-gray-400 mt-1">JPG, PNG o PDF · max 10 MB</p>
+          <input type="file" name="file" id="file-input" accept=".pdf,.jpg,.jpeg,.png" required class="hidden">
         </div>
+
+        {# File selezionato #}
+        <div id="file-preview" class="hidden mt-3 flex items-center justify-between bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <div class="flex items-center gap-3">
+            <svg class="w-6 h-6 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <div>
+              <p class="text-sm font-medium text-blue-900" id="file-name"></p>
+              <p class="text-xs text-blue-600" id="file-size"></p>
+            </div>
+          </div>
+          <button type="button" id="btn-remove-file"
+                  class="text-gray-400 hover:text-gray-700 p-1 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <button type="submit" id="btn-upload"
+                class="hidden mt-4 w-full bg-blue-700 text-white py-3 rounded-xl font-semibold hover:bg-blue-800 transition-colors flex items-center justify-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+          </svg>
+          Carica ricevuta
+        </button>
       </form>
+
+      {% if p.url_contabile %}
+      <div class="mt-4 flex items-center gap-2 text-sm text-green-700 bg-green-50 rounded-lg p-3">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+        </svg>
+        Ricevuta precedente: {{ p.nome_file_contabile or 'file caricato' }}
+      </div>
+      {% endif %}
     </div>
     {% endif %}
 
-    {# Attestato #}
+    {# Ricevuta in attesa di verifica #}
+    {% if p.stato.value == 'PAGAMENTO_CARICATO' %}
+    <div class="bg-blue-50 border border-blue-200 rounded-xl p-5">
+      <div class="flex items-start gap-3">
+        <svg class="w-6 h-6 text-blue-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <div>
+          <p class="font-semibold text-blue-900">Ricevuta in fase di verifica</p>
+          <p class="text-sm text-blue-700 mt-1">
+            La segreteria verificherà il tuo pagamento e confermerà l'iscrizione.
+            Riceverai una email non appena la prenotazione sarà approvata.
+          </p>
+          {% if p.url_contabile %}
+          <a href="{{ p.url_contabile }}" target="_blank" rel="noopener noreferrer"
+             class="inline-flex items-center gap-1.5 text-sm text-blue-700 hover:underline mt-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+            </svg>
+            {{ p.nome_file_contabile or 'Visualizza ricevuta' }}
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {# Confermata #}
+    {% if p.stato.value == 'CONFERMATA' %}
+    <div class="bg-green-50 border border-green-200 rounded-xl p-5">
+      <div class="flex items-start gap-3">
+        <svg class="w-6 h-6 text-green-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <div>
+          <p class="font-semibold text-green-900">Prenotazione confermata!</p>
+          <p class="text-sm text-green-700 mt-1">La tua iscrizione al corso è stata confermata dalla segreteria.</p>
+          {% if p.note_segreteria %}
+          <p class="text-sm text-green-700 mt-1">Note: {{ p.note_segreteria }}</p>
+          {% endif %}
+          {% if p.corso.attestato_abilitato and not p.attestato_emesso %}
+          <p class="text-sm text-green-700 mt-2">
+            Dopo il completamento del corso potrai scaricare il tuo attestato di partecipazione da questa pagina.
+          </p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {# Attestato disponibile #}
     {% if p.attestato_emesso and p.attestato_url %}
-    <div class="bg-white border border-green-200 bg-green-50 rounded-xl p-5">
-      <h3 class="font-semibold text-green-800 mb-2">Attestato disponibile</h3>
-      <a href="{{ url_for('dashboard.scarica_attestato', prenotazione_id=p.id) }}"
-         class="bg-green-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-800 inline-block">
-        Scarica attestato
-      </a>
+    <div class="bg-purple-50 border border-purple-200 rounded-xl p-5">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <svg class="w-7 h-7 text-purple-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+          </svg>
+          <div>
+            <p class="font-semibold text-purple-900">Attestato disponibile!</p>
+            {% if p.attestato_emesso_at %}
+            <p class="text-sm text-purple-700">Emesso il {{ format_date(p.attestato_emesso_at) }}</p>
+            {% endif %}
+          </div>
+        </div>
+        <a href="{{ url_for('dashboard.scarica_attestato', prenotazione_id=p.id) }}"
+           class="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+          </svg>
+          Scarica
+        </a>
+      </div>
     </div>
     {% endif %}
 
     {# Partecipanti #}
     {% if p.partecipanti %}
     <div class="bg-white border border-gray-200 rounded-xl p-5">
-      <h3 class="font-semibold mb-3">Partecipanti</h3>
-      <div class="space-y-2">
+      <h3 class="font-semibold mb-4 flex items-center gap-2">
+        <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+        Partecipanti
+      </h3>
+      <div class="space-y-3">
         {% for part in p.partecipanti %}
-        <div class="flex items-center justify-between text-sm py-2 border-b border-gray-100 last:border-0">
-          <span class="font-medium">{{ part.nome }} {{ part.cognome }}</span>
-          <span class="text-gray-500">{{ part.email or '' }}</span>
+        <div class="flex items-start gap-3 py-3 border-b border-gray-100 last:border-0">
+          <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm shrink-0">
+            {{ loop.index }}
+          </div>
+          <div>
+            <p class="font-medium text-gray-900">{{ part.nome }} {{ part.cognome }}</p>
+            {% if part.email %}<p class="text-sm text-gray-500">{{ part.email }}</p>{% endif %}
+            {% if part.codice_fiscale %}<p class="text-sm text-gray-500 font-mono">{{ part.codice_fiscale }}</p>{% endif %}
+          </div>
         </div>
         {% endfor %}
       </div>
@@ -87,24 +224,103 @@
 
   </div>
 
+  {# Sidebar #}
   <div class="space-y-4">
     <div class="bg-white border border-gray-200 rounded-xl p-5">
-      <h3 class="font-semibold mb-3">Dettagli corso</h3>
-      <div class="space-y-2 text-sm">
-        {% if p.corso.data_inizio %}<div><span class="text-gray-500">Data:</span> {{ format_date(p.corso.data_inizio) }}</div>{% endif %}
-        {% if p.corso.luogo %}<div><span class="text-gray-500">Luogo:</span> {{ p.corso.luogo }}</div>{% endif %}
-        {% if p.corso.orario %}<div><span class="text-gray-500">Orario:</span> {{ p.corso.orario }}</div>{% endif %}
-        <div><span class="text-gray-500">Posti:</span> {{ p.numero_posti }}</div>
-        {% if p.metodo_pagamento %}<div><span class="text-gray-500">Pagamento:</span> {{ p.metodo_pagamento.value }}</div>{% endif %}
-        {% if p.id_transazione %}<div><span class="text-gray-500">Transazione:</span> <span class="font-mono text-xs">{{ p.id_transazione }}</span></div>{% endif %}
+      <h3 class="font-semibold mb-4">Riepilogo</h3>
+      <div class="space-y-3 text-sm">
+        <div class="flex justify-between py-2 border-b border-gray-100">
+          <span class="text-gray-500">Posti</span>
+          <span class="font-medium">{{ p.numero_posti }}</span>
+        </div>
+        <div class="flex justify-between py-2 border-b border-gray-100">
+          <span class="text-gray-500">Costo/persona</span>
+          <span class="font-medium">{{ format_currency(p.corso.costo) }}</span>
+        </div>
+        <div class="flex justify-between py-2 border-b border-gray-100">
+          <span class="text-gray-500 font-semibold">Totale</span>
+          <span class="font-bold text-gray-900 text-base">{{ format_currency(p.importo_totale) }}</span>
+        </div>
+        {% if p.corso.data_inizio %}
+        <div class="flex justify-between py-2 border-b border-gray-100">
+          <span class="text-gray-500">Data</span>
+          <span class="font-medium">{{ format_date(p.corso.data_inizio) }}</span>
+        </div>
+        {% endif %}
+        {% if p.corso.luogo %}
+        <div class="flex justify-between py-2 border-b border-gray-100">
+          <span class="text-gray-500">Luogo</span>
+          <span class="font-medium">{{ p.corso.luogo }}</span>
+        </div>
+        {% endif %}
+        {% if p.metodo_pagamento %}
+        <div class="flex justify-between py-2 border-b border-gray-100">
+          <span class="text-gray-500">Pagamento</span>
+          <span class="font-medium">{{ p.metodo_pagamento.value.capitalize() }}</span>
+        </div>
+        {% endif %}
+        {% if p.note %}
+        <div class="py-2">
+          <p class="text-gray-500 mb-1">Note</p>
+          <p class="text-gray-700">{{ p.note }}</p>
+        </div>
+        {% endif %}
       </div>
     </div>
-    {% if p.note %}
-    <div class="bg-white border border-gray-200 rounded-xl p-5">
-      <h3 class="font-semibold mb-2">Le tue note</h3>
-      <p class="text-sm text-gray-700">{{ p.note }}</p>
-    </div>
-    {% endif %}
   </div>
 </div>
+
+<script>
+(function () {
+  const dropZone = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('file-input');
+  const preview = document.getElementById('file-preview');
+  const btnUpload = document.getElementById('btn-upload');
+  const fileName = document.getElementById('file-name');
+  const fileSize = document.getElementById('file-size');
+  const btnRemove = document.getElementById('btn-remove-file');
+  if (!dropZone) return;
+
+  function showFile(f) {
+    if (f.size > 10 * 1024 * 1024) { alert('File troppo grande (max 10 MB)'); return; }
+    fileName.textContent = f.name;
+    fileSize.textContent = (f.size / 1024).toFixed(0) + ' KB';
+    dropZone.classList.add('hidden');
+    preview.classList.remove('hidden');
+    btnUpload.classList.remove('hidden');
+  }
+
+  fileInput.addEventListener('change', function () {
+    if (this.files[0]) showFile(this.files[0]);
+  });
+
+  btnRemove.addEventListener('click', function () {
+    fileInput.value = '';
+    dropZone.classList.remove('hidden');
+    preview.classList.add('hidden');
+    btnUpload.classList.add('hidden');
+  });
+
+  dropZone.addEventListener('dragover', function (e) {
+    e.preventDefault();
+    this.classList.add('border-blue-400', 'bg-blue-50');
+  });
+
+  dropZone.addEventListener('dragleave', function () {
+    this.classList.remove('border-blue-400', 'bg-blue-50');
+  });
+
+  dropZone.addEventListener('drop', function (e) {
+    e.preventDefault();
+    this.classList.remove('border-blue-400', 'bg-blue-50');
+    const f = e.dataTransfer.files[0];
+    if (f) {
+      const dt = new DataTransfer();
+      dt.items.add(f);
+      fileInput.files = dt.files;
+      showFile(f);
+    }
+  });
+})();
+</script>
 {% endblock %}

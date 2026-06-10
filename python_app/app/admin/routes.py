@@ -314,6 +314,47 @@ def emetti_attestato(prenotazione_id):
     return redirect(url_for("admin.prenotazione_dettaglio", prenotazione_id=p.id))
 
 
+@admin_bp.route("/prenotazioni/<string:prenotazione_id>/attestato/pdf", methods=["POST"])
+@admin_required
+def upload_attestato_pdf(prenotazione_id):
+    p = Prenotazione.query.get_or_404(prenotazione_id)
+    if p.stato != StatoPrenotazione.CONFERMATA:
+        flash("La prenotazione deve essere confermata.", "error")
+        return redirect(url_for("admin.prenotazione_dettaglio", prenotazione_id=p.id))
+
+    file = request.files.get("attestato_pdf")
+    if not file or not file.filename:
+        flash("Nessun file selezionato.", "error")
+        return redirect(url_for("admin.prenotazione_dettaglio", prenotazione_id=p.id))
+    if not file.filename.lower().endswith(".pdf"):
+        flash("Sono accettati solo file PDF.", "error")
+        return redirect(url_for("admin.prenotazione_dettaglio", prenotazione_id=p.id))
+    file.seek(0, 2)
+    if file.tell() > 20 * 1024 * 1024:
+        flash("File troppo grande (max 20 MB).", "error")
+        return redirect(url_for("admin.prenotazione_dettaglio", prenotazione_id=p.id))
+    file.seek(0)
+
+    filename = f"attestato_{p.id}.pdf"
+    upload_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], "attestati")
+    os.makedirs(upload_dir, exist_ok=True)
+    file.save(os.path.join(upload_dir, filename))
+
+    p.attestato_url = f"/static/uploads/attestati/{filename}"
+    p.attestato_emesso = True
+    p.attestato_emesso_at = datetime.now(timezone.utc)
+    db.session.commit()
+    logger.info("Admin %s: attestato PDF caricato per prenotazione %s", current_user.email, p.id)
+
+    try:
+        invia_email_attestato(p)
+    except Exception:
+        pass
+
+    flash("Attestato PDF caricato e inviato all'utente.", "success")
+    return redirect(url_for("admin.prenotazione_dettaglio", prenotazione_id=p.id))
+
+
 def _applica_variabili_template(template: str, variables: dict) -> str:
     """Safe {varname} substitution without Python format spec interpretation."""
     return re.sub(r'\{(\w+)\}', lambda m: variables.get(m.group(1), m.group(0)), template)
@@ -487,7 +528,9 @@ def marketing():
     leads = LeadMarketing.query.order_by(LeadMarketing.created_at.desc()).all()
     corsi_pubblicati = Corso.query.filter_by(pubblicato=True).order_by(Corso.data_inizio.desc()).all()
     all_tags = sorted({t for lead in leads for t in (lead.tags or [])})
-    return render_template("admin/marketing/lista.html", leads=leads, corsi_pubblicati=corsi_pubblicati, all_tags=all_tags)
+    utenti_marketing = Utente.query.filter_by(consenso_marketing=True).order_by(Utente.data_consenso.desc()).all()
+    return render_template("admin/marketing/lista.html", leads=leads, corsi_pubblicati=corsi_pubblicati,
+                           all_tags=all_tags, utenti_marketing=utenti_marketing)
 
 
 @admin_bp.route("/marketing/leads/<string:lead_id>/elimina", methods=["POST"])
