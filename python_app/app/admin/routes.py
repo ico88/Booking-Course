@@ -574,37 +574,40 @@ def marketing_importa():
 _SENSITIVE_KEYS = {"smtp_password", "stripe_secret_key", "paypal_client_secret", "whatsapp_token", "telegram_bot_token", "turnstile_secret_key"}
 _MASK = "••••••••"
 
+_TAB_KEYS = {
+    "generale":  ["app_name", "app_url", "email_segreteria"],
+    "aspetto":   ["color_scheme"],
+    "email":     ["smtp_host", "smtp_port", "smtp_user", "smtp_password", "smtp_from_name"],
+    "pagamenti": ["stripe_publishable_key", "stripe_secret_key",
+                  "paypal_client_id", "paypal_client_secret", "paypal_mode"],
+    "notifiche": ["whatsapp_phone_id", "whatsapp_token", "whatsapp_template",
+                  "telegram_bot_token", "telegram_chat_id"],
+    "sicurezza": ["turnstile_site_key", "turnstile_secret_key"],
+}
+
 
 @admin_bp.route("/impostazioni", methods=["GET", "POST"])
 @admin_required
 def impostazioni():
     if request.method == "POST":
-        keys = [
-            "app_name", "app_url", "email_segreteria", "color_scheme",
-            "smtp_host", "smtp_port", "smtp_user", "smtp_password", "smtp_from_name",
-            "stripe_publishable_key", "stripe_secret_key",
-            "paypal_client_id", "paypal_client_secret", "paypal_mode",
-            "whatsapp_phone_id", "whatsapp_token", "whatsapp_template",
-            "telegram_bot_token", "telegram_chat_id",
-            "turnstile_site_key", "turnstile_secret_key",
-        ]
+        saved_tab = request.form.get("_tab", "generale")
+        keys = _TAB_KEYS.get(saved_tab, _TAB_KEYS["generale"])
         for key in keys:
             val = request.form.get(key, "").strip()[:2000]
             if val == _MASK:
-                continue  # skip masked placeholder, keep existing value
+                continue
             Impostazione.set(key, val)
         db.session.commit()
-        logger.info("Admin %s: impostazioni aggiornate", current_user.email)
+        logger.info("Admin %s: impostazioni tab=%s aggiornate", current_user.email, saved_tab)
         flash("Impostazioni salvate.", "success")
-        return redirect(url_for("admin.impostazioni"))
+        return redirect(url_for("admin.impostazioni", tab=saved_tab))
 
-    settings = {}
-    for row in Impostazione.query.all():
-        if row.chiave in _SENSITIVE_KEYS and row.valore:
-            settings[row.chiave] = _MASK
-        else:
-            settings[row.chiave] = row.valore
-    return render_template("admin/impostazioni.html", settings=settings)
+    tab = request.args.get("tab", "generale")
+    settings = {
+        row.chiave: (_MASK if row.chiave in _SENSITIVE_KEYS and row.valore else row.valore)
+        for row in Impostazione.query.all()
+    }
+    return render_template("admin/impostazioni.html", settings=settings, tab=tab)
 
 
 @admin_bp.route("/impostazioni/test-email", methods=["POST"])
