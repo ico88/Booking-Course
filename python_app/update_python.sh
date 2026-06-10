@@ -8,7 +8,7 @@ set -euo pipefail
 APP_DIR="$(cd "$(dirname "$0")" && pwd)"
 VENV_DIR="$APP_DIR/.venv"
 SERVICE_NAME="booking-corsi"
-APP_USER="${APP_USER:-www-data}"
+APP_USER="${APP_USER:-booking-corsi}"
 PYTHON_BIN="${PYTHON_BIN:-}"
 
 info()  { echo "[INFO]  $*"; }
@@ -40,6 +40,27 @@ ensure_venv_support() {
   fi
 }
 
+ensure_service_user() {
+  [[ "$APP_USER" != "root" ]] || error "APP_USER non può essere root"
+
+  if id -u "$APP_USER" >/dev/null 2>&1; then
+    info "Utente servizio già esistente: $APP_USER"
+  else
+    info "Creazione utente servizio: $APP_USER"
+    useradd --system --home-dir "$APP_DIR" --shell /usr/sbin/nologin "$APP_USER"
+  fi
+}
+
+grant_parent_traversal() {
+  local dir
+  dir="$(dirname "$APP_DIR")"
+
+  while [[ "$dir" != "/" && -n "$dir" ]]; do
+    setfacl -m "u:${APP_USER}:--x" "$dir" 2>/dev/null || true
+    dir="$(dirname "$dir")"
+  done
+}
+
 select_python() {
   local candidate
 
@@ -61,6 +82,12 @@ select_python() {
 }
 
 [[ $EUID -eq 0 ]] || error "Esegui come root: sudo bash update_python.sh"
+info "Utente servizio dedicato: $APP_USER"
+
+# ── Dipendenze minime sistema ────────────────────────────────
+apt-get update -qq
+apt-get install -y -qq acl
+ensure_service_user
 
 # ── Pull aggiornamenti ───────────────────────────────────────
 info "Pull da git..."
@@ -83,6 +110,10 @@ version_ok "$VENV_DIR/bin/python" || error "Virtualenv con Python non supportato
 "$VENV_DIR/bin/python" -m flask --version >/dev/null
 ok "Dipendenze aggiornate"
 
+# ── Permessi app ─────────────────────────────────────────────
+chown -R "$APP_USER:$APP_USER" "$APP_DIR"
+grant_parent_traversal
+
 # ── Migrazione DB ────────────────────────────────────────────
 info "Migrazione database..."
 cd "$APP_DIR"
@@ -90,9 +121,6 @@ export $(grep -v '^#' .env | xargs)
 sudo -u "$APP_USER" "$VENV_DIR/bin/python" -m flask --app wsgi:app db migrate -m "auto" 2>/dev/null || true
 sudo -u "$APP_USER" "$VENV_DIR/bin/python" -m flask --app wsgi:app db upgrade
 ok "Database aggiornato"
-
-# ── Aggiorna permessi statici ────────────────────────────────
-chown -R "$APP_USER:$APP_USER" "$APP_DIR/app/static"
 
 # ── Riavvio servizio ─────────────────────────────────────────
 info "Riavvio servizio..."

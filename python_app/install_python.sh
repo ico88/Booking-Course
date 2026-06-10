@@ -8,7 +8,7 @@ set -euo pipefail
 # ============================================================
 
 APP_DIR="$(cd "$(dirname "$0")" && pwd)"
-APP_USER="${APP_USER:-www-data}"
+APP_USER="${APP_USER:-booking-corsi}"
 VENV_DIR="$APP_DIR/.venv"
 SERVICE_NAME="booking-corsi"
 PORT="${PORT:-5000}"
@@ -44,6 +44,27 @@ ensure_venv_support() {
   fi
 }
 
+ensure_service_user() {
+  [[ "$APP_USER" != "root" ]] || error "APP_USER non può essere root"
+
+  if id -u "$APP_USER" >/dev/null 2>&1; then
+    info "Utente servizio già esistente: $APP_USER"
+  else
+    info "Creazione utente servizio: $APP_USER"
+    useradd --system --home-dir "$APP_DIR" --shell /usr/sbin/nologin "$APP_USER"
+  fi
+}
+
+grant_parent_traversal() {
+  local dir
+  dir="$(dirname "$APP_DIR")"
+
+  while [[ "$dir" != "/" && -n "$dir" ]]; do
+    setfacl -m "u:${APP_USER}:--x" "$dir" 2>/dev/null || true
+    dir="$(dirname "$dir")"
+  done
+}
+
 select_python() {
   local candidate
 
@@ -65,6 +86,7 @@ select_python() {
 }
 
 [[ $EUID -eq 0 ]] || error "Esegui come root: sudo bash install_python.sh"
+info "Utente servizio dedicato: $APP_USER"
 
 # ── Dominio per SSL ──────────────────────────────────────────
 if [[ -z "$DOMAIN" ]]; then
@@ -82,9 +104,12 @@ fi
 info "Installazione dipendenze sistema..."
 apt-get update -qq
 apt-get install -y -qq \
-  gcc build-essential nginx curl certbot python3-certbot-nginx \
+  gcc build-essential nginx curl certbot python3-certbot-nginx acl \
   python3-pip python3-venv python3-dev \
   libjpeg-dev zlib1g-dev libpng-dev libwebp-dev libfreetype6-dev liblcms2-dev
+
+# ── Utente servizio ─────────────────────────────────────────
+ensure_service_user
 
 # ── Python ──────────────────────────────────────────────────
 info "Verifica Python supportato (3.11, 3.12 o 3.13)..."
@@ -139,6 +164,7 @@ fi
 
 # ── Permessi ─────────────────────────────────────────────────
 chown -R "$APP_USER:$APP_USER" "$APP_DIR"
+grant_parent_traversal
 mkdir -p "$APP_DIR/app/static/uploads"
 chown -R "$APP_USER:$APP_USER" "$APP_DIR/app/static/uploads"
 
