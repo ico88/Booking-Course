@@ -191,17 +191,23 @@ def disiscrivi():
 
 @public_bp.route("/privacy-policy")
 def privacy_policy():
-    content = sanitize_html(Impostazione.get("pagina_privacy") or "<p>Privacy policy non ancora configurata.</p>")
+    from ..pagine_legali_defaults import DEFAULT_PRIVACY_POLICY
+    stored = Impostazione.get("pagina_privacy")
+    content = sanitize_html(stored) if stored else DEFAULT_PRIVACY_POLICY
     return render_template("public/pagina_legale.html", titolo="Privacy Policy", content=content)
 
 
 @public_bp.route("/cookie-policy")
 def cookie_policy():
-    content = sanitize_html(Impostazione.get("pagina_cookie") or "<p>Cookie policy non ancora configurata.</p>")
+    from ..pagine_legali_defaults import DEFAULT_COOKIE_POLICY
+    stored = Impostazione.get("pagina_cookie")
+    content = sanitize_html(stored) if stored else DEFAULT_COOKIE_POLICY
     return render_template("public/pagina_legale.html", titolo="Cookie Policy", content=content)
 
 
 @public_bp.route("/termini-condizioni")
 def termini_condizioni():
-    content = sanitize_html(Impostazione.get("pagina_termini") or "<p>Termini e condizioni non ancora configurati.</p>")
+    from ..pagine_legali_defaults import DEFAULT_TERMINI
+    stored = Impostazione.get("pagina_termini")
+    content = sanitize_html(stored) if stored else DEFAULT_TERMINI
     return render_template("public/pagina_legale.html", titolo="Termini e Condizioni", content=content)

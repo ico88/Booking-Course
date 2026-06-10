@@ -486,7 +486,8 @@ def iscrivi_utente():
 def marketing():
     leads = LeadMarketing.query.order_by(LeadMarketing.created_at.desc()).all()
     corsi_pubblicati = Corso.query.filter_by(pubblicato=True).order_by(Corso.data_inizio.desc()).all()
-    return render_template("admin/marketing/lista.html", leads=leads, corsi_pubblicati=corsi_pubblicati)
+    all_tags = sorted({t for lead in leads for t in (lead.tags or [])})
+    return render_template("admin/marketing/lista.html", leads=leads, corsi_pubblicati=corsi_pubblicati, all_tags=all_tags)
 
 
 @admin_bp.route("/marketing/leads/<string:lead_id>/elimina", methods=["POST"])
@@ -570,26 +571,39 @@ def marketing_importa():
 # IMPOSTAZIONI
 # ===========================================================================
 
+_SENSITIVE_KEYS = {"smtp_password", "stripe_secret_key", "paypal_client_secret", "whatsapp_token", "telegram_bot_token", "turnstile_secret_key"}
+_MASK = "••••••••"
+
+
 @admin_bp.route("/impostazioni", methods=["GET", "POST"])
 @admin_required
 def impostazioni():
     if request.method == "POST":
         keys = [
-            "app_name", "smtp_host", "smtp_port", "smtp_user",
-            "smtp_password", "smtp_from_name",
+            "app_name", "app_url", "email_segreteria", "color_scheme",
+            "smtp_host", "smtp_port", "smtp_user", "smtp_password", "smtp_from_name",
             "stripe_publishable_key", "stripe_secret_key",
             "paypal_client_id", "paypal_client_secret", "paypal_mode",
+            "whatsapp_phone_id", "whatsapp_token", "whatsapp_template",
+            "telegram_bot_token", "telegram_chat_id",
             "turnstile_site_key", "turnstile_secret_key",
         ]
         for key in keys:
-            val = request.form.get(key, "").strip()[:500]
+            val = request.form.get(key, "").strip()[:2000]
+            if val == _MASK:
+                continue  # skip masked placeholder, keep existing value
             Impostazione.set(key, val)
         db.session.commit()
         logger.info("Admin %s: impostazioni aggiornate", current_user.email)
         flash("Impostazioni salvate.", "success")
         return redirect(url_for("admin.impostazioni"))
 
-    settings = {row.chiave: row.valore for row in Impostazione.query.all()}
+    settings = {}
+    for row in Impostazione.query.all():
+        if row.chiave in _SENSITIVE_KEYS and row.valore:
+            settings[row.chiave] = _MASK
+        else:
+            settings[row.chiave] = row.valore
     return render_template("admin/impostazioni.html", settings=settings)
 
 
@@ -632,6 +646,20 @@ def upload_logo():
     return redirect(url_for("admin.impostazioni"))
 
 
+@admin_bp.route("/impostazioni/logo/elimina", methods=["POST"])
+@admin_required
+def logo_elimina():
+    logo_url = Impostazione.get("logo_url", "")
+    if logo_url:
+        logo_path = os.path.join(current_app.root_path, "static", logo_url.lstrip("/static/"))
+        if os.path.exists(logo_path):
+            os.remove(logo_path)
+        Impostazione.set("logo_url", "")
+        db.session.commit()
+    flash("Logo rimosso.", "success")
+    return redirect(url_for("admin.impostazioni"))
+
+
 # ===========================================================================
 # PAGINE LEGALI
 # ===========================================================================
@@ -639,60 +667,86 @@ def upload_logo():
 @admin_bp.route("/pagine-legali", methods=["GET", "POST"])
 @admin_required
 def pagine_legali():
+    from ..pagine_legali_defaults import DEFAULT_PRIVACY_POLICY, DEFAULT_COOKIE_POLICY, DEFAULT_TERMINI
     if request.method == "POST":
         for key in ["pagina_privacy", "pagina_cookie", "pagina_termini"]:
-            Impostazione.set(key, sanitize_html(request.form.get(key, "")))
+            val = request.form.get(key, "").strip()
+            Impostazione.set(key, sanitize_html(val) if val else "")
         db.session.commit()
         logger.info("Admin %s: pagine legali aggiornate", current_user.email)
         flash("Pagine aggiornate.", "success")
         return redirect(url_for("admin.pagine_legali"))
 
     settings = {row.chiave: row.valore for row in Impostazione.query.all()}
-    return render_template("admin/pagine_legali.html", settings=settings)
+    defaults = {
+        "privacy": DEFAULT_PRIVACY_POLICY,
+        "cookie": DEFAULT_COOKIE_POLICY,
+        "termini": DEFAULT_TERMINI,
+    }
+    return render_template("admin/pagine_legali.html", settings=settings, defaults=defaults)
 
 
 # ===========================================================================
 # BACKUP
 # ===========================================================================
 
-@admin_bp.route("/backup")
+def _sqlite_db_path():
+    db_url = current_app.config["SQLALCHEMY_DATABASE_URI"]
+    if not db_url.startswith("sqlite"):
+        return None
+    path = db_url[len("sqlite:///"):]
+    if not os.path.isabs(path):
+        path = os.path.join(current_app.root_path, "..", path)
+    return os.path.normpath(path)
+
+
+@admin_bp.route("/backup", methods=["GET", "POST"])
 @admin_required
 def backup():
-    return render_template("admin/backup.html")
+    backup_dir = os.path.join(current_app.instance_path, "backups")
+    os.makedirs(backup_dir, exist_ok=True)
 
-
-@admin_bp.route("/backup/scarica")
-@admin_required
-def backup_scarica():
-    import subprocess
-    db_url = current_app.config["SQLALCHEMY_DATABASE_URI"]
-    try:
-        from urllib.parse import urlparse
-        parsed = urlparse(db_url)
-        hostname = parsed.hostname or "localhost"
-        port = str(parsed.port or 5432)
-        username = parsed.username or "postgres"
-        dbname = parsed.path.lstrip("/")
-        for component in (hostname, port, username, dbname):
-            if not component or any(c in component for c in (";", "&", "|", "$", "`", "\n", "\r", "'")):
-                flash("Configurazione database non valida.", "error")
-                return redirect(url_for("admin.backup"))
-        env = os.environ.copy()
-        env["PGPASSWORD"] = parsed.password or ""
-        cmd = ["pg_dump", "-h", hostname, "-p", port, "-U", username, "-d", dbname, "--no-password"]
-        result = subprocess.run(cmd, capture_output=True, env=env, timeout=60)
-        if result.returncode != 0:
-            logger.error("Backup fallito: %s", result.stderr.decode(errors="replace")[:500])
-            flash("Errore durante il backup.", "error")
-            return redirect(url_for("admin.backup"))
-        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-        logger.info("Admin %s: backup DB eseguito", current_user.email)
-        return Response(
-            result.stdout,
-            mimetype="application/octet-stream",
-            headers={"Content-Disposition": f"attachment; filename=backup_{ts}.sql"},
-        )
-    except Exception as e:
-        logger.error("Errore backup: %s", e)
-        flash(f"Errore backup: {e}", "error")
+    if request.method == "POST":
+        action = request.form.get("action", "")
+        if action == "crea":
+            db_path = _sqlite_db_path()
+            if db_path and os.path.exists(db_path):
+                import shutil
+                ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+                dest = os.path.join(backup_dir, f"backup_{ts}.db")
+                shutil.copy2(db_path, dest)
+                logger.info("Admin %s: backup creato %s", current_user.email, dest)
+                flash("Backup creato con successo.", "success")
+            else:
+                flash("File database non trovato.", "error")
+        elif action == "elimina":
+            filename = request.form.get("filename", "")
+            if filename and re.match(r'^[\w\-\.]+$', filename):
+                fp = os.path.join(backup_dir, filename)
+                if os.path.isfile(fp):
+                    os.remove(fp)
+                    logger.info("Admin %s: backup eliminato %s", current_user.email, filename)
+                    flash("Backup eliminato.", "success")
         return redirect(url_for("admin.backup"))
+
+    backups = []
+    for f in sorted(os.listdir(backup_dir), reverse=True):
+        fp = os.path.join(backup_dir, f)
+        if os.path.isfile(fp):
+            stat = os.stat(fp)
+            backups.append({
+                "nome": f,
+                "dimensione": stat.st_size,
+                "data": datetime.fromtimestamp(stat.st_mtime),
+            })
+    app_url = Impostazione.get("app_url") or current_app.config.get("APP_URL", "")
+    return render_template("admin/backup.html", backups=backups, backup_dir=backup_dir, app_url=app_url)
+
+
+@admin_bp.route("/backup/scarica/<filename>")
+@admin_required
+def backup_scarica(filename):
+    if not re.match(r'^[\w\-\.]+$', filename):
+        abort(400)
+    backup_dir = os.path.join(current_app.instance_path, "backups")
+    return send_from_directory(backup_dir, filename, as_attachment=True)

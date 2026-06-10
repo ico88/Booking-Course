@@ -4,93 +4,249 @@
 {% block admin_content %}
 <h1 class="text-2xl font-bold mb-6">Impostazioni</h1>
 
-<form method="POST" class="space-y-6 max-w-2xl">
-  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-  <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
-    <h2 class="font-semibold">Generale</h2>
-    <div>
-      <label class="block text-sm font-medium mb-1">Nome applicazione</label>
-      <input type="text" name="app_name" value="{{ settings.get('app_name', '') }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-    </div>
+<div x-data="{ tab: '{{ tab or 'generale' }}' }">
+  <!-- Tabs -->
+  <div class="flex gap-1 mb-6 bg-white border border-gray-200 rounded-xl p-1 w-fit flex-wrap">
+    {% for t, label in [('generale','Generale'),('aspetto','Aspetto'),('email','Email'),('pagamenti','Pagamenti'),('notifiche','Notifiche'),('sicurezza','Sicurezza')] %}
+    <button type="button" onclick="showTab('{{ t }}')" id="tab-btn-{{ t }}"
+      class="px-4 py-2 rounded-lg text-sm font-medium transition-colors tab-btn {{ 'bg-blue-600 text-white' if (tab or 'generale') == t else 'text-gray-600 hover:bg-gray-100' }}">
+      {{ label }}
+    </button>
+    {% endfor %}
   </div>
 
-  <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
-    <h2 class="font-semibold">Email SMTP</h2>
-    <div class="grid grid-cols-2 gap-4">
-      <div>
-        <label class="block text-sm font-medium mb-1">Server SMTP</label>
-        <input type="text" name="smtp_host" value="{{ settings.get('smtp_host', '') }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-      </div>
-      <div>
-        <label class="block text-sm font-medium mb-1">Porta</label>
-        <input type="number" name="smtp_port" value="{{ settings.get('smtp_port', '587') }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-      </div>
-      <div>
-        <label class="block text-sm font-medium mb-1">Utente</label>
-        <input type="email" name="smtp_user" value="{{ settings.get('smtp_user', '') }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-      </div>
-      <div>
-        <label class="block text-sm font-medium mb-1">Password</label>
-        <input type="password" name="smtp_password" value="{{ settings.get('smtp_password', '') }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-      </div>
-      <div class="col-span-2">
-        <label class="block text-sm font-medium mb-1">Nome mittente</label>
-        <input type="text" name="smtp_from_name" value="{{ settings.get('smtp_from_name', '') }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-      </div>
-    </div>
-    <form method="POST" action="{{ url_for('admin.test_email') }}" class="inline">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <button type="submit" class="text-sm bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg">Invia email di test</button>
-    </form>
-  </div>
-
-  <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
-    <h2 class="font-semibold">Stripe</h2>
-    <div>
-      <label class="block text-sm font-medium mb-1">Chiave pubblica (pk_...)</label>
-      <input type="text" name="stripe_publishable_key" value="{{ settings.get('stripe_publishable_key', '') }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 font-mono text-sm">
-    </div>
-    <div>
-      <label class="block text-sm font-medium mb-1">Chiave segreta (sk_...)</label>
-      <input type="password" name="stripe_secret_key" value="{{ settings.get('stripe_secret_key', '') }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-    </div>
-  </div>
-
-  <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
-    <h2 class="font-semibold">PayPal</h2>
-    <div class="grid grid-cols-2 gap-4">
-      <div>
-        <label class="block text-sm font-medium mb-1">Client ID</label>
-        <input type="text" name="paypal_client_id" value="{{ settings.get('paypal_client_id', '') }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-      </div>
-      <div>
-        <label class="block text-sm font-medium mb-1">Client Secret</label>
-        <input type="password" name="paypal_client_secret" value="{{ settings.get('paypal_client_secret', '') }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-      </div>
-      <div class="col-span-2">
-        <label class="block text-sm font-medium mb-1">Modalità</label>
-        <select name="paypal_mode" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-          <option value="sandbox" {{ 'selected' if settings.get('paypal_mode') == 'sandbox' }}>Sandbox (test)</option>
-          <option value="live" {{ 'selected' if settings.get('paypal_mode') == 'live' }}>Live (produzione)</option>
-        </select>
-      </div>
-    </div>
-  </div>
-
-  <button type="submit" class="w-full bg-blue-700 text-white py-2.5 rounded-xl font-medium hover:bg-blue-800">
-    Salva impostazioni
-  </button>
-</form>
-
-<div class="mt-6 max-w-2xl bg-white border border-gray-200 rounded-xl p-6">
-  <h2 class="font-semibold mb-3">Logo</h2>
-  {% if settings.get('logo_url') %}
-    <img src="{{ settings.get('logo_url') }}" alt="Logo" class="h-12 mb-3">
-  {% endif %}
-  <form method="POST" action="{{ url_for('admin.upload_logo') }}" enctype="multipart/form-data" class="flex gap-3">
+  <form method="POST" id="settings-form">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <input type="file" name="logo" accept="image/*" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm">
-    <button type="submit" class="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-900">Carica</button>
+
+    <!-- Generale -->
+    <div id="tab-generale" class="tab-panel space-y-5 {{ 'hidden' if (tab or 'generale') != 'generale' }}">
+      <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+        <h2 class="font-semibold text-gray-800">Impostazioni generali</h2>
+        <div>
+          <label class="block text-sm font-medium mb-1">Nome applicazione</label>
+          <input type="text" name="app_name" value="{{ settings.get('app_name', '') }}" maxlength="100"
+                 class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">URL applicazione</label>
+          <input type="url" name="app_url" value="{{ settings.get('app_url', '') }}" maxlength="200"
+                 placeholder="https://tuodominio.com"
+                 class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Email segreteria</label>
+          <input type="email" name="email_segreteria" value="{{ settings.get('email_segreteria', '') }}" maxlength="200"
+                 class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+        </div>
+      </div>
+
+      <!-- Logo -->
+      <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+        <h2 class="font-semibold text-gray-800">Logo</h2>
+        {% if settings.get('logo_url') %}
+        <div class="flex items-center gap-4">
+          <img src="{{ settings.get('logo_url') }}" alt="Logo" class="h-14 object-contain border border-gray-100 rounded-lg p-1 bg-white">
+          <form method="POST" action="{{ url_for('admin.logo_elimina') }}" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="text-sm text-red-600 hover:text-red-800">Rimuovi logo</button>
+          </form>
+        </div>
+        {% endif %}
+        <form method="POST" action="{{ url_for('admin.upload_logo') }}" enctype="multipart/form-data" class="flex gap-3 items-end">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="flex-1">
+            <label class="block text-sm font-medium mb-1">Carica nuovo logo <span class="font-normal text-gray-400">(PNG, JPG, SVG, WebP — max 5 MB)</span></label>
+            <input type="file" name="logo" accept="image/*" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+          </div>
+          <button type="submit" class="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-900 whitespace-nowrap">Carica</button>
+        </form>
+      </div>
+      <button type="submit" class="w-full bg-blue-700 text-white py-2.5 rounded-xl font-medium hover:bg-blue-800">Salva</button>
+    </div>
+
+    <!-- Aspetto -->
+    <div id="tab-aspetto" class="tab-panel space-y-5 {{ 'hidden' if (tab or 'generale') != 'aspetto' }}">
+      <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+        <h2 class="font-semibold text-gray-800">Schema di colori</h2>
+        <p class="text-sm text-gray-500">Scegli il colore principale dell'interfaccia. La modifica sarà visibile dopo il salvataggio.</p>
+        <div class="grid grid-cols-3 gap-4">
+          {% for scheme_id, scheme_name, scheme_color, scheme_bg in [
+            ('blu', 'Blu', '#1d4ed8', '#eff6ff'),
+            ('rosso', 'Rosso', '#b91c1c', '#fef2f2'),
+            ('verde', 'Verde', '#15803d', '#f0fdf4'),
+          ] %}
+          <label class="cursor-pointer">
+            <input type="radio" name="color_scheme" value="{{ scheme_id }}" class="sr-only peer"
+                   {{ 'checked' if settings.get('color_scheme', 'blu') == scheme_id }}>
+            <div class="border-2 rounded-xl p-4 text-center transition-all peer-checked:border-current peer-checked:ring-2 peer-checked:ring-offset-1"
+                 style="border-color: {{ scheme_color }}; --tw-ring-color: {{ scheme_color }}">
+              <div class="w-10 h-10 rounded-full mx-auto mb-2 shadow-md" style="background: {{ scheme_color }}"></div>
+              <div class="text-sm font-medium" style="color: {{ scheme_color }}">{{ scheme_name }}</div>
+              <div class="text-xs text-gray-400 mt-0.5">{{ scheme_color }}</div>
+            </div>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      <button type="submit" class="w-full bg-blue-700 text-white py-2.5 rounded-xl font-medium hover:bg-blue-800">Salva</button>
+    </div>
+
+    <!-- Email -->
+    <div id="tab-email" class="tab-panel space-y-5 {{ 'hidden' if (tab or 'generale') != 'email' }}">
+      <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+        <h2 class="font-semibold text-gray-800">Email SMTP</h2>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">Server SMTP</label>
+            <input type="text" name="smtp_host" value="{{ settings.get('smtp_host', '') }}"
+                   placeholder="smtp.gmail.com" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Porta</label>
+            <input type="number" name="smtp_port" value="{{ settings.get('smtp_port', '587') }}"
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Utente / Email</label>
+            <input type="text" name="smtp_user" value="{{ settings.get('smtp_user', '') }}"
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Password</label>
+            <input type="password" name="smtp_password" value="{{ settings.get('smtp_password', '') }}"
+                   autocomplete="new-password" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div class="col-span-2">
+            <label class="block text-sm font-medium mb-1">Nome mittente</label>
+            <input type="text" name="smtp_from_name" value="{{ settings.get('smtp_from_name', '') }}"
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+        <div class="flex gap-3 pt-2">
+          <button type="submit" class="flex-1 bg-blue-700 text-white py-2.5 rounded-xl font-medium hover:bg-blue-800">Salva</button>
+          <form method="POST" action="{{ url_for('admin.test_email') }}" class="flex-none">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="bg-gray-100 hover:bg-gray-200 px-4 py-2.5 rounded-xl text-sm font-medium">Invia email di test</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagamenti -->
+    <div id="tab-pagamenti" class="tab-panel space-y-5 {{ 'hidden' if (tab or 'generale') != 'pagamenti' }}">
+      <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+        <h2 class="font-semibold text-gray-800">Stripe</h2>
+        <div>
+          <label class="block text-sm font-medium mb-1">Chiave pubblica <span class="text-gray-400 font-normal">(pk_...)</span></label>
+          <input type="text" name="stripe_publishable_key" value="{{ settings.get('stripe_publishable_key', '') }}"
+                 class="w-full border border-gray-300 rounded-lg px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Chiave segreta <span class="text-gray-400 font-normal">(sk_...)</span></label>
+          <input type="password" name="stripe_secret_key" value="{{ settings.get('stripe_secret_key', '') }}"
+                 autocomplete="new-password" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+        </div>
+      </div>
+      <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+        <h2 class="font-semibold text-gray-800">PayPal</h2>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">Client ID</label>
+            <input type="text" name="paypal_client_id" value="{{ settings.get('paypal_client_id', '') }}"
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Client Secret</label>
+            <input type="password" name="paypal_client_secret" value="{{ settings.get('paypal_client_secret', '') }}"
+                   autocomplete="new-password" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div class="col-span-2">
+            <label class="block text-sm font-medium mb-1">Modalità</label>
+            <select name="paypal_mode" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+              <option value="sandbox" {{ 'selected' if settings.get('paypal_mode','sandbox') == 'sandbox' }}>Sandbox (test)</option>
+              <option value="live"    {{ 'selected' if settings.get('paypal_mode') == 'live' }}>Live (produzione)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <button type="submit" class="w-full bg-blue-700 text-white py-2.5 rounded-xl font-medium hover:bg-blue-800">Salva</button>
+    </div>
+
+    <!-- Notifiche -->
+    <div id="tab-notifiche" class="tab-panel space-y-5 {{ 'hidden' if (tab or 'generale') != 'notifiche' }}">
+      <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+        <h2 class="font-semibold text-gray-800">WhatsApp Business API</h2>
+        <div>
+          <label class="block text-sm font-medium mb-1">Phone Number ID</label>
+          <input type="text" name="whatsapp_phone_id" value="{{ settings.get('whatsapp_phone_id', '') }}"
+                 placeholder="123456789012345"
+                 class="w-full border border-gray-300 rounded-lg px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Token API</label>
+          <input type="password" name="whatsapp_token" value="{{ settings.get('whatsapp_token', '') }}"
+                 autocomplete="new-password" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Nome template predefinito</label>
+          <input type="text" name="whatsapp_template" value="{{ settings.get('whatsapp_template', '') }}"
+                 placeholder="es. booking_confirmation"
+                 class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+          <p class="text-xs text-gray-400 mt-1">Nome del template approvato su Meta Business Manager</p>
+        </div>
+      </div>
+      <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+        <h2 class="font-semibold text-gray-800">Telegram Bot</h2>
+        <div>
+          <label class="block text-sm font-medium mb-1">Token Bot</label>
+          <input type="password" name="telegram_bot_token" value="{{ settings.get('telegram_bot_token', '') }}"
+                 autocomplete="new-password" placeholder="1234567890:AAxxxxxx..."
+                 class="w-full border border-gray-300 rounded-lg px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-blue-500">
+          <p class="text-xs text-gray-400 mt-1">Ottenibile da @BotFather su Telegram</p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Chat ID segreteria</label>
+          <input type="text" name="telegram_chat_id" value="{{ settings.get('telegram_chat_id', '') }}"
+                 placeholder="-1001234567890"
+                 class="w-full border border-gray-300 rounded-lg px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-blue-500">
+          <p class="text-xs text-gray-400 mt-1">ID del gruppo o canale dove inviare le notifiche</p>
+        </div>
+      </div>
+      <button type="submit" class="w-full bg-blue-700 text-white py-2.5 rounded-xl font-medium hover:bg-blue-800">Salva</button>
+    </div>
+
+    <!-- Sicurezza -->
+    <div id="tab-sicurezza" class="tab-panel space-y-5 {{ 'hidden' if (tab or 'generale') != 'sicurezza' }}">
+      <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+        <h2 class="font-semibold text-gray-800">Cloudflare Turnstile <span class="text-xs text-gray-400 font-normal">(CAPTCHA registrazione)</span></h2>
+        <div>
+          <label class="block text-sm font-medium mb-1">Site Key</label>
+          <input type="text" name="turnstile_site_key" value="{{ settings.get('turnstile_site_key', '') }}"
+                 class="w-full border border-gray-300 rounded-lg px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Secret Key</label>
+          <input type="password" name="turnstile_secret_key" value="{{ settings.get('turnstile_secret_key', '') }}"
+                 autocomplete="new-password" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+        </div>
+        <p class="text-xs text-gray-400">Lascia vuoto per disabilitare il CAPTCHA. Ottenibile da <a href="https://dash.cloudflare.com/" class="underline" target="_blank">dash.cloudflare.com</a></p>
+      </div>
+      <button type="submit" class="w-full bg-blue-700 text-white py-2.5 rounded-xl font-medium hover:bg-blue-800">Salva</button>
+    </div>
   </form>
 </div>
+
+<script>
+function showTab(id) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.remove('bg-blue-600', 'text-white');
+    b.classList.add('text-gray-600', 'hover:bg-gray-100');
+  });
+  document.getElementById('tab-' + id).classList.remove('hidden');
+  const btn = document.getElementById('tab-btn-' + id);
+  btn.classList.add('bg-blue-600', 'text-white');
+  btn.classList.remove('text-gray-600', 'hover:bg-gray-100');
+}
+</script>
 {% endblock %}

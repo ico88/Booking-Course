@@ -89,6 +89,7 @@ def create_app(config_name=None):
         try:
             app_name = Impostazione.get("app_name") or app.config.get("APP_NAME", "Gestione Corsi")
             logo_url = Impostazione.get("logo_url")
+            color_scheme = Impostazione.get("color_scheme") or "blu"
             try:
                 corsi_pubblicati = Corso.query.filter_by(pubblicato=True).order_by(Corso.data_inizio.asc()).all()
             except Exception:
@@ -96,6 +97,7 @@ def create_app(config_name=None):
         except Exception:
             app_name = app.config.get("APP_NAME", "Gestione Corsi")
             logo_url = None
+            color_scheme = "blu"
             corsi_pubblicati = []
         turnstile_site_key = (
             Impostazione.get("turnstile_site_key") or app.config.get("TURNSTILE_SITE_KEY", "")
@@ -103,6 +105,7 @@ def create_app(config_name=None):
         return {
             "app_name": app_name,
             "logo_url": logo_url,
+            "color_scheme": color_scheme,
             "corsi_pubblicati": corsi_pubblicati,
             "turnstile_site_key": turnstile_site_key,
         }
