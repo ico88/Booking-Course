@@ -104,9 +104,12 @@ fi
 info "Installazione dipendenze sistema..."
 apt-get update -qq
 apt-get install -y -qq \
-  gcc build-essential nginx curl certbot python3-certbot-nginx acl \
+  gcc build-essential nginx curl cron certbot python3-certbot-nginx acl \
   python3-pip python3-venv python3-dev \
   libjpeg-dev zlib1g-dev libpng-dev libwebp-dev libfreetype6-dev liblcms2-dev
+if command -v systemctl >/dev/null 2>&1; then
+  systemctl enable --now cron >/dev/null 2>&1 || true
+fi
 
 # ── Utente servizio ─────────────────────────────────────────
 ensure_service_user
