@@ -128,6 +128,10 @@ def dati_personali():
             if not current_user.check_password(password_attuale):
                 flash("La password attuale non è corretta.", "error")
                 return render_template("dashboard/dati_personali.html")
+            conferma_pw = request.form.get("conferma_password") or ""
+            if nuova_pw != conferma_pw:
+                flash("Le password non coincidono.", "error")
+                return render_template("dashboard/dati_personali.html")
             if len(nuova_pw) < 8:
                 flash("La nuova password deve avere almeno 8 caratteri.", "error")
                 return render_template("dashboard/dati_personali.html")

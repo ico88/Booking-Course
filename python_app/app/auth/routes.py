@@ -103,6 +103,7 @@ def registrazione():
         cognome = (request.form.get("cognome") or "").strip()[:100]
         raw_email = (request.form.get("email") or "").strip()
         password = request.form.get("password") or ""
+        conferma_password = request.form.get("conferma_password") or ""
         consenso = request.form.get("consenso_privacy") == "on"
         marketing = request.form.get("consenso_marketing") == "on"
 
@@ -118,6 +119,8 @@ def registrazione():
 
         if len(password) < 8:
             errors.append("La password deve avere almeno 8 caratteri.")
+        if password != conferma_password:
+            errors.append("Le password non coincidono.")
         if not consenso:
             errors.append("Devi accettare la privacy policy.")
         if email and Utente.query.filter_by(email=email).first():
