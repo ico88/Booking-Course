@@ -1,0 +1,202 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}{{ 'Modifica' if corso else 'Nuovo' }} corso{% endblock %}
+
+{% block head %}
+<style>
+  [contenteditable]:focus{outline:none;box-shadow:0 0 0 2px #3b82f6}
+  [contenteditable] ul{list-style:disc;padding-left:1.5em}
+  [contenteditable] ol{list-style:decimal;padding-left:1.5em}
+  [contenteditable] h2{font-size:1.25em;font-weight:600;margin:.75em 0 .25em}
+  [contenteditable] h3{font-size:1.05em;font-weight:600;margin:.6em 0 .2em}
+  [contenteditable] p{margin:.25em 0}
+  [contenteditable] a{color:#2563eb;text-decoration:underline}
+  .e-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:5px;font-size:.8rem;cursor:pointer;color:#374151}
+  .e-btn:hover{background:#e5e7eb}
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <a href="{{ url_for('admin.corsi') }}" class="text-sm text-blue-600 hover:underline">← Corsi</a>
+    <h1 class="text-2xl font-bold mt-1">{{ 'Modifica corso' if corso else 'Nuovo corso' }}</h1>
+  </div>
+  {% if corso %}
+  <div class="flex gap-2">
+    <form method="POST" action="{{ url_for('admin.corso_duplica', corso_id=corso.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg text-sm">Duplica</button>
+    </form>
+    <form method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="_action" value="delete">
+      <button type="submit" onclick="return confirm('Eliminare il corso?')" class="bg-red-50 text-red-700 hover:bg-red-100 px-3 py-2 rounded-lg text-sm">Elimina</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="{{ 'lg:col-span-2' if corso else 'lg:col-span-3' }}">
+    <form method="POST" id="corso-form" class="space-y-5">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1">Titolo *</label>
+          <input type="text" name="titolo" value="{{ corso.titolo if corso else '' }}" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Descrizione</label>
+          <div class="border border-gray-300 rounded-lg overflow-hidden">
+            <div class="bg-gray-50 border-b border-gray-300 px-2 py-1 flex flex-wrap items-center gap-0.5">
+              <button type="button" onmousedown="event.preventDefault();eCmd('ed-desc','bold')" class="e-btn font-bold" title="Grassetto">B</button>
+              <button type="button" onmousedown="event.preventDefault();eCmd('ed-desc','italic')" class="e-btn italic" title="Corsivo">I</button>
+              <button type="button" onmousedown="event.preventDefault();eCmd('ed-desc','underline')" class="e-btn underline" title="Sottolineato">U</button>
+              <span class="w-px h-5 bg-gray-200 mx-0.5"></span>
+              <button type="button" onmousedown="event.preventDefault();eBlock('ed-desc','h2')" class="e-btn font-bold text-xs" title="Titolo H2">H2</button>
+              <button type="button" onmousedown="event.preventDefault();eBlock('ed-desc','h3')" class="e-btn font-semibold text-xs" title="Titolo H3">H3</button>
+              <button type="button" onmousedown="event.preventDefault();eBlock('ed-desc','p')" class="e-btn text-gray-400 text-xs" title="Paragrafo">¶</button>
+              <span class="w-px h-5 bg-gray-200 mx-0.5"></span>
+              <button type="button" onmousedown="event.preventDefault();eCmd('ed-desc','insertUnorderedList')" class="e-btn" title="Elenco puntato">•≡</button>
+              <button type="button" onmousedown="event.preventDefault();eCmd('ed-desc','insertOrderedList')" class="e-btn text-xs" title="Elenco numerato">1.</button>
+              <span class="w-px h-5 bg-gray-200 mx-0.5"></span>
+              <button type="button" onmousedown="event.preventDefault();eLink('ed-desc')" class="e-btn text-xs px-1.5" style="width:auto" title="Link">Link</button>
+              <button type="button" onmousedown="event.preventDefault();eCmd('ed-desc','removeFormat')" class="e-btn text-gray-400 text-xs" title="Rimuovi formattazione">✕</button>
+            </div>
+            <div id="ed-desc" contenteditable="true" class="p-3 bg-white text-sm leading-relaxed" style="min-height:160px"></div>
+          </div>
+          <textarea name="descrizione" id="textarea-descrizione" class="hidden"></textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">Data inizio</label>
+            <input type="datetime-local" name="data_inizio"
+                   value="{{ corso.data_inizio.strftime('%Y-%m-%dT%H:%M') if corso and corso.data_inizio else '' }}"
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Data fine</label>
+            <input type="datetime-local" name="data_fine"
+                   value="{{ corso.data_fine.strftime('%Y-%m-%dT%H:%M') if corso and corso.data_fine else '' }}"
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">Luogo</label>
+            <input type="text" name="luogo" value="{{ corso.luogo if corso else '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Orario</label>
+            <input type="text" name="orario" value="{{ corso.orario if corso else '' }}" placeholder="es. 9:00-13:00" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Durata</label>
+            <input type="text" name="durata" value="{{ corso.durata if corso else '' }}" placeholder="es. 8 ore" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">Costo (€)</label>
+            <input type="number" name="costo" step="0.01" min="0" value="{{ corso.costo if corso else '0' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Posti totali</label>
+            <input type="number" name="posti_totali" min="0" value="{{ corso.posti_totali if corso else '0' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Timeout pagamento (ore)</label>
+            <input type="number" name="timeout_pagamento_ore" min="1" value="{{ corso.timeout_pagamento_ore if corso else '24' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Coordinate bancarie</label>
+          <textarea name="coordinate_bancarie" rows="4" placeholder="IBAN, intestatario, causale suggerita..." class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">{{ corso.coordinate_bancarie if corso else '' }}</textarea>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Tag (separati da virgola)</label>
+          <input type="text" name="tags" value="{{ (corso.tags | join(', ')) if corso and corso.tags else '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div class="flex gap-6">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" name="pubblicato" {{ 'checked' if corso and corso.pubblicato }}>
+            <span class="text-sm font-medium">Pubblicato</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" name="attestato_abilitato" {{ 'checked' if corso and corso.attestato_abilitato }}>
+            <span class="text-sm font-medium">Attestato abilitato</span>
+          </label>
+        </div>
+        <div id="attestato-template-box" class="{{ '' if corso and corso.attestato_abilitato else 'hidden' }}">
+          <label class="block text-sm font-medium mb-1">Template HTML attestato
+            <span class="text-gray-400 font-normal text-xs ml-1">— lascia vuoto per il template generico</span>
+          </label>
+          <textarea name="attestato_html_template" rows="10"
+                    placeholder="HTML personalizzato. Variabili disponibili: {nome} {cognome} {nome_completo} {titolo_corso} {data} {luogo} {app_name}"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 font-mono text-xs focus:ring-2 focus:ring-blue-500">{{ corso.attestato_html_template if corso and corso.attestato_html_template else '' }}</textarea>
+          <p class="text-xs text-gray-400 mt-1">
+            Variabili: <code class="bg-gray-100 px-1 rounded">{nome}</code>
+            <code class="bg-gray-100 px-1 rounded">{cognome}</code>
+            <code class="bg-gray-100 px-1 rounded">{nome_completo}</code>
+            <code class="bg-gray-100 px-1 rounded">{titolo_corso}</code>
+            <code class="bg-gray-100 px-1 rounded">{data}</code>
+            <code class="bg-gray-100 px-1 rounded">{luogo}</code>
+            <code class="bg-gray-100 px-1 rounded">{app_name}</code>
+          </p>
+        </div>
+      </div>
+      <button type="submit" class="w-full bg-blue-700 text-white py-2.5 rounded-lg font-medium hover:bg-blue-800">
+        Salva corso
+      </button>
+    </form>
+  </div>
+
+  {% if corso %}
+  <div class="space-y-4">
+    <div class="bg-white border border-gray-200 rounded-xl p-5">
+      <h3 class="font-semibold mb-3">Immagine corso</h3>
+      {% if corso.immagine_url %}
+        <img src="{{ corso.immagine_url }}" class="w-full h-32 object-cover rounded-lg mb-3">
+      {% endif %}
+      <form method="POST" action="{{ url_for('admin.corso_upload_immagine', corso_id=corso.id) }}" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="file" name="immagine" accept="image/*" class="w-full text-sm mb-2">
+        <button type="submit" class="w-full bg-gray-100 hover:bg-gray-200 py-2 rounded-lg text-sm">Carica immagine</button>
+      </form>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-xl p-5">
+      <h3 class="font-semibold mb-2">Azioni rapide</h3>
+      <div class="space-y-2">
+        <a href="{{ url_for('admin.corso_partecipanti', corso_id=corso.id) }}" class="block w-full text-center bg-gray-100 hover:bg-gray-200 py-2 rounded-lg text-sm">Lista partecipanti</a>
+        <a href="{{ url_for('public.corso_dettaglio', corso_id=corso.id) }}" target="_blank" class="block w-full text-center bg-gray-100 hover:bg-gray-200 py-2 rounded-lg text-sm">Vedi pagina pubblica</a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+function eCmd(id, cmd) { document.getElementById(id).focus(); document.execCommand(cmd, false, null); }
+function eBlock(id, tag) { document.getElementById(id).focus(); document.execCommand('formatBlock', false, tag); }
+function eLink(id) {
+  document.getElementById(id).focus();
+  const url = prompt('URL del link (es. https://...)');
+  if (url) document.execCommand('createLink', false, url);
+}
+
+const edDesc = document.getElementById('ed-desc');
+edDesc.innerHTML = {{ (corso.descrizione if corso else '') | tojson }};
+document.getElementById('corso-form').addEventListener('submit', function() {
+  document.getElementById('textarea-descrizione').value = edDesc.innerHTML;
+});
+
+// Show/hide attestato template box
+const attestatoCheck = document.querySelector('input[name="attestato_abilitato"]');
+const templateBox = document.getElementById('attestato-template-box');
+if (attestatoCheck && templateBox) {
+  attestatoCheck.addEventListener('change', () => {
+    templateBox.classList.toggle('hidden', !attestatoCheck.checked);
+  });
+}
+</script>
+{% endblock %}

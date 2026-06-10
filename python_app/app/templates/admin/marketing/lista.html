@@ -1,0 +1,196 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Marketing Leads{% endblock %}
+
+{% block admin_content %}
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-bold">Marketing Leads</h1>
+  <div class="flex gap-2">
+    <label class="bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg text-sm cursor-pointer font-medium">
+      Importa CSV
+      <input type="file" class="hidden" id="csv-input" accept=".csv" onchange="importCsv(this)">
+    </label>
+    <button onclick="document.getElementById('modal-notifica').classList.remove('hidden')"
+            class="bg-blue-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-800 font-medium">
+      Invia notifica
+    </button>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="grid grid-cols-3 gap-4 mb-6">
+  <div class="bg-white border border-gray-200 rounded-xl p-4 text-center">
+    <div class="text-2xl font-bold" id="stat-totale">{{ leads|length }}</div>
+    <div class="text-xs text-gray-500 mt-1">Totale lead</div>
+  </div>
+  <div class="bg-white border border-gray-200 rounded-xl p-4 text-center">
+    <div class="text-2xl font-bold text-green-600" id="stat-attivi">{{ leads|selectattr('attivo')|list|length }}</div>
+    <div class="text-xs text-gray-500 mt-1">Attivi</div>
+  </div>
+  <div class="bg-white border border-gray-200 rounded-xl p-4 text-center">
+    <div class="text-2xl font-bold text-blue-600" id="stat-verificati">{{ leads|selectattr('verificato')|list|length }}</div>
+    <div class="text-xs text-gray-500 mt-1">Verificati</div>
+  </div>
+</div>
+
+<!-- Filtri -->
+<div class="bg-white border border-gray-200 rounded-xl p-4 mb-4 flex flex-wrap gap-3 items-end">
+  <div class="flex-1 min-w-48">
+    <label class="block text-xs font-medium text-gray-500 mb-1">Cerca</label>
+    <input type="search" id="filter-search" placeholder="Email o nome..."
+           oninput="applyFilters()"
+           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+  </div>
+  <div class="min-w-36">
+    <label class="block text-xs font-medium text-gray-500 mb-1">Tag</label>
+    <select id="filter-tag" onchange="applyFilters()"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+      <option value="">Tutti i tag</option>
+      {% for tag in all_tags %}
+      <option value="{{ tag }}">{{ tag }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="min-w-36">
+    <label class="block text-xs font-medium text-gray-500 mb-1">Stato</label>
+    <select id="filter-stato" onchange="applyFilters()"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+      <option value="">Tutti</option>
+      <option value="attivi">Attivi</option>
+      <option value="verificati">Verificati</option>
+      <option value="non-verificati">Non verificati</option>
+      <option value="inattivi">Inattivi</option>
+    </select>
+  </div>
+  <button onclick="resetFilters()" class="text-sm text-gray-500 hover:text-gray-800 px-3 py-2">Reset</button>
+  <div class="text-xs text-gray-400 self-center ml-auto" id="filter-count"></div>
+</div>
+
+<div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+  <table class="w-full text-sm" id="leads-table">
+    <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+      <tr>
+        <th class="px-5 py-3 text-left">Email</th>
+        <th class="px-5 py-3 text-left">Nome</th>
+        <th class="px-5 py-3 text-left">Tag</th>
+        <th class="px-5 py-3 text-left">Verificato</th>
+        <th class="px-5 py-3 text-left">Attivo</th>
+        <th class="px-5 py-3 text-left">Iscritto</th>
+        <th class="px-5 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100" id="leads-tbody">
+      {% for lead in leads %}
+      <tr class="hover:bg-gray-50 lead-row"
+          data-email="{{ lead.email|lower }}"
+          data-nome="{{ ((lead.nome or '') + ' ' + (lead.cognome or '')).strip()|lower }}"
+          data-tags="{{ (lead.tags or [])|join(',') }}"
+          data-verificato="{{ 'true' if lead.verificato else 'false' }}"
+          data-attivo="{{ 'true' if lead.attivo else 'false' }}">
+        <td class="px-5 py-3 font-mono text-xs">{{ lead.email }}</td>
+        <td class="px-5 py-3 text-gray-600">{{ ((lead.nome or '') + ' ' + (lead.cognome or '')).strip() or '—' }}</td>
+        <td class="px-5 py-3">
+          {% for tag in (lead.tags or []) %}
+          <span class="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded mr-1">{{ tag }}</span>
+          {% endfor %}
+        </td>
+        <td class="px-5 py-3">
+          <span class="text-{{ 'green' if lead.verificato else 'gray' }}-600 text-xs font-medium">{{ '✓ Sì' if lead.verificato else '✗ No' }}</span>
+        </td>
+        <td class="px-5 py-3">
+          <span class="text-{{ 'green' if lead.attivo else 'red' }}-600 text-xs font-medium">{{ 'Sì' if lead.attivo else 'No' }}</span>
+        </td>
+        <td class="px-5 py-3 text-gray-400 text-xs">{{ format_date(lead.created_at) }}</td>
+        <td class="px-5 py-3">
+          <form method="POST" action="{{ url_for('admin.lead_elimina', lead_id=lead.id) }}" onsubmit="return confirm('Eliminare?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="text-red-500 hover:text-red-700 text-xs">Elimina</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div id="no-results" class="hidden px-5 py-8 text-center text-gray-400 text-sm">Nessun lead trovato con i filtri selezionati.</div>
+</div>
+
+{# Modal invio notifica #}
+<div id="modal-notifica" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-xl p-6 w-full max-w-sm shadow-xl">
+    <h2 class="font-bold text-lg mb-4">Invia notifica corso</h2>
+    <form method="POST" action="{{ url_for('admin.marketing_notifica') }}" class="space-y-3">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div>
+        <label class="block text-xs font-medium mb-1">Corso</label>
+        <select name="corso_id" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+          {% for corso in corsi_pubblicati %}
+          <option value="{{ corso.id }}">{{ corso.titolo }}{% if corso.tags %} [{{ corso.tags|join(', ') }}]{% endif %}</option>
+          {% endfor %}
+        </select>
+        <p class="text-xs text-gray-400 mt-1">L'email verrà inviata solo ai lead con tag corrispondenti (o a tutti se il corso non ha tag)</p>
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button type="submit" class="flex-1 bg-blue-700 text-white py-2 rounded-lg text-sm hover:bg-blue-800">Invia</button>
+        <button type="button" onclick="document.getElementById('modal-notifica').classList.add('hidden')" class="flex-1 bg-gray-100 py-2 rounded-lg text-sm">Annulla</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function importCsv(input) {
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = '{{ url_for("admin.marketing_importa") }}';
+  form.enctype = 'multipart/form-data';
+  const csrf = document.createElement('input');
+  csrf.type = 'hidden'; csrf.name = 'csrf_token';
+  csrf.value = document.querySelector('meta[name="csrf-token"]').content;
+  form.appendChild(csrf);
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file'; fileInput.name = 'csv';
+  const dt = new DataTransfer();
+  dt.items.add(input.files[0]);
+  fileInput.files = dt.files;
+  form.appendChild(fileInput);
+  document.body.appendChild(form);
+  form.submit();
+}
+
+function applyFilters() {
+  const search = document.getElementById('filter-search').value.toLowerCase();
+  const tag = document.getElementById('filter-tag').value.toLowerCase();
+  const stato = document.getElementById('filter-stato').value;
+  const rows = document.querySelectorAll('.lead-row');
+  let visible = 0;
+
+  rows.forEach(row => {
+    const email = row.dataset.email;
+    const nome = row.dataset.nome;
+    const tags = row.dataset.tags.toLowerCase();
+    const verificato = row.dataset.verificato === 'true';
+    const attivo = row.dataset.attivo === 'true';
+
+    let show = true;
+    if (search && !email.includes(search) && !nome.includes(search)) show = false;
+    if (tag && !tags.split(',').includes(tag)) show = false;
+    if (stato === 'attivi' && !attivo) show = false;
+    if (stato === 'verificati' && !verificato) show = false;
+    if (stato === 'non-verificati' && verificato) show = false;
+    if (stato === 'inattivi' && attivo) show = false;
+
+    row.classList.toggle('hidden', !show);
+    if (show) visible++;
+  });
+
+  document.getElementById('no-results').classList.toggle('hidden', visible > 0);
+  document.getElementById('filter-count').textContent = visible + ' / ' + rows.length;
+}
+
+function resetFilters() {
+  document.getElementById('filter-search').value = '';
+  document.getElementById('filter-tag').value = '';
+  document.getElementById('filter-stato').value = '';
+  applyFilters();
+}
+</script>
+{% endblock %}

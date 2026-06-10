@@ -1,0 +1,43 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block dashboard_content %}
+<h1 class="text-2xl font-bold mb-6">Le mie prenotazioni</h1>
+
+{% if prenotazioni %}
+<div class="space-y-4">
+  {% for p in prenotazioni %}
+  {% set color_map = {'CONFERMATA': 'green', 'IN_ATTESA_PAGAMENTO': 'yellow', 'PAGAMENTO_CARICATO': 'blue', 'ANNULLATA': 'red', 'SCADUTA': 'gray'} %}
+  {% set color = color_map.get(p.stato.value, 'gray') %}
+  <div class="bg-white border border-gray-200 rounded-xl p-5 flex items-center justify-between">
+    <div>
+      <div class="font-semibold text-gray-900">{{ p.corso.titolo }}</div>
+      <div class="text-sm text-gray-500 mt-0.5">{{ format_date(p.corso.data_inizio) }} · {{ p.numero_posti }} posto{% if p.numero_posti > 1 %}i{% endif %}</div>
+      <div class="mt-1">
+        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-{{ color }}-100 text-{{ color }}-700">
+          {{ p.stato_label }}
+        </span>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="text-right">
+        <div class="font-bold text-gray-900">{{ format_currency(p.importo_totale) }}</div>
+        <div class="text-xs text-gray-400">{{ format_date(p.created_at) }}</div>
+      </div>
+      <a href="{{ url_for('dashboard.prenotazione_dettaglio', prenotazione_id=p.id) }}"
+         class="bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg text-sm font-medium">
+        Dettagli →
+      </a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-24 text-gray-400">
+  <p class="text-lg mb-4">Nessuna prenotazione ancora</p>
+  <a href="{{ url_for('public.index') }}" class="bg-blue-700 text-white px-5 py-2.5 rounded-lg hover:bg-blue-800">
+    Sfoglia i corsi
+  </a>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,101 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Prenotazione{% endblock %}
+
+{% block admin_content %}
+{% set p = prenotazione %}
+<div class="mb-4"><a href="{{ url_for('admin.prenotazioni') }}" class="text-sm text-blue-600 hover:underline">← Prenotazioni</a></div>
+<div class="flex items-start justify-between mb-6">
+  <div>
+    <h1 class="text-2xl font-bold">{{ p.corso.titolo }}</h1>
+    <div class="text-gray-500 mt-1">{{ p.utente.nome_completo }} — {{ p.utente.email }}</div>
+  </div>
+  {% set color_map = {'CONFERMATA': 'green', 'IN_ATTESA_PAGAMENTO': 'yellow', 'PAGAMENTO_CARICATO': 'blue', 'ANNULLATA': 'red', 'SCADUTA': 'gray'} %}
+  {% set color = color_map.get(p.stato.value, 'gray') %}
+  <span class="px-3 py-1 rounded-full text-sm bg-{{ color }}-100 text-{{ color }}-700 font-medium">{{ p.stato_label }}</span>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="lg:col-span-2 space-y-5">
+
+    {# Azioni #}
+    <div class="bg-white border border-gray-200 rounded-xl p-5">
+      <h3 class="font-semibold mb-3">Azioni</h3>
+      <div class="flex flex-wrap gap-2">
+        {% if p.stato.value in ('IN_ATTESA_PAGAMENTO', 'PAGAMENTO_CARICATO') %}
+        <form method="POST" action="{{ url_for('admin.prenotazione_conferma', prenotazione_id=p.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700">✓ Conferma</button>
+        </form>
+        {% endif %}
+        {% if p.stato.value not in ('ANNULLATA', 'SCADUTA') %}
+        <form method="POST" action="{{ url_for('admin.prenotazione_annulla', prenotazione_id=p.id) }}" onsubmit="return confirm('Annullare la prenotazione?')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="bg-red-50 text-red-700 border border-red-200 px-4 py-2 rounded-lg text-sm hover:bg-red-100">✕ Annulla</button>
+        </form>
+        {% endif %}
+        {% if p.stato.value == 'CONFERMATA' and p.corso.attestato_abilitato %}
+        <form method="POST" action="{{ url_for('admin.emetti_attestato', prenotazione_id=p.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-700">📄 Emetti attestato</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+
+    {# Ricevuta #}
+    {% if p.url_contabile %}
+    <div class="bg-white border border-gray-200 rounded-xl p-5">
+      <h3 class="font-semibold mb-2">Ricevuta di pagamento</h3>
+      <div class="text-sm text-gray-600 mb-2">{{ p.nome_file_contabile }}</div>
+      <a href="{{ p.url_contabile }}" target="_blank" class="text-blue-600 hover:underline text-sm">Visualizza ricevuta →</a>
+    </div>
+    {% endif %}
+
+    {# Note segreteria #}
+    <form method="POST" class="bg-white border border-gray-200 rounded-xl p-5">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <h3 class="font-semibold mb-3">Note segreteria</h3>
+      <textarea name="note_segreteria" rows="4" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 mb-3">{{ p.note_segreteria or '' }}</textarea>
+      <button type="submit" class="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-900">Salva note</button>
+    </form>
+
+    {# Partecipanti #}
+    {% if p.partecipanti %}
+    <div class="bg-white border border-gray-200 rounded-xl p-5">
+      <h3 class="font-semibold mb-3">Partecipanti</h3>
+      {% for part in p.partecipanti %}
+      <div class="text-sm py-2 border-b border-gray-100 last:border-0 flex justify-between">
+        <span class="font-medium">{{ part.nome }} {{ part.cognome }}</span>
+        <span class="text-gray-500">{{ part.email or '' }}</span>
+        <span class="text-gray-400 font-mono text-xs">{{ part.codice_fiscale or '' }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="space-y-4">
+    <div class="bg-white border border-gray-200 rounded-xl p-5 text-sm space-y-2">
+      <div class="flex justify-between"><span class="text-gray-500">Posti</span><span>{{ p.numero_posti }}</span></div>
+      <div class="flex justify-between"><span class="text-gray-500">Importo</span><span class="font-bold">{{ format_currency(p.importo_totale) }}</span></div>
+      {% if p.importo_pagato %}<div class="flex justify-between"><span class="text-gray-500">Pagato</span><span>{{ format_currency(p.importo_pagato) }}</span></div>{% endif %}
+      {% if p.metodo_pagamento %}<div class="flex justify-between"><span class="text-gray-500">Metodo</span><span>{{ p.metodo_pagamento.value }}</span></div>{% endif %}
+      {% if p.id_transazione %}<div class="flex justify-between"><span class="text-gray-500">Transazione</span><span class="font-mono text-xs">{{ p.id_transazione }}</span></div>{% endif %}
+      <div class="flex justify-between"><span class="text-gray-500">Creata</span><span>{{ format_date(p.created_at) }}</span></div>
+      {% if p.scadenza_pagamento %}<div class="flex justify-between"><span class="text-gray-500">Scadenza</span><span>{{ format_date(p.scadenza_pagamento) }}</span></div>{% endif %}
+    </div>
+    {% if p.note %}
+    <div class="bg-white border border-gray-200 rounded-xl p-5">
+      <div class="text-xs text-gray-500 mb-1">Note utente</div>
+      <div class="text-sm">{{ p.note }}</div>
+    </div>
+    {% endif %}
+    {% if p.attestato_emesso %}
+    <div class="bg-green-50 border border-green-200 rounded-xl p-5">
+      <div class="text-sm text-green-700 font-medium">✓ Attestato emesso</div>
+      <div class="text-xs text-green-600 mt-1">{{ format_date(p.attestato_emesso_at) }}</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

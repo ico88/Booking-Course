@@ -1,0 +1,21 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Partecipanti — {{ corso.titolo }}{% endblock %}
+
+{% block admin_content %}
+<div class="mb-4"><a href="{{ url_for('admin.corso_modifica', corso_id=corso.id) }}" class="text-sm text-blue-600 hover:underline">← {{ corso.titolo }}</a></div>
+<h1 class="text-2xl font-bold mb-6">Partecipanti</h1>
+
+{% for p in prenotazioni %}
+  {% for part in p.partecipanti %}
+  <div class="bg-white border border-gray-200 rounded-lg px-5 py-3 mb-2 flex items-center justify-between text-sm">
+    <span class="font-medium">{{ part.nome }} {{ part.cognome }}</span>
+    <span class="text-gray-500">{{ part.email or '' }}</span>
+    <span class="text-gray-400">{{ p.utente.nome_completo }}</span>
+    <a href="{{ url_for('admin.prenotazione_dettaglio', prenotazione_id=p.id) }}" class="text-blue-600 hover:underline">Prenotazione</a>
+  </div>
+  {% endfor %}
+{% endfor %}
+{% if not prenotazioni %}
+<p class="text-gray-500">Nessun partecipante confermato.</p>
+{% endif %}
+{% endblock %}

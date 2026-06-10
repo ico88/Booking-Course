@@ -1,0 +1,88 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Backup{% endblock %}
+
+{% block admin_content %}
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-bold">Backup</h1>
+  <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="action" value="crea">
+    <button type="submit" class="bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800">
+      Crea backup ora
+    </button>
+  </form>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="lg:col-span-2">
+    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+        <h2 class="font-semibold text-sm">Backup disponibili</h2>
+        <span class="text-xs text-gray-400">{{ backups|length }} file</span>
+      </div>
+      {% if backups %}
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+          <tr>
+            <th class="px-5 py-3 text-left">File</th>
+            <th class="px-5 py-3 text-left">Dimensione</th>
+            <th class="px-5 py-3 text-left">Data</th>
+            <th class="px-5 py-3"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for b in backups %}
+          <tr class="hover:bg-gray-50">
+            <td class="px-5 py-3 font-mono text-xs text-gray-700">{{ b.nome }}</td>
+            <td class="px-5 py-3 text-gray-500 text-xs">{{ "%.1f"|format(b.dimensione / 1024) }} KB</td>
+            <td class="px-5 py-3 text-gray-400 text-xs">{{ b.data.strftime('%d/%m/%Y %H:%M') }}</td>
+            <td class="px-5 py-3">
+              <div class="flex items-center gap-3">
+                <a href="{{ url_for('admin.backup_scarica', filename=b.nome) }}"
+                   class="text-blue-600 hover:text-blue-800 text-xs font-medium">Scarica</a>
+                <form method="POST" onsubmit="return confirm('Eliminare il backup {{ b.nome }}?')">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="hidden" name="action" value="elimina">
+                  <input type="hidden" name="filename" value="{{ b.nome }}">
+                  <button type="submit" class="text-red-500 hover:text-red-700 text-xs">Elimina</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="px-5 py-10 text-center text-gray-400 text-sm">
+        Nessun backup disponibile. Premi "Crea backup ora" per il primo backup.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="space-y-4">
+    <div class="bg-white border border-gray-200 rounded-xl p-5">
+      <h2 class="font-semibold mb-3 text-sm">Informazioni</h2>
+      <div class="space-y-2 text-sm text-gray-600">
+        <div>
+          <span class="text-xs text-gray-400 block">Tipo database</span>
+          SQLite
+        </div>
+        <div>
+          <span class="text-xs text-gray-400 block">Cartella backup</span>
+          <code class="text-xs bg-gray-100 px-1.5 py-0.5 rounded font-mono">{{ backup_dir }}</code>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white border border-gray-200 rounded-xl p-5">
+      <h2 class="font-semibold mb-3 text-sm">Backup automatico (cron)</h2>
+      <p class="text-xs text-gray-500 mb-3">Per pianificare backup automatici aggiungi al crontab del server:</p>
+      <code class="block text-xs bg-gray-900 text-green-400 p-3 rounded-lg font-mono leading-relaxed whitespace-pre-wrap">0 3 * * * curl -s -X POST \
+  -H "Cookie: session=..." \
+  {{ app_url }}/admin/backup</code>
+      <p class="text-xs text-gray-400 mt-2">Oppure copia periodicamente il file <code class="bg-gray-100 px-1 rounded">booking.db</code> con uno script di sistema.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

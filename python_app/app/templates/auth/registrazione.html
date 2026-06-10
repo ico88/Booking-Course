@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Registrati{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto py-12">
+  <h1 class="text-2xl font-bold text-center mb-8">Crea un account</h1>
+  <form method="POST" class="bg-white border border-gray-200 rounded-xl p-8 space-y-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="block text-sm font-medium mb-1">Nome *</label>
+        <input type="text" name="nome" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Cognome *</label>
+        <input type="text" name="cognome" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">Email *</label>
+      <input type="email" name="email" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">Password * (min. 8 caratteri)</label>
+      <input type="password" name="password" required minlength="8" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+    </div>
+    <div class="space-y-2 pt-2">
+      <label class="flex items-start gap-2 cursor-pointer">
+        <input type="checkbox" name="consenso_privacy" required class="mt-0.5">
+        <span class="text-sm text-gray-700">Ho letto e accetto la <a href="{{ url_for('public.privacy_policy') }}" class="text-blue-700 hover:underline" target="_blank">Privacy Policy</a> *</span>
+      </label>
+      <label class="flex items-start gap-2 cursor-pointer">
+        <input type="checkbox" name="consenso_marketing" class="mt-0.5">
+        <span class="text-sm text-gray-700">Accetto di ricevere comunicazioni di marketing</span>
+      </label>
+    </div>
+    {% if turnstile_site_key %}
+    <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}" data-theme="light"></div>
+    {% endif %}
+    <button type="submit" class="w-full bg-blue-700 text-white py-2.5 rounded-lg font-medium hover:bg-blue-800 mt-2">
+      Registrati
+    </button>
+  </form>
+  <div class="text-center mt-4 text-sm text-gray-500">
+    Hai già un account? <a href="{{ url_for('auth.login') }}" class="text-blue-700 hover:underline">Accedi</a>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+{% if turnstile_site_key %}
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+{% endif %}
+{% endblock %}

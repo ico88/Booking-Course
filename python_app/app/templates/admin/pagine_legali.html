@@ -1,0 +1,150 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Pagine legali{% endblock %}
+
+{% block head %}
+<style>
+  [contenteditable]:focus{outline:none;box-shadow:inset 0 0 0 2px #3b82f6;border-radius:0 0 12px 12px}
+  [contenteditable] ul{list-style:disc;padding-left:1.5em}
+  [contenteditable] ol{list-style:decimal;padding-left:1.5em}
+  [contenteditable] h2{font-size:1.25em;font-weight:700;margin:.8em 0 .3em}
+  [contenteditable] h3{font-size:1.05em;font-weight:600;margin:.6em 0 .2em}
+  [contenteditable] p{margin:.3em 0}
+  [contenteditable] a{color:#2563eb;text-decoration:underline}
+  .e-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:5px;font-size:.8rem;cursor:pointer;color:#374151}
+  .e-btn:hover{background:#e5e7eb}
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-bold">Pagine legali</h1>
+  <div class="flex gap-2 text-sm">
+    <a href="{{ url_for('public.privacy_policy') }}" target="_blank" class="text-gray-500 hover:text-gray-800">Privacy ↗</a>
+    <a href="{{ url_for('public.cookie_policy') }}" target="_blank" class="text-gray-500 hover:text-gray-800">Cookie ↗</a>
+    <a href="{{ url_for('public.termini_condizioni') }}" target="_blank" class="text-gray-500 hover:text-gray-800">Termini ↗</a>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="flex gap-1 mb-4 bg-white border border-gray-200 rounded-xl p-1 w-fit">
+  {% for tab_id, tab_label in [('privacy','Privacy Policy'),('cookie','Cookie Policy'),('termini','Termini e Condizioni')] %}
+  <button type="button" onclick="showTab('{{ tab_id }}')" id="tab-btn-{{ tab_id }}"
+    class="px-4 py-2 rounded-lg text-sm font-medium transition-colors tab-btn {{ 'bg-blue-600 text-white' if loop.first else 'text-gray-600 hover:bg-gray-100' }}">
+    {{ tab_label }}
+  </button>
+  {% endfor %}
+</div>
+
+<form method="POST" id="legal-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {% for tab_id, tab_label, key in [('privacy','Privacy Policy','pagina_privacy'),('cookie','Cookie Policy','pagina_cookie'),('termini','Termini e Condizioni','pagina_termini')] %}
+  <div id="tab-{{ tab_id }}" class="tab-panel space-y-3 {{ 'hidden' if not loop.first }}">
+    <div class="flex items-center justify-between">
+      <p class="text-sm text-gray-500">
+        {% if tab_id == 'cookie' %}Scrivi <code class="bg-gray-100 px-1 rounded text-xs">&#123;&#123;TABELLA_COOKIE&#125;&#125;</code> nel testo per inserire la tabella automatica dei cookie.{% else %}Formatta il testo con la barra degli strumenti.{% endif %}
+      </p>
+      <div class="flex gap-2">
+        <button type="button" onclick="togglePreview('{{ tab_id }}')" id="preview-btn-{{ tab_id }}"
+                class="text-xs bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg">Anteprima</button>
+        <button type="button" onclick="ripristina('{{ tab_id }}', '{{ key }}')"
+                class="text-xs text-orange-600 hover:text-orange-800 px-3 py-1.5">Ripristina default</button>
+      </div>
+    </div>
+
+    <!-- Editor -->
+    <div id="editor-wrap-{{ tab_id }}" class="border border-gray-200 rounded-xl overflow-visible bg-white">
+      <div class="bg-gray-50 border-b border-gray-200 px-2 py-1 flex flex-wrap items-center gap-0.5 rounded-t-xl">
+        <button type="button" onmousedown="event.preventDefault();eCmd('ed-{{ tab_id }}','bold')" class="e-btn font-bold" title="Grassetto">B</button>
+        <button type="button" onmousedown="event.preventDefault();eCmd('ed-{{ tab_id }}','italic')" class="e-btn italic" title="Corsivo">I</button>
+        <button type="button" onmousedown="event.preventDefault();eCmd('ed-{{ tab_id }}','underline')" class="e-btn underline" title="Sottolineato">U</button>
+        <span class="w-px h-5 bg-gray-200 mx-0.5"></span>
+        <button type="button" onmousedown="event.preventDefault();eBlock('ed-{{ tab_id }}','h2')" class="e-btn font-bold text-xs" title="Titolo H2">H2</button>
+        <button type="button" onmousedown="event.preventDefault();eBlock('ed-{{ tab_id }}','h3')" class="e-btn font-semibold text-xs" title="Titolo H3">H3</button>
+        <button type="button" onmousedown="event.preventDefault();eBlock('ed-{{ tab_id }}','p')" class="e-btn text-gray-400 text-xs" title="Paragrafo">¶</button>
+        <span class="w-px h-5 bg-gray-200 mx-0.5"></span>
+        <button type="button" onmousedown="event.preventDefault();eCmd('ed-{{ tab_id }}','insertUnorderedList')" class="e-btn" title="Elenco puntato">•≡</button>
+        <button type="button" onmousedown="event.preventDefault();eCmd('ed-{{ tab_id }}','insertOrderedList')" class="e-btn text-xs" title="Elenco numerato">1.</button>
+        <span class="w-px h-5 bg-gray-200 mx-0.5"></span>
+        <button type="button" onmousedown="event.preventDefault();eLink('ed-{{ tab_id }}')" class="e-btn text-xs px-2" style="width:auto" title="Inserisci link">Link</button>
+        <button type="button" onmousedown="event.preventDefault();eCmd('ed-{{ tab_id }}','removeFormat')" class="e-btn text-gray-400 text-xs" title="Rimuovi formattazione">✕</button>
+      </div>
+      <div id="ed-{{ tab_id }}" contenteditable="true"
+           class="p-4 bg-white text-sm leading-relaxed rounded-b-xl"
+           style="min-height:440px"></div>
+    </div>
+    <textarea name="{{ key }}" id="textarea-{{ tab_id }}" class="hidden">{{ settings.get(key) or defaults[tab_id] }}</textarea>
+
+    <!-- Preview -->
+    <div id="preview-{{ tab_id }}" class="hidden bg-white border border-gray-200 rounded-xl p-6 prose max-w-none min-h-64"></div>
+
+    <button type="submit" class="w-full bg-blue-700 text-white py-2.5 rounded-xl font-medium hover:bg-blue-800">Salva pagine legali</button>
+  </div>
+  {% endfor %}
+</form>
+
+<script>
+const defaults = {
+  pagina_privacy: {{ defaults.privacy | tojson }},
+  pagina_cookie:  {{ defaults.cookie | tojson }},
+  pagina_termini: {{ defaults.termini | tojson }},
+};
+
+// Editor helpers
+function eCmd(id, cmd) { document.getElementById(id).focus(); document.execCommand(cmd, false, null); }
+function eBlock(id, tag) { document.getElementById(id).focus(); document.execCommand('formatBlock', false, tag); }
+function eLink(id) {
+  document.getElementById(id).focus();
+  const url = prompt('URL del link (es. https://...)');
+  if (url) document.execCommand('createLink', false, url);
+}
+
+// Init editor content from hidden textarea
+['privacy', 'cookie', 'termini'].forEach(function(id) {
+  document.getElementById('ed-' + id).innerHTML = document.getElementById('textarea-' + id).value;
+});
+
+// Sync all editors to textareas on submit
+document.getElementById('legal-form').addEventListener('submit', function() {
+  ['privacy', 'cookie', 'termini'].forEach(function(id) {
+    document.getElementById('textarea-' + id).value = document.getElementById('ed-' + id).innerHTML;
+  });
+});
+
+function showTab(id) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.remove('bg-blue-600','text-white');
+    b.classList.add('text-gray-600','hover:bg-gray-100');
+  });
+  document.getElementById('tab-' + id).classList.remove('hidden');
+  const btn = document.getElementById('tab-btn-' + id);
+  btn.classList.add('bg-blue-600','text-white');
+  btn.classList.remove('text-gray-600','hover:bg-gray-100');
+}
+
+function togglePreview(id) {
+  const wrap = document.getElementById('editor-wrap-' + id);
+  const preview = document.getElementById('preview-' + id);
+  const btn = document.getElementById('preview-btn-' + id);
+  if (!preview.classList.contains('hidden')) {
+    wrap.classList.remove('hidden');
+    preview.classList.add('hidden');
+    btn.textContent = 'Anteprima';
+  } else {
+    preview.innerHTML = document.getElementById('ed-' + id).innerHTML;
+    wrap.classList.add('hidden');
+    preview.classList.remove('hidden');
+    btn.textContent = 'Modifica';
+  }
+}
+
+function ripristina(id, key) {
+  if (!confirm('Ripristinare il testo predefinito? Il contenuto attuale verrà sovrascritto.')) return;
+  const html = defaults[key] || '';
+  document.getElementById('ed-' + id).innerHTML = html;
+  document.getElementById('textarea-' + id).value = html;
+  const preview = document.getElementById('preview-' + id);
+  if (!preview.classList.contains('hidden')) preview.innerHTML = html;
+}
+</script>
+{% endblock %}

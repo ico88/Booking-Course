@@ -1,0 +1,110 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Prenotazione{% endblock %}
+
+{% block dashboard_content %}
+{% set p = prenotazione %}
+<div class="mb-4"><a href="{{ url_for('dashboard.index') }}" class="text-sm text-blue-700 hover:underline">← Le mie prenotazioni</a></div>
+<h1 class="text-2xl font-bold mb-6">{{ p.corso.titolo }}</h1>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="lg:col-span-2 space-y-6">
+
+    {# Stato #}
+    {% set color_map = {'CONFERMATA': 'green', 'IN_ATTESA_PAGAMENTO': 'yellow', 'PAGAMENTO_CARICATO': 'blue', 'ANNULLATA': 'red', 'SCADUTA': 'gray'} %}
+    {% set color = color_map.get(p.stato.value, 'gray') %}
+    <div class="bg-white border border-gray-200 rounded-xl p-5">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-sm text-gray-500">Stato</div>
+          <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-{{ color }}-100 text-{{ color }}-700 mt-1">
+            {{ p.stato_label }}
+          </span>
+        </div>
+        <div class="text-right">
+          <div class="text-sm text-gray-500">Importo</div>
+          <div class="text-2xl font-bold text-gray-900">{{ format_currency(p.importo_totale) }}</div>
+        </div>
+      </div>
+      {% if p.scadenza_pagamento and p.stato.value == 'IN_ATTESA_PAGAMENTO' %}
+      <div class="mt-3 text-sm text-yellow-700 bg-yellow-50 rounded-lg p-3">
+        ⚠️ Scadenza pagamento: {{ format_datetime(p.scadenza_pagamento) }}
+      </div>
+      {% endif %}
+    </div>
+
+    {# Azioni pagamento #}
+    {% if p.stato.value == 'IN_ATTESA_PAGAMENTO' %}
+    <div class="bg-white border border-gray-200 rounded-xl p-5">
+      <h3 class="font-semibold mb-3">Completa il pagamento</h3>
+      <a href="{{ url_for('dashboard.pagamento', prenotazione_id=p.id) }}"
+         class="bg-blue-700 text-white px-5 py-2.5 rounded-lg hover:bg-blue-800 inline-block font-medium">
+        Vai al pagamento →
+      </a>
+    </div>
+    {% endif %}
+
+    {# Upload ricevuta bonifico #}
+    {% if p.stato.value in ('IN_ATTESA_PAGAMENTO', 'PAGAMENTO_CARICATO') %}
+    <div class="bg-white border border-gray-200 rounded-xl p-5">
+      <h3 class="font-semibold mb-3">Carica ricevuta bonifico</h3>
+      {% if p.url_contabile %}
+        <div class="text-sm text-green-700 bg-green-50 rounded-lg p-3 mb-3">✓ Ricevuta caricata: {{ p.nome_file_contabile }}</div>
+      {% endif %}
+      <form method="POST" action="{{ url_for('dashboard.upload_contabile', prenotazione_id=p.id) }}" enctype="multipart/form-data">
+        <div class="flex gap-3">
+          <input type="file" name="file" accept=".pdf,.jpg,.jpeg,.png" required class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm">
+          <button type="submit" class="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-900">Carica</button>
+        </div>
+      </form>
+    </div>
+    {% endif %}
+
+    {# Attestato #}
+    {% if p.attestato_emesso and p.attestato_url %}
+    <div class="bg-white border border-green-200 bg-green-50 rounded-xl p-5">
+      <h3 class="font-semibold text-green-800 mb-2">Attestato disponibile</h3>
+      <a href="{{ url_for('dashboard.scarica_attestato', prenotazione_id=p.id) }}"
+         class="bg-green-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-800 inline-block">
+        Scarica attestato
+      </a>
+    </div>
+    {% endif %}
+
+    {# Partecipanti #}
+    {% if p.partecipanti %}
+    <div class="bg-white border border-gray-200 rounded-xl p-5">
+      <h3 class="font-semibold mb-3">Partecipanti</h3>
+      <div class="space-y-2">
+        {% for part in p.partecipanti %}
+        <div class="flex items-center justify-between text-sm py-2 border-b border-gray-100 last:border-0">
+          <span class="font-medium">{{ part.nome }} {{ part.cognome }}</span>
+          <span class="text-gray-500">{{ part.email or '' }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <div class="space-y-4">
+    <div class="bg-white border border-gray-200 rounded-xl p-5">
+      <h3 class="font-semibold mb-3">Dettagli corso</h3>
+      <div class="space-y-2 text-sm">
+        {% if p.corso.data_inizio %}<div><span class="text-gray-500">Data:</span> {{ format_date(p.corso.data_inizio) }}</div>{% endif %}
+        {% if p.corso.luogo %}<div><span class="text-gray-500">Luogo:</span> {{ p.corso.luogo }}</div>{% endif %}
+        {% if p.corso.orario %}<div><span class="text-gray-500">Orario:</span> {{ p.corso.orario }}</div>{% endif %}
+        <div><span class="text-gray-500">Posti:</span> {{ p.numero_posti }}</div>
+        {% if p.metodo_pagamento %}<div><span class="text-gray-500">Pagamento:</span> {{ p.metodo_pagamento.value }}</div>{% endif %}
+        {% if p.id_transazione %}<div><span class="text-gray-500">Transazione:</span> <span class="font-mono text-xs">{{ p.id_transazione }}</span></div>{% endif %}
+      </div>
+    </div>
+    {% if p.note %}
+    <div class="bg-white border border-gray-200 rounded-xl p-5">
+      <h3 class="font-semibold mb-2">Le tue note</h3>
+      <p class="text-sm text-gray-700">{{ p.note }}</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

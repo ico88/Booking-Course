@@ -1,0 +1,45 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Corsi{% endblock %}
+
+{% block admin_content %}
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-bold">Corsi</h1>
+  <a href="{{ url_for('admin.corso_nuovo') }}" class="bg-blue-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-800">+ Nuovo corso</a>
+</div>
+
+<div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+      <tr>
+        <th class="px-5 py-3 text-left">Titolo</th>
+        <th class="px-5 py-3 text-left">Data</th>
+        <th class="px-5 py-3 text-left">Posti</th>
+        <th class="px-5 py-3 text-left">Costo</th>
+        <th class="px-5 py-3 text-left">Stato</th>
+        <th class="px-5 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {% for corso in corsi %}
+      <tr class="hover:bg-gray-50">
+        <td class="px-5 py-3 font-medium">{{ corso.titolo }}</td>
+        <td class="px-5 py-3 text-gray-500">{{ format_date(corso.data_inizio) or '—' }}</td>
+        <td class="px-5 py-3">{{ corso.posti_disponibili }}/{{ corso.posti_totali or '∞' }}</td>
+        <td class="px-5 py-3">{{ corso.costo_formattato }}</td>
+        <td class="px-5 py-3">
+          {% if corso.pubblicato %}
+            <span class="px-2 py-0.5 rounded text-xs bg-green-100 text-green-700">Pubblicato</span>
+          {% else %}
+            <span class="px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-600">Bozza</span>
+          {% endif %}
+        </td>
+        <td class="px-5 py-3 flex gap-2">
+          <a href="{{ url_for('admin.corso_modifica', corso_id=corso.id) }}" class="text-blue-600 hover:underline">Modifica</a>
+          <a href="{{ url_for('admin.corso_partecipanti', corso_id=corso.id) }}" class="text-gray-500 hover:underline">Partecipanti</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

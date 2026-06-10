@@ -1,0 +1,102 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Attestati{% endblock %}
+
+{% block admin_content %}
+<h1 class="text-2xl font-bold mb-6">Attestati</h1>
+
+{# ── Da emettere ─────────────────────────────────────────── #}
+<div class="mb-10">
+  <h2 class="text-lg font-semibold mb-3 text-gray-700">
+    Da emettere
+    {% if da_emettere %}<span class="ml-2 text-sm bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">{{ da_emettere|length }}</span>{% endif %}
+  </h2>
+
+  {% if da_emettere %}
+  <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+        <tr>
+          <th class="px-5 py-3 text-left">Partecipante</th>
+          <th class="px-5 py-3 text-left">Corso</th>
+          <th class="px-5 py-3 text-left">Data prenotazione</th>
+          <th class="px-5 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        {% for p in da_emettere %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-5 py-3">
+            <div class="font-medium">{{ p.utente.nome_completo }}</div>
+            <div class="text-xs text-gray-500">{{ p.utente.email }}</div>
+          </td>
+          <td class="px-5 py-3 text-gray-700">{{ p.corso.titolo }}</td>
+          <td class="px-5 py-3 text-gray-400">{{ format_date(p.created_at) }}</td>
+          <td class="px-5 py-3 text-right">
+            <form method="POST" action="{{ url_for('admin.emetti_attestato', prenotazione_id=p.id) }}" class="inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="bg-purple-600 text-white px-3 py-1.5 rounded-lg text-xs hover:bg-purple-700">
+                Emetti attestato
+              </button>
+            </form>
+            <a href="{{ url_for('admin.prenotazione_dettaglio', prenotazione_id=p.id) }}"
+               class="ml-2 text-blue-600 hover:underline text-xs">Dettaglio</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="bg-white border border-gray-200 rounded-xl p-6 text-sm text-gray-500">
+    Nessun attestato da emettere.
+  </div>
+  {% endif %}
+</div>
+
+{# ── Emessi ──────────────────────────────────────────────── #}
+<div>
+  <h2 class="text-lg font-semibold mb-3 text-gray-700">
+    Emessi
+    {% if emessi %}<span class="ml-2 text-sm bg-green-100 text-green-700 px-2 py-0.5 rounded-full">{{ emessi|length }}</span>{% endif %}
+  </h2>
+
+  {% if emessi %}
+  <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+        <tr>
+          <th class="px-5 py-3 text-left">Partecipante</th>
+          <th class="px-5 py-3 text-left">Corso</th>
+          <th class="px-5 py-3 text-left">Emesso il</th>
+          <th class="px-5 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        {% for p in emessi %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-5 py-3">
+            <div class="font-medium">{{ p.utente.nome_completo }}</div>
+            <div class="text-xs text-gray-500">{{ p.utente.email }}</div>
+          </td>
+          <td class="px-5 py-3 text-gray-700">{{ p.corso.titolo }}</td>
+          <td class="px-5 py-3 text-gray-400">{{ format_date(p.attestato_emesso_at) }}</td>
+          <td class="px-5 py-3 text-right flex items-center justify-end gap-3">
+            {% if p.attestato_url %}
+            <a href="{{ p.attestato_url }}" target="_blank"
+               class="text-blue-600 hover:underline text-xs">Scarica</a>
+            {% endif %}
+            <a href="{{ url_for('admin.prenotazione_dettaglio', prenotazione_id=p.id) }}"
+               class="text-gray-500 hover:underline text-xs">Dettaglio</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="bg-white border border-gray-200 rounded-xl p-6 text-sm text-gray-500">
+    Nessun attestato ancora emesso.
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="it" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>{% block title %}{% endblock %} — {{ app_name }}</title>
+  <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+  {% set _scheme = color_scheme or 'blu' %}
+  {% set _palettes = {
+    'rosso': {'50':'#fef2f2','100':'#fee2e2','200':'#fecaca','300':'#fca5a5','400':'#f87171','500':'#ef4444','600':'#dc2626','700':'#b91c1c','800':'#991b1b','900':'#7f1d1d'},
+    'verde': {'50':'#f0fdf4','100':'#dcfce7','200':'#bbf7d0','300':'#86efac','400':'#4ade80','500':'#22c55e','600':'#16a34a','700':'#15803d','800':'#166534','900':'#14532d'},
+  } %}
+  {% set _p = _palettes.get(_scheme) %}
+  {% if _p %}<style>
+{% for shade, hex in _p.items() %}
+.bg-blue-{{ shade }}{background-color:{{ hex }}!important}
+.hover\:bg-blue-{{ shade }}:hover{background-color:{{ hex }}!important}
+.text-blue-{{ shade }}{color:{{ hex }}!important}
+.hover\:text-blue-{{ shade }}:hover{color:{{ hex }}!important}
+.border-blue-{{ shade }}{border-color:{{ hex }}!important}
+.ring-blue-{{ shade }}{--tw-ring-color:{{ hex }}}
+.focus\:ring-blue-{{ shade }}:focus{--tw-ring-color:{{ hex }}}
+{% endfor %}
+</style>{% endif %}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>body{font-family:'Inter',sans-serif}</style>
+  {% block head %}{% endblock %}
+</head>
+<body class="min-h-full bg-gray-50 text-gray-900">
+
+{% block navbar %}
+<nav class="bg-white border-b border-gray-200 sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between h-16 items-center">
+      <a href="{{ url_for('public.index') }}" class="flex items-center gap-2 font-bold text-blue-700 text-lg">
+        {% if logo_url %}<img src="{{ logo_url }}" alt="" class="h-8">{% endif %}
+        {{ app_name }}
+      </a>
+      <div class="flex items-center gap-4">
+        {% if current_user.is_authenticated %}
+          {% if current_user.is_admin() %}
+            <a href="{{ url_for('admin.index') }}" class="text-sm text-gray-600 hover:text-blue-700">Admin</a>
+          {% endif %}
+          <a href="{{ url_for('dashboard.index') }}" class="text-sm text-gray-600 hover:text-blue-700">Dashboard</a>
+          <a href="{{ url_for('auth.logout') }}" class="text-sm bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg">Esci</a>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}" class="text-sm text-gray-600 hover:text-blue-700">Accedi</a>
+          <a href="{{ url_for('auth.registrazione') }}" class="text-sm bg-blue-700 text-white px-3 py-1.5 rounded-lg hover:bg-blue-800">Registrati</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</nav>
+{% endblock %}
+
+<main class="{% block main_class %}max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8{% endblock %}">
+  {# Flash messages #}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="mb-6 space-y-2">
+        {% for category, message in messages %}
+          {% set colors = {'success': 'bg-green-50 border-green-400 text-green-800', 'error': 'bg-red-50 border-red-400 text-red-800', 'info': 'bg-blue-50 border-blue-400 text-blue-800', 'warning': 'bg-yellow-50 border-yellow-400 text-yellow-800'} %}
+          <div class="border-l-4 px-4 py-3 rounded-r {{ colors.get(category, 'bg-gray-50 border-gray-400 text-gray-800') }}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="mt-16 border-t border-gray-200 bg-white py-8 text-center text-sm text-gray-500">
+  <div class="max-w-7xl mx-auto px-4">
+    {{ app_name }} &mdash;
+    <a href="{{ url_for('public.privacy_policy') }}" class="hover:underline">Privacy</a> ·
+    <a href="{{ url_for('public.cookie_policy') }}" class="hover:underline">Cookie</a> ·
+    <a href="{{ url_for('public.termini_condizioni') }}" class="hover:underline">Termini</a>
+  </div>
+</footer>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>
