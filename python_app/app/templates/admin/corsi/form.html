@@ -95,6 +95,23 @@
             <span class="text-sm font-medium">Attestato abilitato</span>
           </label>
         </div>
+        <div id="attestato-template-box" class="{{ '' if corso and corso.attestato_abilitato else 'hidden' }}">
+          <label class="block text-sm font-medium mb-1">Template HTML attestato
+            <span class="text-gray-400 font-normal text-xs ml-1">— lascia vuoto per il template generico</span>
+          </label>
+          <textarea name="attestato_html_template" rows="10"
+                    placeholder="HTML personalizzato. Variabili disponibili: {nome} {cognome} {nome_completo} {titolo_corso} {data} {luogo} {app_name}"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 font-mono text-xs focus:ring-2 focus:ring-blue-500">{{ corso.attestato_html_template if corso and corso.attestato_html_template else '' }}</textarea>
+          <p class="text-xs text-gray-400 mt-1">
+            Variabili: <code class="bg-gray-100 px-1 rounded">{nome}</code>
+            <code class="bg-gray-100 px-1 rounded">{cognome}</code>
+            <code class="bg-gray-100 px-1 rounded">{nome_completo}</code>
+            <code class="bg-gray-100 px-1 rounded">{titolo_corso}</code>
+            <code class="bg-gray-100 px-1 rounded">{data}</code>
+            <code class="bg-gray-100 px-1 rounded">{luogo}</code>
+            <code class="bg-gray-100 px-1 rounded">{app_name}</code>
+          </p>
+        </div>
       </div>
       <button type="submit" class="w-full bg-blue-700 text-white py-2.5 rounded-lg font-medium hover:bg-blue-800">
         Salva corso
@@ -125,4 +142,15 @@
   </div>
   {% endif %}
 </div>
+
+<script>
+// Show/hide template textarea based on attestato_abilitato checkbox
+const attestatoCheck = document.querySelector('input[name="attestato_abilitato"]');
+const templateBox = document.getElementById('attestato-template-box');
+if (attestatoCheck && templateBox) {
+  attestatoCheck.addEventListener('change', () => {
+    templateBox.classList.toggle('hidden', !attestatoCheck.checked);
+  });
+}
+</script>
 {% endblock %}

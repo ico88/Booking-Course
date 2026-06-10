@@ -4,7 +4,10 @@ from datetime import datetime, timezone, timedelta
 from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app, abort
 from flask_login import current_user, login_required
 from ..models import db, Corso, Prenotazione, Partecipante, Utente, LeadMarketing, Impostazione, StatoPrenotazione, MetodoPagamento
-from ..email_service import invia_email_prenotazione, invia_email_notifica_segreteria, invia_email_verifica_lead
+from ..email_service import (
+    invia_email_prenotazione, invia_email_conferma_prenotazione,
+    invia_email_notifica_segreteria, invia_email_verifica_lead,
+)
 from ..utils import validate_email_address, verify_unsubscribe_token, validate_int_range, sanitize_html
 from .. import limiter
 
@@ -75,6 +78,22 @@ def prenota(corso_id):
                     codice_fiscale=(request.form.get(f"partecipante_{i}_cf") or "").strip()[:20].upper(),
                 )
                 db.session.add(p)
+        # Corsi gratuiti: conferma immediata senza passare per il pagamento
+        if float(corso.costo or 0) == 0:
+            prenotazione.stato = StatoPrenotazione.CONFERMATA
+            prenotazione.scadenza_pagamento = None
+            db.session.commit()
+            try:
+                invia_email_conferma_prenotazione(prenotazione)
+                invia_email_notifica_segreteria(
+                    f"Nuova prenotazione (gratuita) - {corso.titolo}",
+                    f"{current_user.nome_completo} si è iscritto (corso gratuito) a {corso.titolo}.",
+                )
+            except Exception as exc:
+                logger.error("Errore email corso gratuito: %s", exc)
+            flash("Iscrizione confermata! Il corso è gratuito.", "success")
+            return redirect(url_for("dashboard.prenotazione_dettaglio", prenotazione_id=prenotazione.id))
+
         db.session.commit()
 
         try:
@@ -95,20 +114,27 @@ def prenota(corso_id):
 @public_bp.route("/notifiche-corsi", methods=["GET", "POST"])
 @limiter.limit("10 per hour")
 def notifiche_corsi():
+    # Gather unique tags from published courses to offer as interest categories
+    corsi = Corso.query.filter_by(pubblicato=True).all()
+    tag_disponibili = sorted({t for c in corsi for t in (c.tags or [])})
+
     if request.method == "POST":
         email = validate_email_address((request.form.get("email") or "").strip())
         if not email:
             flash("Email non valida.", "error")
-            return render_template("public/notifiche_corsi.html")
+            return render_template("public/notifiche_corsi.html", tag_disponibili=tag_disponibili)
 
         nome = (request.form.get("nome") or "").strip()[:100]
         cognome = (request.form.get("cognome") or "").strip()[:100]
+        # Accept only tags that actually exist in courses
+        tags_selezionati = [t for t in request.form.getlist("tags") if t in tag_disponibili]
 
         lead = LeadMarketing.query.filter_by(email=email).first()
         if not lead:
             token = secrets.token_urlsafe(32)
             lead = LeadMarketing(
                 email=email, nome=nome, cognome=cognome,
+                tags=tags_selezionati,
                 token_verifica=token,
                 token_scadenza=datetime.now(timezone.utc) + timedelta(days=7),
             )
@@ -119,11 +145,16 @@ def notifiche_corsi():
                 invia_email_verifica_lead(lead, verifica_url)
             except Exception as exc:
                 logger.error("Errore email verifica lead: %s", exc)
+        else:
+            # Update tags for existing lead
+            existing = set(lead.tags or [])
+            lead.tags = list(existing | set(tags_selezionati))
+            db.session.commit()
 
         flash("Controlla la tua email per confermare l'iscrizione.", "info")
         return redirect(url_for("public.index"))
 
-    return render_template("public/notifiche_corsi.html")
+    return render_template("public/notifiche_corsi.html", tag_disponibili=tag_disponibili)
 
 
 @public_bp.route("/conferma-iscrizione")

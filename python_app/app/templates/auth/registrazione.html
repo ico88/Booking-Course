@@ -33,6 +33,9 @@
         <span class="text-sm text-gray-700">Accetto di ricevere comunicazioni di marketing</span>
       </label>
     </div>
+    {% if turnstile_site_key %}
+    <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}" data-theme="light"></div>
+    {% endif %}
     <button type="submit" class="w-full bg-blue-700 text-white py-2.5 rounded-lg font-medium hover:bg-blue-800 mt-2">
       Registrati
     </button>
@@ -41,4 +44,9 @@
     Hai già un account? <a href="{{ url_for('auth.login') }}" class="text-blue-700 hover:underline">Accedi</a>
   </div>
 </div>
+{% endblock %}
+{% block scripts %}
+{% if turnstile_site_key %}
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+{% endif %}
 {% endblock %}

@@ -67,13 +67,13 @@ def create_app(config_name=None):
         csp = (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' cdn.tailwindcss.com js.stripe.com "
-            "www.paypal.com www.paypalobjects.com; "
+            "www.paypal.com www.paypalobjects.com challenges.cloudflare.com; "
             "style-src 'self' 'unsafe-inline' fonts.googleapis.com cdn.tailwindcss.com; "
             "font-src 'self' fonts.gstatic.com; "
             "img-src 'self' data: https:; "
-            "frame-src js.stripe.com www.paypal.com; "
+            "frame-src js.stripe.com www.paypal.com challenges.cloudflare.com; "
             "connect-src 'self' api.stripe.com www.paypal.com "
-            "api-m.paypal.com api-m.sandbox.paypal.com;"
+            "api-m.paypal.com api-m.sandbox.paypal.com challenges.cloudflare.com;"
         )
         response.headers["Content-Security-Policy"] = csp
         return response
@@ -97,6 +97,14 @@ def create_app(config_name=None):
             app_name = app.config.get("APP_NAME", "Gestione Corsi")
             logo_url = None
             corsi_pubblicati = []
-        return {"app_name": app_name, "logo_url": logo_url, "corsi_pubblicati": corsi_pubblicati}
+        turnstile_site_key = (
+            Impostazione.get("turnstile_site_key") or app.config.get("TURNSTILE_SITE_KEY", "")
+        ) if app_name else app.config.get("TURNSTILE_SITE_KEY", "")
+        return {
+            "app_name": app_name,
+            "logo_url": logo_url,
+            "corsi_pubblicati": corsi_pubblicati,
+            "turnstile_site_key": turnstile_site_key,
+        }
 
     return app

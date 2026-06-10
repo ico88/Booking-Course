@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import uuid
 import csv
 import io
@@ -37,6 +38,30 @@ def admin_required(f):
             abort(403)
         return f(*args, **kwargs)
     return decorated
+
+
+# ===========================================================================
+# ATTESTATI
+# ===========================================================================
+
+@admin_bp.route("/attestati")
+@admin_required
+def attestati():
+    da_emettere = (
+        Prenotazione.query
+        .filter_by(stato=StatoPrenotazione.CONFERMATA, attestato_emesso=False)
+        .join(Prenotazione.corso)
+        .filter(Corso.attestato_abilitato == True)
+        .order_by(Prenotazione.created_at.desc())
+        .all()
+    )
+    emessi = (
+        Prenotazione.query
+        .filter_by(attestato_emesso=True)
+        .order_by(Prenotazione.attestato_emesso_at.desc())
+        .all()
+    )
+    return render_template("admin/attestati/lista.html", da_emettere=da_emettere, emessi=emessi)
 
 
 # ---------------------------------------------------------------------------
@@ -128,6 +153,7 @@ def _corso_da_form(corso: Corso) -> Corso:
         corso.timeout_pagamento_ore = 24
     corso.pubblicato = request.form.get("pubblicato") == "on"
     corso.attestato_abilitato = request.form.get("attestato_abilitato") == "on"
+    corso.attestato_html_template = request.form.get("attestato_html_template", "").strip() or None
     tags_raw = request.form.get("tags", "")[:500]
     corso.tags = [t.strip()[:50] for t in tags_raw.split(",") if t.strip()][:20]
 
@@ -288,15 +314,36 @@ def emetti_attestato(prenotazione_id):
     return redirect(url_for("admin.prenotazione_dettaglio", prenotazione_id=p.id))
 
 
+def _applica_variabili_template(template: str, variables: dict) -> str:
+    """Safe {varname} substitution without Python format spec interpretation."""
+    return re.sub(r'\{(\w+)\}', lambda m: variables.get(m.group(1), m.group(0)), template)
+
+
 def _genera_attestato_html(prenotazione: Prenotazione) -> str:
     u = prenotazione.utente
     c = prenotazione.corso
-    app_name = escape(Impostazione.get("app_name") or "Gestione Corsi")
-    nome = escape(u.nome or "")
-    cognome = escape(u.cognome or "")
-    titolo = escape(c.titolo or "")
-    luogo = escape(c.luogo or "")
+    app_name_val = Impostazione.get("app_name") or "Gestione Corsi"
     data_str = c.data_inizio.strftime("%d/%m/%Y") if c.data_inizio else ""
+
+    variables = {
+        "nome": str(escape(u.nome or "")),
+        "cognome": str(escape(u.cognome or "")),
+        "nome_completo": str(escape(f"{u.nome or ''} {u.cognome or ''}".strip())),
+        "titolo_corso": str(escape(c.titolo or "")),
+        "data": data_str,
+        "luogo": str(escape(c.luogo or "")),
+        "app_name": str(escape(app_name_val)),
+    }
+
+    if c.attestato_html_template:
+        return _applica_variabili_template(c.attestato_html_template, variables)
+
+    # Default generic template (used when no per-corso template is set)
+    nome = variables["nome"]
+    cognome = variables["cognome"]
+    titolo = variables["titolo_corso"]
+    luogo = variables["luogo"]
+    app_name = variables["app_name"]
     return f"""<!DOCTYPE html>
 <html lang="it"><head><meta charset="UTF-8">
 <style>
@@ -365,6 +412,26 @@ def utente_nuovo():
         pass
 
     flash("Utente creato.", "success")
+    return redirect(url_for("admin.utenti"))
+
+
+@admin_bp.route("/utenti/<string:utente_id>/ruolo", methods=["POST"])
+@admin_required
+def utente_modifica_ruolo(utente_id):
+    if utente_id == current_user.id:
+        flash("Non puoi modificare il tuo ruolo.", "error")
+        return redirect(url_for("admin.utenti"))
+    u = Utente.query.get_or_404(utente_id)
+    ruolo_str = request.form.get("ruolo", "UTENTE")
+    try:
+        nuovo_ruolo = Ruolo(ruolo_str)
+    except ValueError:
+        flash("Ruolo non valido.", "error")
+        return redirect(url_for("admin.utenti"))
+    logger.info("Admin %s: ruolo di %s cambiato %s → %s", current_user.email, u.email, u.ruolo.value, nuovo_ruolo.value)
+    u.ruolo = nuovo_ruolo
+    db.session.commit()
+    flash(f"Ruolo di {u.nome_completo} aggiornato a {nuovo_ruolo.value}.", "success")
     return redirect(url_for("admin.utenti"))
 
 
@@ -438,7 +505,16 @@ def lead_elimina(lead_id):
 def marketing_notifica():
     corso_id = request.form.get("corso_id")
     corso = Corso.query.get_or_404(corso_id)
-    leads = LeadMarketing.query.filter_by(attivo=True, verificato=True).all()
+    all_leads = LeadMarketing.query.filter_by(attivo=True, verificato=True).all()
+
+    # Tag filtering: if corso has tags, send only to leads with at least one matching
+    # tag or to leads with no tags set (they receive everything)
+    corso_tags = set(corso.tags or [])
+    if corso_tags:
+        leads = [l for l in all_leads if not l.tags or set(l.tags) & corso_tags]
+    else:
+        leads = all_leads
+
     sent = 0
     secret = current_app.config.get("SECRET_KEY", "")
     from ..utils import generate_unsubscribe_token
@@ -449,7 +525,7 @@ def marketing_notifica():
             sent += 1
         except Exception:
             pass
-    logger.info("Admin %s: notifica marketing per corso %s a %d lead", current_user.email, corso.id, sent)
+    logger.info("Admin %s: notifica marketing per corso %s a %d lead (tag filter: %s)", current_user.email, corso.id, sent, bool(corso_tags))
     flash(f"Notifica inviata a {sent} lead.", "success")
     return redirect(url_for("admin.marketing"))
 

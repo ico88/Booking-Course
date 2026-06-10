@@ -20,6 +20,20 @@
       <label class="block text-sm font-medium mb-1">Email *</label>
       <input type="email" name="email" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
     </div>
+    {% if tag_disponibili %}
+    <div>
+      <label class="block text-sm font-medium mb-2">Aree di interesse (opzionale)</label>
+      <div class="flex flex-wrap gap-2">
+        {% for tag in tag_disponibili %}
+        <label class="flex items-center gap-1.5 cursor-pointer bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-blue-50 hover:border-blue-300 text-sm">
+          <input type="checkbox" name="tags" value="{{ tag }}" class="accent-blue-600">
+          {{ tag }}
+        </label>
+        {% endfor %}
+      </div>
+      <p class="text-xs text-gray-400 mt-1">Riceverai notifiche solo per le aree selezionate (o tutte se non selezioni nulla).</p>
+    </div>
+    {% endif %}
     <button type="submit" class="w-full bg-blue-700 text-white py-2.5 rounded-lg font-medium hover:bg-blue-800">Iscrivimi</button>
   </form>
 </div>

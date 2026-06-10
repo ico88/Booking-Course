@@ -4,6 +4,7 @@ from datetime import datetime, timezone, timedelta
 from collections import defaultdict
 from time import time
 
+import requests as _req
 from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 
@@ -16,6 +17,24 @@ auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 logger = logging.getLogger(__name__)
 
 _login_attempts: dict = defaultdict(list)
+
+
+def _verify_turnstile(token: str) -> bool:
+    secret = current_app.config.get("TURNSTILE_SECRET_KEY", "")
+    if not secret:
+        return True  # Not configured → skip verification
+    if not token:
+        return False
+    try:
+        resp = _req.post(
+            "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+            data={"secret": secret, "response": token},
+            timeout=5,
+        )
+        return resp.json().get("success", False)
+    except Exception as exc:
+        logger.error("Turnstile verification error: %s", exc)
+        return True  # On network error, don't block legitimate users
 
 
 def _check_rate_limit(ip: str) -> bool:
@@ -74,6 +93,12 @@ def registrazione():
         return redirect(url_for("dashboard.index"))
 
     if request.method == "POST":
+        # Turnstile CAPTCHA verification (skipped if not configured)
+        turnstile_token = request.form.get("cf-turnstile-response", "")
+        if not _verify_turnstile(turnstile_token):
+            flash("Verifica CAPTCHA fallita. Riprova.", "error")
+            return render_template("auth/registrazione.html")
+
         nome = (request.form.get("nome") or "").strip()[:100]
         cognome = (request.form.get("cognome") or "").strip()[:100]
         raw_email = (request.form.get("email") or "").strip()
