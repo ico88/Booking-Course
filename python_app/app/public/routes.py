@@ -90,16 +90,24 @@ def prenota(corso_id):
             nome_p = (request.form.get(f"partecipante_{i}_nome") or "").strip()[:100]
             cognome_p = (request.form.get(f"partecipante_{i}_cognome") or "").strip()[:100]
             email_p = validate_email_address((request.form.get(f"partecipante_{i}_email") or "").strip()) or ""
+            telefono_p = (request.form.get(f"partecipante_{i}_telefono") or "").strip()[:30]
+            cf_p = (request.form.get(f"partecipante_{i}_cf") or "").strip()[:20].upper()
             if nome_p or cognome_p:
                 p = Partecipante(
                     prenotazione_id=prenotazione.id,
                     nome=nome_p or current_user.nome,
                     cognome=cognome_p or current_user.cognome,
                     email=email_p,
-                    telefono=(request.form.get(f"partecipante_{i}_telefono") or "").strip()[:30],
-                    codice_fiscale=(request.form.get(f"partecipante_{i}_cf") or "").strip()[:20].upper(),
+                    telefono=telefono_p,
+                    codice_fiscale=cf_p,
                 )
                 db.session.add(p)
+            # Aggiorna anagrafica utente dal primo partecipante se fornisce dati mancanti o aggiornati
+            if i == 0:
+                if cf_p and cf_p != (current_user.codice_fiscale or ""):
+                    current_user.codice_fiscale = cf_p
+                if telefono_p and telefono_p != (current_user.telefono or ""):
+                    current_user.telefono = telefono_p
         # Corsi gratuiti: conferma immediata senza passare per il pagamento
         if float(corso.costo or 0) == 0:
             prenotazione.stato = StatoPrenotazione.CONFERMATA
