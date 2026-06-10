@@ -80,14 +80,15 @@ fi
 version_ok "$VENV_DIR/bin/python" || error "Virtualenv con Python non supportato: $("$VENV_DIR/bin/python" --version). Ricrea $VENV_DIR con Python 3.11, 3.12 o 3.13."
 "$VENV_DIR/bin/pip" install --upgrade pip -q
 "$VENV_DIR/bin/pip" install --only-binary=:all: -r "$APP_DIR/requirements.txt" -q
+"$VENV_DIR/bin/python" -m flask --version >/dev/null
 ok "Dipendenze aggiornate"
 
 # ── Migrazione DB ────────────────────────────────────────────
 info "Migrazione database..."
 cd "$APP_DIR"
 export $(grep -v '^#' .env | xargs)
-sudo -u "$APP_USER" "$VENV_DIR/bin/flask" --app wsgi:app db migrate -m "auto" 2>/dev/null || true
-sudo -u "$APP_USER" "$VENV_DIR/bin/flask" --app wsgi:app db upgrade
+sudo -u "$APP_USER" "$VENV_DIR/bin/python" -m flask --app wsgi:app db migrate -m "auto" 2>/dev/null || true
+sudo -u "$APP_USER" "$VENV_DIR/bin/python" -m flask --app wsgi:app db upgrade
 ok "Database aggiornato"
 
 # ── Aggiorna permessi statici ────────────────────────────────

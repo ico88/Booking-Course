@@ -112,6 +112,7 @@ fi
 "$SELECTED_PYTHON" -m venv "$VENV_DIR"
 "$VENV_DIR/bin/pip" install --upgrade pip -q
 "$VENV_DIR/bin/pip" install --only-binary=:all: -r "$APP_DIR/requirements.txt" -q
+"$VENV_DIR/bin/python" -m flask --version >/dev/null
 ok "Virtualenv OK"
 
 # ── .env ─────────────────────────────────────────────────────
@@ -147,10 +148,10 @@ cd "$APP_DIR"
 export $(grep -v '^#' .env | xargs)
 
 if [[ ! -d "migrations" || ! -f "migrations/env.py" ]]; then
-  sudo -u "$APP_USER" "$VENV_DIR/bin/flask" --app wsgi:app db init
+  sudo -u "$APP_USER" "$VENV_DIR/bin/python" -m flask --app wsgi:app db init
 fi
-sudo -u "$APP_USER" "$VENV_DIR/bin/flask" --app wsgi:app db migrate -m "auto" 2>/dev/null || true
-sudo -u "$APP_USER" "$VENV_DIR/bin/flask" --app wsgi:app db upgrade
+sudo -u "$APP_USER" "$VENV_DIR/bin/python" -m flask --app wsgi:app db migrate -m "auto" 2>/dev/null || true
+sudo -u "$APP_USER" "$VENV_DIR/bin/python" -m flask --app wsgi:app db upgrade
 ok "Database aggiornato"
 
 # ── Admin iniziale ────────────────────────────────────────────
