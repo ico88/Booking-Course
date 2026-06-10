@@ -2,12 +2,16 @@
 {% block title %}Pagine legali{% endblock %}
 
 {% block head %}
-<link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet">
 <style>
-  .ql-toolbar.ql-snow{border-radius:8px 8px 0 0;border-color:#e5e7eb;background:#f9fafb}
-  .ql-container.ql-snow{border-radius:0 0 12px 12px;border-color:#e5e7eb;font-size:0.925rem;background:#fff}
-  .ql-editor{min-height:420px;color:#111827}
-  .ql-editor.ql-blank::before{color:#9ca3af;font-style:normal}
+  [contenteditable]:focus{outline:none;box-shadow:inset 0 0 0 2px #3b82f6;border-radius:0 0 12px 12px}
+  [contenteditable] ul{list-style:disc;padding-left:1.5em}
+  [contenteditable] ol{list-style:decimal;padding-left:1.5em}
+  [contenteditable] h2{font-size:1.25em;font-weight:700;margin:.8em 0 .3em}
+  [contenteditable] h3{font-size:1.05em;font-weight:600;margin:.6em 0 .2em}
+  [contenteditable] p{margin:.3em 0}
+  [contenteditable] a{color:#2563eb;text-decoration:underline}
+  .e-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:5px;font-size:.8rem;cursor:pointer;color:#374151}
+  .e-btn:hover{background:#e5e7eb}
 </style>
 {% endblock %}
 
@@ -37,7 +41,7 @@
   <div id="tab-{{ tab_id }}" class="tab-panel space-y-3 {{ 'hidden' if not loop.first }}">
     <div class="flex items-center justify-between">
       <p class="text-sm text-gray-500">
-        {% if tab_id == 'cookie' %}Usa <code class="bg-gray-100 px-1 rounded text-xs">&#123;&#123;TABELLA_COOKIE&#125;&#125;</code> per inserire la tabella automatica dei cookie.{% else %}Formatta liberamente il testo con l'editor.{% endif %}
+        {% if tab_id == 'cookie' %}Scrivi <code class="bg-gray-100 px-1 rounded text-xs">&#123;&#123;TABELLA_COOKIE&#125;&#125;</code> nel testo per inserire la tabella automatica dei cookie.{% else %}Formatta il testo con la barra degli strumenti.{% endif %}
       </p>
       <div class="flex gap-2">
         <button type="button" onclick="togglePreview('{{ tab_id }}')" id="preview-btn-{{ tab_id }}"
@@ -46,17 +50,38 @@
                 class="text-xs text-orange-600 hover:text-orange-800 px-3 py-1.5">Ripristina default</button>
       </div>
     </div>
-    <div id="editor-{{ tab_id }}" class="rounded-xl">
-      <div id="quill-{{ tab_id }}"></div>
-      <textarea name="{{ key }}" id="textarea-{{ tab_id }}" class="hidden">{{ settings.get(key) or defaults[tab_id] }}</textarea>
+
+    <!-- Editor -->
+    <div id="editor-wrap-{{ tab_id }}" class="border border-gray-200 rounded-xl overflow-visible bg-white">
+      <div class="bg-gray-50 border-b border-gray-200 px-2 py-1 flex flex-wrap items-center gap-0.5 rounded-t-xl">
+        <button type="button" onmousedown="event.preventDefault();eCmd('ed-{{ tab_id }}','bold')" class="e-btn font-bold" title="Grassetto">B</button>
+        <button type="button" onmousedown="event.preventDefault();eCmd('ed-{{ tab_id }}','italic')" class="e-btn italic" title="Corsivo">I</button>
+        <button type="button" onmousedown="event.preventDefault();eCmd('ed-{{ tab_id }}','underline')" class="e-btn underline" title="Sottolineato">U</button>
+        <span class="w-px h-5 bg-gray-200 mx-0.5"></span>
+        <button type="button" onmousedown="event.preventDefault();eBlock('ed-{{ tab_id }}','h2')" class="e-btn font-bold text-xs" title="Titolo H2">H2</button>
+        <button type="button" onmousedown="event.preventDefault();eBlock('ed-{{ tab_id }}','h3')" class="e-btn font-semibold text-xs" title="Titolo H3">H3</button>
+        <button type="button" onmousedown="event.preventDefault();eBlock('ed-{{ tab_id }}','p')" class="e-btn text-gray-400 text-xs" title="Paragrafo">¶</button>
+        <span class="w-px h-5 bg-gray-200 mx-0.5"></span>
+        <button type="button" onmousedown="event.preventDefault();eCmd('ed-{{ tab_id }}','insertUnorderedList')" class="e-btn" title="Elenco puntato">•≡</button>
+        <button type="button" onmousedown="event.preventDefault();eCmd('ed-{{ tab_id }}','insertOrderedList')" class="e-btn text-xs" title="Elenco numerato">1.</button>
+        <span class="w-px h-5 bg-gray-200 mx-0.5"></span>
+        <button type="button" onmousedown="event.preventDefault();eLink('ed-{{ tab_id }}')" class="e-btn text-xs px-2" style="width:auto" title="Inserisci link">Link</button>
+        <button type="button" onmousedown="event.preventDefault();eCmd('ed-{{ tab_id }}','removeFormat')" class="e-btn text-gray-400 text-xs" title="Rimuovi formattazione">✕</button>
+      </div>
+      <div id="ed-{{ tab_id }}" contenteditable="true"
+           class="p-4 bg-white text-sm leading-relaxed rounded-b-xl"
+           style="min-height:440px"></div>
     </div>
+    <textarea name="{{ key }}" id="textarea-{{ tab_id }}" class="hidden">{{ settings.get(key) or defaults[tab_id] }}</textarea>
+
+    <!-- Preview -->
     <div id="preview-{{ tab_id }}" class="hidden bg-white border border-gray-200 rounded-xl p-6 prose max-w-none min-h-64"></div>
+
     <button type="submit" class="w-full bg-blue-700 text-white py-2.5 rounded-xl font-medium hover:bg-blue-800">Salva pagine legali</button>
   </div>
   {% endfor %}
 </form>
 
-<script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
 <script>
 const defaults = {
   pagina_privacy: {{ defaults.privacy | tojson }},
@@ -64,25 +89,24 @@ const defaults = {
   pagina_termini: {{ defaults.termini | tojson }},
 };
 
-const toolbarOpts = [
-  [{ header: [2, 3, false] }],
-  ['bold', 'italic', 'underline'],
-  [{ list: 'ordered' }, { list: 'bullet' }],
-  ['link'],
-  ['clean']
-];
+// Editor helpers
+function eCmd(id, cmd) { document.getElementById(id).focus(); document.execCommand(cmd, false, null); }
+function eBlock(id, tag) { document.getElementById(id).focus(); document.execCommand('formatBlock', false, tag); }
+function eLink(id) {
+  document.getElementById(id).focus();
+  const url = prompt('URL del link (es. https://...)');
+  if (url) document.execCommand('createLink', false, url);
+}
 
-const quills = {};
-['privacy', 'cookie', 'termini'].forEach(id => {
-  const q = new Quill('#quill-' + id, { theme: 'snow', modules: { toolbar: toolbarOpts } });
-  q.root.innerHTML = document.getElementById('textarea-' + id).value;
-  quills[id] = q;
+// Init editor content from hidden textarea
+['privacy', 'cookie', 'termini'].forEach(function(id) {
+  document.getElementById('ed-' + id).innerHTML = document.getElementById('textarea-' + id).value;
 });
 
+// Sync all editors to textareas on submit
 document.getElementById('legal-form').addEventListener('submit', function() {
-  ['privacy', 'cookie', 'termini'].forEach(id => {
-    const html = quills[id].root.innerHTML;
-    document.getElementById('textarea-' + id).value = html === '<p><br></p>' ? '' : html;
+  ['privacy', 'cookie', 'termini'].forEach(function(id) {
+    document.getElementById('textarea-' + id).value = document.getElementById('ed-' + id).innerHTML;
   });
 });
 
@@ -96,21 +120,19 @@ function showTab(id) {
   const btn = document.getElementById('tab-btn-' + id);
   btn.classList.add('bg-blue-600','text-white');
   btn.classList.remove('text-gray-600','hover:bg-gray-100');
-  quills[id].update();
 }
 
 function togglePreview(id) {
-  const editor = document.getElementById('editor-' + id);
+  const wrap = document.getElementById('editor-wrap-' + id);
   const preview = document.getElementById('preview-' + id);
   const btn = document.getElementById('preview-btn-' + id);
-  const isPreview = !preview.classList.contains('hidden');
-  if (isPreview) {
-    editor.classList.remove('hidden');
+  if (!preview.classList.contains('hidden')) {
+    wrap.classList.remove('hidden');
     preview.classList.add('hidden');
     btn.textContent = 'Anteprima';
   } else {
-    preview.innerHTML = quills[id].root.innerHTML;
-    editor.classList.add('hidden');
+    preview.innerHTML = document.getElementById('ed-' + id).innerHTML;
+    wrap.classList.add('hidden');
     preview.classList.remove('hidden');
     btn.textContent = 'Modifica';
   }
@@ -118,11 +140,11 @@ function togglePreview(id) {
 
 function ripristina(id, key) {
   if (!confirm('Ripristinare il testo predefinito? Il contenuto attuale verrà sovrascritto.')) return;
-  quills[id].root.innerHTML = defaults[key] || '';
+  const html = defaults[key] || '';
+  document.getElementById('ed-' + id).innerHTML = html;
+  document.getElementById('textarea-' + id).value = html;
   const preview = document.getElementById('preview-' + id);
-  if (!preview.classList.contains('hidden')) {
-    preview.innerHTML = defaults[key] || '';
-  }
+  if (!preview.classList.contains('hidden')) preview.innerHTML = html;
 }
 </script>
 {% endblock %}
