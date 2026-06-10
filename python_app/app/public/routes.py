@@ -19,9 +19,15 @@ logger = logging.getLogger(__name__)
 def index():
     now = datetime.now(timezone.utc)
     corsi = Corso.query.filter_by(pubblicato=True).order_by(Corso.data_inizio.asc()).all()
-    corsi_aperti = [c for c in corsi if c.data_inizio and c.data_inizio > now and (not c.posti_totali or c.posti_disponibili > 0)]
-    corsi_completi = [c for c in corsi if c.data_inizio and c.data_inizio > now and c.posti_totali and c.posti_disponibili <= 0]
-    corsi_passati = [c for c in corsi if not c.data_inizio or c.data_inizio <= now]
+
+    def _dt(d):
+        if d is None:
+            return None
+        return d if d.tzinfo else d.replace(tzinfo=timezone.utc)
+
+    corsi_aperti = [c for c in corsi if c.data_inizio and _dt(c.data_inizio) > now and (not c.posti_totali or c.posti_disponibili > 0)]
+    corsi_completi = [c for c in corsi if c.data_inizio and _dt(c.data_inizio) > now and c.posti_totali and c.posti_disponibili <= 0]
+    corsi_passati = [c for c in corsi if not c.data_inizio or _dt(c.data_inizio) <= now]
     return render_template("public/index.html",
                            corsi_aperti=corsi_aperti,
                            corsi_completi=corsi_completi,
@@ -32,7 +38,9 @@ def index():
 def corso_dettaglio(corso_id):
     corso = Corso.query.filter_by(id=corso_id, pubblicato=True).first_or_404()
     now = datetime.now(timezone.utc)
-    is_passato = bool(corso.data_inizio and corso.data_inizio <= now)
+    di = corso.data_inizio
+    di_aware = di.replace(tzinfo=timezone.utc) if di and not di.tzinfo else di
+    is_passato = bool(di_aware and di_aware <= now)
     is_completo = bool(corso.posti_totali and corso.posti_disponibili <= 0)
     posti_liberi = corso.posti_disponibili if corso.posti_totali else None
     perc = int(min(100, round((corso.posti_occupati or 0) / corso.posti_totali * 100))) if corso.posti_totali else 0
