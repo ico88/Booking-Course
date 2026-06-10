@@ -5,8 +5,9 @@
 <link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet">
 <style>
   .ql-toolbar.ql-snow{border-radius:8px 8px 0 0;border-color:#e5e7eb;background:#f9fafb}
-  .ql-container.ql-snow{border-radius:0 0 12px 12px;border-color:#e5e7eb;font-size:0.925rem}
-  .ql-editor{min-height:420px}
+  .ql-container.ql-snow{border-radius:0 0 12px 12px;border-color:#e5e7eb;font-size:0.925rem;background:#fff}
+  .ql-editor{min-height:420px;color:#111827}
+  .ql-editor.ql-blank::before{color:#9ca3af;font-style:normal}
 </style>
 {% endblock %}
 
@@ -45,7 +46,7 @@
                 class="text-xs text-orange-600 hover:text-orange-800 px-3 py-1.5">Ripristina default</button>
       </div>
     </div>
-    <div id="editor-{{ tab_id }}" class="rounded-xl overflow-hidden">
+    <div id="editor-{{ tab_id }}" class="rounded-xl">
       <div id="quill-{{ tab_id }}"></div>
       <textarea name="{{ key }}" id="textarea-{{ tab_id }}" class="hidden">{{ settings.get(key) or defaults[tab_id] }}</textarea>
     </div>
