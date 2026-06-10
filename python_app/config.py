@@ -1,8 +1,10 @@
 import os
+import pathlib
 from datetime import timedelta
 from dotenv import load_dotenv
 
-load_dotenv()
+# Load .env from the same directory as this file, regardless of CWD
+load_dotenv(pathlib.Path(__file__).parent / ".env")
 
 
 class Config:
@@ -10,9 +12,7 @@ class Config:
     if not SECRET_KEY:
         raise RuntimeError("SECRET_KEY non impostato. Imposta la variabile d'ambiente SECRET_KEY.")
 
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
-        "DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/booking_corsi",
-    )
+    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL", "sqlite:///booking.db")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True, "pool_recycle": 300}
 
@@ -41,20 +41,23 @@ class Config:
     RATELIMIT_LOGIN_WINDOW = 900
 
     SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SAMESITE = "Strict"
+    SESSION_COOKIE_SECURE = False   # overridden to True in ProductionConfig
+    SESSION_COOKIE_SAMESITE = "Lax" # overridden to Strict in ProductionConfig
     PERMANENT_SESSION_LIFETIME = timedelta(hours=8)
     WTF_CSRF_ENABLED = True
     WTF_CSRF_TIME_LIMIT = 3600
 
 
 class DevelopmentConfig(Config):
-    DEBUG = os.environ.get("DEBUG", "False") == "True"
+    DEBUG = True
     SESSION_COOKIE_SECURE = False
+    SESSION_COOKIE_SAMESITE = "Lax"
 
 
 class ProductionConfig(Config):
     DEBUG = False
     SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_SAMESITE = "Strict"
 
 
 config = {
