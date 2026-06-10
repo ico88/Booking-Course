@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it" class="h-full">
+<html lang="it">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,23 +13,27 @@
     'verde': {'50':'#f0fdf4','100':'#dcfce7','200':'#bbf7d0','300':'#86efac','400':'#4ade80','500':'#22c55e','600':'#16a34a','700':'#15803d','800':'#166534','900':'#14532d'},
   } %}
   {% set _p = _palettes.get(_scheme, _palettes['blu']) %}
-  <script>
-    tailwind.config = {theme:{extend:{colors:{blue:{
-      '50':'{{ _p["50"] }}','100':'{{ _p["100"] }}','200':'{{ _p["200"] }}',
-      '300':'{{ _p["300"] }}','400':'{{ _p["400"] }}','500':'{{ _p["500"] }}',
-      '600':'{{ _p["600"] }}','700':'{{ _p["700"] }}','800':'{{ _p["800"] }}',
-      '900':'{{ _p["900"] }}'
-    }}}}};
-  </script>
+  {% if _scheme != 'blu' %}<style>
+{% for shade, hex in _p.items() %}
+.bg-blue-{{ shade }}{background-color:{{ hex }}!important}
+.hover\:bg-blue-{{ shade }}:hover{background-color:{{ hex }}!important}
+.text-blue-{{ shade }}{color:{{ hex }}!important}
+.hover\:text-blue-{{ shade }}:hover{color:{{ hex }}!important}
+.border-blue-{{ shade }}{border-color:{{ hex }}!important}
+.ring-blue-{{ shade }}{--tw-ring-color:{{ hex }}}
+.focus\:ring-blue-{{ shade }}:focus{--tw-ring-color:{{ hex }}}
+{% endfor %}
+</style>{% endif %}
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>body{font-family:'Inter',sans-serif}</style>
   {% block head %}{% endblock %}
 </head>
-<body class="h-full bg-gray-50 text-gray-900 flex">
+<body class="bg-gray-50 text-gray-900">
 
-<aside class="w-60 bg-gray-900 text-gray-300 flex-shrink-0 flex flex-col min-h-screen sticky top-0">
-  <div class="px-4 py-5 border-b border-gray-800">
+<!-- Fixed sidebar -->
+<aside class="fixed inset-y-0 left-0 w-60 bg-gray-900 text-gray-300 flex flex-col z-20 overflow-hidden">
+  <div class="px-4 py-5 border-b border-gray-800 flex-shrink-0">
     {% if logo_url %}
     <img src="{{ logo_url }}" alt="" class="h-8 mb-2 max-w-full object-contain">
     {% endif %}
@@ -66,13 +70,14 @@
       Sito pubblico
     </a>
   </nav>
-  <div class="px-4 py-4 border-t border-gray-800">
+  <div class="px-4 py-4 border-t border-gray-800 flex-shrink-0">
     <div class="text-xs text-gray-400 truncate mb-1">{{ current_user.email }}</div>
     <a href="{{ url_for('auth.logout') }}" class="text-xs text-gray-500 hover:text-white transition-colors">Esci</a>
   </div>
 </aside>
 
-<div class="flex-1 flex flex-col min-h-screen min-w-0">
+<!-- Main content — offset by sidebar width -->
+<div class="ml-60 min-h-screen flex flex-col">
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
     <div class="px-6 pt-4 space-y-2">
