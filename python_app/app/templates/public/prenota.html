@@ -2,68 +2,188 @@
 {% block title %}Prenota — {{ corso.titolo }}{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl">
-  <a href="{{ url_for('public.corso_dettaglio', corso_id=corso.id) }}" class="text-sm text-blue-700 hover:underline mb-4 inline-flex items-center gap-1">← {{ corso.titolo }}</a>
-  <h1 class="text-2xl font-bold mb-6">Prenota il corso</h1>
+<div class="max-w-2xl mx-auto">
+
+  <a href="{{ url_for('public.corso_dettaglio', corso_id=corso.id) }}"
+     class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 mb-6 transition-colors">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+    </svg>
+    {{ corso.titolo }}
+  </a>
+
+  {# Riepilogo corso #}
+  <div class="bg-blue-50 rounded-xl p-5 border border-blue-100 mb-8">
+    <h2 class="font-semibold text-blue-900 text-lg">{{ corso.titolo }}</h2>
+    <div class="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-sm text-blue-700">
+      {% if corso.data_inizio %}<span>{{ format_date(corso.data_inizio) }}</span>{% endif %}
+      {% if corso.data_inizio and corso.luogo %}<span>•</span>{% endif %}
+      {% if corso.luogo %}<span>{{ corso.luogo }}</span>{% endif %}
+    </div>
+    <div class="mt-3 flex items-center justify-between">
+      {% if corso.posti_totali %}
+      <span class="text-sm text-blue-700">{{ corso.posti_disponibili }} posti disponibili</span>
+      {% endif %}
+      <span class="font-bold text-blue-900">{{ corso.costo_formattato }}/persona</span>
+    </div>
+  </div>
 
   <form method="POST" id="form-prenota">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <div class="bg-white border border-gray-200 rounded-xl p-6 mb-6">
-      <h2 class="font-semibold mb-4">Riepilogo corso</h2>
-      <div class="text-gray-700">{{ corso.titolo }}</div>
-      {% if corso.data_inizio %}<div class="text-sm text-gray-500">{{ format_date(corso.data_inizio) }}</div>{% endif %}
-      <div class="text-xl font-bold text-blue-700 mt-2">{{ corso.costo_formattato }} <span class="text-sm font-normal text-gray-500">a posto</span></div>
-    </div>
 
+    {# Selettore posti con −/+ #}
     <div class="bg-white border border-gray-200 rounded-xl p-6 mb-6">
-      <label class="block text-sm font-medium mb-1">Numero di posti</label>
-      <select name="numero_posti" id="numero_posti" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-        {% for i in range(1, (corso.posti_disponibili if corso.posti_totali else 10) + 1) %}
-          <option value="{{ i }}">{{ i }} posto{% if i > 1 %}i{% endif %}</option>
-        {% endfor %}
-      </select>
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="font-semibold text-gray-900 flex items-center gap-2">
+            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            Partecipanti
+          </h3>
+          <p class="text-xs text-gray-500 mt-0.5">Ogni partecipante occupa un posto</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <button type="button" id="btn-minus"
+            class="w-9 h-9 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
+            </svg>
+          </button>
+          <span id="num-posti-display" class="w-8 text-center font-bold text-gray-900 text-lg">1</span>
+          <button type="button" id="btn-plus"
+            class="w-9 h-9 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+          </button>
+        </div>
+      </div>
     </div>
+    <input type="hidden" name="numero_posti" id="numero_posti" value="1">
 
+    {# Schede partecipanti #}
     <div id="partecipanti-container" class="space-y-4 mb-6"></div>
 
+    {# Note #}
     <div class="bg-white border border-gray-200 rounded-xl p-6 mb-6">
-      <label class="block text-sm font-medium mb-1">Note (opzionale)</label>
-      <textarea name="note" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="Eventuali note o richieste speciali..."></textarea>
+      <label class="block text-sm font-medium mb-1">Note aggiuntive <span class="text-gray-400 font-normal">(opzionale)</span></label>
+      <textarea name="note" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 text-sm"
+                placeholder="Esigenze particolari, richieste speciali..."></textarea>
     </div>
 
-    <button type="submit" class="w-full bg-blue-700 text-white py-3 rounded-xl font-semibold hover:bg-blue-800 text-lg">
+    {# Riepilogo costo #}
+    <div class="bg-gray-50 rounded-xl p-5 border border-gray-200 mb-6">
+      <div class="flex justify-between text-sm text-gray-600 mb-2">
+        <span id="riepilogo-label">1 posto × {{ corso.costo_formattato }}</span>
+        <span id="riepilogo-subtotale">{{ corso.costo_formattato }}</span>
+      </div>
+      <div class="flex justify-between font-bold text-gray-900 text-lg border-t border-gray-200 pt-3 mt-1">
+        <span>Totale</span>
+        <span id="riepilogo-totale">{{ corso.costo_formattato }}</span>
+      </div>
+      {% if corso.timeout_pagamento_ore %}
+      <p class="text-xs text-gray-500 mt-2">
+        Dopo la prenotazione avrai {{ corso.timeout_pagamento_ore }} ore per effettuare il bonifico e caricare la ricevuta.
+      </p>
+      {% endif %}
+    </div>
+
+    <button type="submit" class="w-full bg-blue-700 text-white py-3 rounded-xl font-semibold hover:bg-blue-800 text-lg transition-colors">
       Conferma prenotazione
     </button>
   </form>
 </div>
 
 <script>
-const costoPerPosto = {{ corso.costo | float }};
-const sel = document.getElementById('numero_posti');
-const container = document.getElementById('partecipanti-container');
+(function () {
+  const costoPerPosto = {{ corso.costo | float }};
+  const maxPosti = {{ corso.posti_disponibili if corso.posti_totali else 10 }};
+  const utente = {
+    nome: {{ current_user.nome | tojson }},
+    cognome: {{ current_user.cognome | tojson }},
+    email: {{ current_user.email | tojson }},
+    telefono: {{ (current_user.telefono or '') | tojson }},
+    cf: {{ (current_user.codice_fiscale or '') | tojson }},
+  };
 
-function renderPartecipanti(n) {
-  container.innerHTML = '';
-  for (let i = 0; i < n; i++) {
-    const div = document.createElement('div');
-    div.className = 'bg-white border border-gray-200 rounded-xl p-6';
-    div.innerHTML = `
-      <h3 class="font-semibold mb-3">Partecipante ${i+1}</h3>
-      <div class="grid grid-cols-2 gap-3">
-        <div><label class="block text-xs text-gray-500 mb-1">Nome *</label>
-          <input type="text" name="partecipante_${i}_nome" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"></div>
-        <div><label class="block text-xs text-gray-500 mb-1">Cognome *</label>
-          <input type="text" name="partecipante_${i}_cognome" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"></div>
-        <div><label class="block text-xs text-gray-500 mb-1">Email</label>
-          <input type="email" name="partecipante_${i}_email" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"></div>
-        <div><label class="block text-xs text-gray-500 mb-1">Codice fiscale</label>
-          <input type="text" name="partecipante_${i}_cf" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 uppercase"></div>
-      </div>`;
-    container.appendChild(div);
+  let numPosti = 1;
+  const container = document.getElementById('partecipanti-container');
+  const display = document.getElementById('num-posti-display');
+  const hiddenInput = document.getElementById('numero_posti');
+  const btnMinus = document.getElementById('btn-minus');
+  const btnPlus = document.getElementById('btn-plus');
+
+  function fmt(n) {
+    return '€ ' + (n).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
-}
 
-sel.addEventListener('change', () => renderPartecipanti(parseInt(sel.value)));
-renderPartecipanti(1);
+  function updateRiepilogo() {
+    const totale = numPosti * costoPerPosto;
+    document.getElementById('riepilogo-label').textContent =
+      numPosti + ' posto' + (numPosti > 1 ? 'i' : '') + ' × ' + fmt(costoPerPosto);
+    document.getElementById('riepilogo-subtotale').textContent = fmt(totale);
+    document.getElementById('riepilogo-totale').textContent = fmt(totale);
+  }
+
+  function buildCard(i) {
+    const isFirst = i === 0;
+    const nome    = isFirst ? utente.nome     : '';
+    const cognome = isFirst ? utente.cognome  : '';
+    const email   = isFirst ? utente.email    : '';
+    const tel     = isFirst ? utente.telefono : '';
+    const cf      = isFirst ? utente.cf       : '';
+
+    const div = document.createElement('div');
+    div.className = 'bg-gray-50 rounded-xl p-5 border border-gray-200';
+    div.innerHTML = `
+      <h4 class="text-sm font-semibold text-gray-700 mb-4">
+        Partecipante ${i + 1}
+        ${isFirst ? '<span class="text-xs text-gray-400 font-normal ml-2">(pre-compilato con i tuoi dati)</span>' : ''}
+      </h4>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Nome *</label>
+          <input type="text" name="partecipante_${i}_nome" value="${escHtml(nome)}" required
+                 class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Cognome *</label>
+          <input type="text" name="partecipante_${i}_cognome" value="${escHtml(cognome)}" required
+                 class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Email</label>
+          <input type="email" name="partecipante_${i}_email" value="${escHtml(email)}"
+                 class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Codice fiscale</label>
+          <input type="text" name="partecipante_${i}_cf" value="${escHtml(cf)}"
+                 class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 uppercase">
+        </div>
+      </div>`;
+    return div;
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function render() {
+    container.innerHTML = '';
+    for (let i = 0; i < numPosti; i++) container.appendChild(buildCard(i));
+    display.textContent = numPosti;
+    hiddenInput.value = numPosti;
+    btnMinus.disabled = numPosti <= 1;
+    btnPlus.disabled = numPosti >= maxPosti || numPosti >= 10;
+    updateRiepilogo();
+  }
+
+  btnMinus.addEventListener('click', () => { if (numPosti > 1) { numPosti--; render(); } });
+  btnPlus.addEventListener('click',  () => { if (numPosti < maxPosti && numPosti < 10) { numPosti++; render(); } });
+
+  render();
+})();
 </script>
 {% endblock %}
