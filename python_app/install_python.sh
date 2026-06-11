@@ -181,6 +181,7 @@ chown -R "$APP_USER:$APP_USER" "$APP_DIR"
 grant_parent_traversal
 mkdir -p "$APP_DIR/app/static/uploads"
 chown -R "$APP_USER:$APP_USER" "$APP_DIR/app/static/uploads"
+chmod 755 "$APP_DIR/app/static/uploads"
 
 # ── Migrazione DB ────────────────────────────────────────────
 info "Migrazione database..."

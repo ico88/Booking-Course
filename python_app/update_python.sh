@@ -123,6 +123,11 @@ ok "Dipendenze aggiornate"
 # ── Permessi app ─────────────────────────────────────────────
 chown -R "$APP_USER:$APP_USER" "$APP_DIR"
 grant_parent_traversal
+# uploads deve essere leggibile da nginx (www-data)
+mkdir -p "$APP_DIR/app/static/uploads"
+chmod 755 "$APP_DIR/app/static/uploads"
+find "$APP_DIR/app/static/uploads" -type f -exec chmod 644 {} \;
+find "$APP_DIR/app/static/uploads" -type d -exec chmod 755 {} \;
 
 # ── Verifica / ripristino .env ───────────────────────────────
 if [[ ! -f "$APP_DIR/.env" ]]; then

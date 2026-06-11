@@ -186,7 +186,9 @@ def corso_upload_immagine(corso_id):
     filename = f"corso_{corso_id}_{uuid.uuid4().hex[:8]}.{ext}"
     upload_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], "corsi")
     os.makedirs(upload_dir, exist_ok=True)
-    file.save(os.path.join(upload_dir, filename))
+    dest_path = os.path.join(upload_dir, filename)
+    file.save(dest_path)
+    os.chmod(dest_path, 0o644)
     corso.immagine_url = f"/static/uploads/corsi/{filename}"
     db.session.commit()
     flash("Immagine caricata.", "success")
@@ -338,7 +340,9 @@ def upload_attestato_pdf(prenotazione_id):
     filename = f"attestato_{p.id}.pdf"
     upload_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], "attestati")
     os.makedirs(upload_dir, exist_ok=True)
-    file.save(os.path.join(upload_dir, filename))
+    dest_path = os.path.join(upload_dir, filename)
+    file.save(dest_path)
+    os.chmod(dest_path, 0o644)
 
     p.attestato_url = f"/static/uploads/attestati/{filename}"
     p.attestato_emesso = True
@@ -719,7 +723,9 @@ def upload_logo():
     ext = file.filename.rsplit(".", 1)[1].lower()
     filename = f"logo.{ext}"
     upload_dir = current_app.config["UPLOAD_FOLDER"]
-    file.save(os.path.join(upload_dir, filename))
+    dest_path = os.path.join(upload_dir, filename)
+    file.save(dest_path)
+    os.chmod(dest_path, 0o644)  # ensure nginx (www-data) can read the file
     # Store relative-to-static path so url_for resolves correctly on any deployment
     Impostazione.set("logo_url", f"uploads/{filename}")
     db.session.commit()
