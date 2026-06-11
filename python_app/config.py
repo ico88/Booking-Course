@@ -7,6 +7,13 @@ from dotenv import load_dotenv
 load_dotenv(pathlib.Path(__file__).parent / ".env")
 
 
+def env_bool(name, default=False):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
 class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", "")
     if not SECRET_KEY:
@@ -56,7 +63,10 @@ class DevelopmentConfig(Config):
 
 class ProductionConfig(Config):
     DEBUG = False
-    SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = env_bool(
+        "SESSION_COOKIE_SECURE",
+        os.environ.get("APP_URL", "").startswith("https://"),
+    )
     SESSION_COOKIE_SAMESITE = "Strict"
 
 

@@ -149,8 +149,10 @@ if [[ ! -f "$APP_DIR/.env" ]]; then
   SECRET_KEY=$(openssl rand -base64 32)
   if [[ "$USE_SSL" == "true" ]]; then
     APP_URL="https://$DOMAIN"
+    SESSION_COOKIE_SECURE_VALUE=true
   else
     APP_URL="http://$(hostname -I | awk '{print $1}')"
+    SESSION_COOKIE_SECURE_VALUE=false
   fi
   cat > "$APP_DIR/.env" <<EOF
 FLASK_ENV=production
@@ -159,10 +161,19 @@ DATABASE_URL=sqlite:///$APP_DIR/booking.db
 APP_URL=$APP_URL
 APP_NAME=Gestione Corsi
 PORT=$PORT
+SESSION_COOKIE_SECURE=$SESSION_COOKIE_SECURE_VALUE
 EOF
   ok ".env creato"
 else
   info ".env già esistente, non sovrascritto"
+  if ! grep -q '^SESSION_COOKIE_SECURE=' "$APP_DIR/.env"; then
+    if [[ "$USE_SSL" == "true" ]]; then
+      echo "SESSION_COOKIE_SECURE=true" >> "$APP_DIR/.env"
+    else
+      echo "SESSION_COOKIE_SECURE=false" >> "$APP_DIR/.env"
+    fi
+    ok "SESSION_COOKIE_SECURE aggiunto a .env"
+  fi
 fi
 
 # ── Permessi ─────────────────────────────────────────────────
