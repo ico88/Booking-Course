@@ -89,11 +89,6 @@ apt-get update -qq
 apt-get install -y -qq acl
 ensure_service_user
 
-# ── Pull aggiornamenti ───────────────────────────────────────
-info "Pull da git..."
-git -C "$APP_DIR/.." pull origin claude/python-rewrite
-ok "Codice aggiornato"
-
 # ── Aggiorna dipendenze Python ───────────────────────────────
 info "Aggiornamento dipendenze Python..."
 if [[ ! -x "$VENV_DIR/bin/python" ]]; then
