@@ -5,8 +5,6 @@ set -euo pipefail
 # update_python.sh — Aggiorna l'app Python senza perdere dati
 # ============================================================
 
-APP_DIR="$(cd "$(dirname "$0")" && pwd)"
-VENV_DIR="$APP_DIR/.venv"
 SERVICE_NAME="booking-corsi"
 APP_USER="${APP_USER:-booking-corsi}"
 PYTHON_BIN="${PYTHON_BIN:-}"
@@ -14,6 +12,22 @@ PYTHON_BIN="${PYTHON_BIN:-}"
 info()  { echo "[INFO]  $*"; }
 ok()    { echo "[OK]    $*"; }
 error() { echo "[ERROR] $*" >&2; exit 1; }
+
+# Deriva APP_DIR dal servizio systemd installato (fonte di verità).
+# Fallback alla directory dello script se il servizio non esiste ancora.
+_SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
+if [[ -f "$_SERVICE_FILE" ]]; then
+  APP_DIR="$(grep '^WorkingDirectory=' "$_SERVICE_FILE" | cut -d= -f2- | tr -d ' ')"
+  if [[ -z "$APP_DIR" || ! -d "$APP_DIR" ]]; then
+    error "WorkingDirectory nel servizio systemd non trovata o inesistente: '$APP_DIR'. Controlla $_SERVICE_FILE"
+  fi
+  info "APP_DIR dal servizio systemd: $APP_DIR"
+else
+  APP_DIR="$(cd "$(dirname "$0")" && pwd)"
+  info "Servizio non trovato, uso directory dello script: $APP_DIR"
+fi
+
+VENV_DIR="$APP_DIR/.venv"
 
 version_ok() {
   "$1" - <<'PY'
@@ -123,7 +137,11 @@ sudo -u "$APP_USER" "$VENV_DIR/bin/python" -m flask --app wsgi:app db upgrade
 ok "Database aggiornato"
 
 # ── Riavvio servizio ─────────────────────────────────────────
+if [[ ! -f "$_SERVICE_FILE" ]]; then
+  error "Servizio systemd $SERVICE_NAME non installato. Esegui prima: sudo bash $APP_DIR/install_python.sh"
+fi
 info "Riavvio servizio..."
+systemctl daemon-reload
 systemctl restart "$SERVICE_NAME"
 sleep 2
 systemctl is-active "$SERVICE_NAME" && ok "Servizio riavviato" || error "Servizio non avviato, controlla: journalctl -u $SERVICE_NAME"
