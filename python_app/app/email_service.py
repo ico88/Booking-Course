@@ -27,7 +27,7 @@ def _html_wrapper(content: str, app_name: str, app_url: str) -> str:
   .header h1{{color:#fff;margin:0;font-size:20px}}
   .body{{padding:32px}}
   .footer{{background:#f3f4f6;padding:16px 32px;font-size:12px;color:#6b7280;text-align:center}}
-  .btn{{display:inline-block;background:#1d4ed8;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;margin:16px 0}}
+  .btn{{display:inline-block;background:#1d4ed8;color:#ffffff !important;padding:12px 24px;border-radius:6px;text-decoration:none !important;font-weight:600;margin:16px 0}}
   .info-box{{background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:16px;margin:16px 0}}
 </style></head>
 <body>
@@ -80,7 +80,7 @@ def invia_email_benvenuto(utente):
 <h2>Benvenuto, {utente.nome}!</h2>
 <p>Il tuo account è stato creato con successo su <strong>{app_name}</strong>.</p>
 <p>Puoi accedere alla tua area personale cliccando il pulsante qui sotto:</p>
-<a href="{app_url}/dashboard" class="btn">Vai alla dashboard</a>
+<a href="{app_url}/dashboard" class="btn" style="display:inline-block;background:#1d4ed8;color:#ffffff !important;padding:12px 24px;border-radius:6px;text-decoration:none !important;font-weight:600;margin:16px 0">Vai alla dashboard</a>
 """
     send_email(utente.email, f"Benvenuto su {app_name}!", _html_wrapper(body, app_name, app_url))
 
@@ -103,7 +103,7 @@ def invia_email_prenotazione(prenotazione):
   Scadenza pagamento: {scadenza}
 </div>
 {f'<div class="info-box"><strong>Dati bonifico:</strong><br><pre>{coord}</pre></div>' if coord else ''}
-<a href="{app_url}/dashboard/prenotazioni/{prenotazione.id}" class="btn">Gestisci prenotazione</a>
+<a href="{app_url}/dashboard/prenotazioni/{prenotazione.id}" class="btn" style="display:inline-block;background:#1d4ed8;color:#ffffff !important;padding:12px 24px;border-radius:6px;text-decoration:none !important;font-weight:600;margin:16px 0">Gestisci prenotazione</a>
 """
     send_email(u.email, f"Prenotazione per {c.titolo}", _html_wrapper(body, app_name, app_url))
 
@@ -116,7 +116,7 @@ def invia_email_contabile_caricata(prenotazione):
 <h2>Pagamento ricevuto</h2>
 <p>Ciao {u.nome}, abbiamo ricevuto la tua ricevuta di pagamento per <strong>{c.titolo}</strong>.</p>
 <p>La segreteria verificherà il pagamento e confermerà la tua iscrizione a breve.</p>
-<a href="{app_url}/dashboard/prenotazioni/{prenotazione.id}" class="btn">Visualizza prenotazione</a>
+<a href="{app_url}/dashboard/prenotazioni/{prenotazione.id}" class="btn" style="display:inline-block;background:#1d4ed8;color:#ffffff !important;padding:12px 24px;border-radius:6px;text-decoration:none !important;font-weight:600;margin:16px 0">Visualizza prenotazione</a>
 """
     send_email(u.email, f"Pagamento ricevuto - {c.titolo}", _html_wrapper(body, app_name, app_url))
 
@@ -129,7 +129,7 @@ def invia_email_conferma_prenotazione(prenotazione):
 <h2>Iscrizione confermata!</h2>
 <p>Ciao {u.nome}, la tua iscrizione al corso <strong>{c.titolo}</strong> è stata <strong>confermata</strong>.</p>
 <p>Ti aspettiamo!</p>
-<a href="{app_url}/dashboard/prenotazioni/{prenotazione.id}" class="btn">Dettagli iscrizione</a>
+<a href="{app_url}/dashboard/prenotazioni/{prenotazione.id}" class="btn" style="display:inline-block;background:#1d4ed8;color:#ffffff !important;padding:12px 24px;border-radius:6px;text-decoration:none !important;font-weight:600;margin:16px 0">Dettagli iscrizione</a>
 """
     send_email(u.email, f"Iscrizione confermata - {c.titolo}", _html_wrapper(body, app_name, app_url))
 
@@ -141,7 +141,7 @@ def invia_email_attestato(prenotazione):
     body = f"""
 <h2>Il tuo attestato è disponibile</h2>
 <p>Ciao {u.nome}, il tuo attestato di partecipazione al corso <strong>{c.titolo}</strong> è ora disponibile.</p>
-<a href="{app_url}/dashboard/prenotazioni/{prenotazione.id}" class="btn">Scarica attestato</a>
+<a href="{app_url}/dashboard/prenotazioni/{prenotazione.id}" class="btn" style="display:inline-block;background:#1d4ed8;color:#ffffff !important;padding:12px 24px;border-radius:6px;text-decoration:none !important;font-weight:600;margin:16px 0">Scarica attestato</a>
 """
     send_email(u.email, f"Attestato disponibile - {c.titolo}", _html_wrapper(body, app_name, app_url))
 
@@ -152,7 +152,7 @@ def invia_email_reset_password(utente, link: str):
 <h2>Recupero password</h2>
 <p>Ciao {utente.nome}, hai richiesto il recupero della password.</p>
 <p>Clicca il pulsante qui sotto per impostare una nuova password (il link scade tra 1 ora):</p>
-<a href="{link}" class="btn">Reimposta password</a>
+<a href="{link}" class="btn" style="display:inline-block;background:#1d4ed8;color:#ffffff !important;padding:12px 24px;border-radius:6px;text-decoration:none !important;font-weight:600;margin:16px 0">Reimposta password</a>
 <p style="color:#6b7280;font-size:13px;">Se non hai richiesto il recupero, ignora questa email.</p>
 """
     send_email(utente.email, f"Recupero password - {app_name}", _html_wrapper(body, app_name, app_url))
@@ -184,7 +184,7 @@ def invia_email_marketing(lead, corso, unsub_token: str):
   Luogo: {corso.luogo or 'Da definire'}<br>
   Costo: {corso.costo_formattato}
 </div>
-<a href="{app_url}/corsi/{corso.id}" class="btn">Scopri il corso</a>
+<a href="{app_url}/corsi/{corso.id}" class="btn" style="display:inline-block;background:#1d4ed8;color:#ffffff !important;padding:12px 24px;border-radius:6px;text-decoration:none !important;font-weight:600;margin:16px 0">Scopri il corso</a>
 <p style="color:#9ca3af;font-size:11px;margin-top:32px">
   Ricevi queste email perché sei iscritto alle notifiche di {app_name}.<br>
   <a href="{unsub_url}">Annulla iscrizione</a>
@@ -198,7 +198,7 @@ def invia_email_verifica_lead(lead, verifica_url: str):
     body = f"""
 <h2>Conferma la tua email</h2>
 <p>Ciao{' ' + lead.nome if lead.nome else ''}! Clicca il pulsante per confermare la tua iscrizione alle notifiche di {app_name}.</p>
-<a href="{verifica_url}" class="btn">Conferma email</a>
+<a href="{verifica_url}" class="btn" style="display:inline-block;background:#1d4ed8;color:#ffffff !important;padding:12px 24px;border-radius:6px;text-decoration:none !important;font-weight:600;margin:16px 0">Conferma email</a>
 <p style="color:#6b7280;font-size:13px;">Il link scade tra 7 giorni.</p>
 """
     send_email(lead.email, f"Conferma la tua email - {app_name}", _html_wrapper(body, app_name, app_url))
