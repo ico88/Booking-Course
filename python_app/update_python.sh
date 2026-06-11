@@ -72,6 +72,8 @@ grant_parent_traversal() {
 
   while [[ "$dir" != "/" && -n "$dir" ]]; do
     setfacl -m "u:${APP_USER}:--x" "$dir" 2>/dev/null || true
+    # nginx (www-data) needs traverse access to reach the static files
+    setfacl -m "u:www-data:--x" "$dir" 2>/dev/null || true
     dir="$(dirname "$dir")"
   done
 }
