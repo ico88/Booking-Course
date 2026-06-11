@@ -44,9 +44,9 @@
   <!-- Logo — separate form, not nested -->
   <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
     <h2 class="font-semibold text-gray-800">Logo</h2>
-    {% if settings.get('logo_url') %}
+    {% if logo_url %}
     <div class="flex items-center gap-4">
-      <img src="{{ settings.get('logo_url') }}" alt="Logo" class="h-14 object-contain border border-gray-100 rounded-lg p-1 bg-white">
+      <img src="{{ logo_url }}" alt="Logo" class="h-14 object-contain border border-gray-100 rounded-lg p-1 bg-white">
       <form method="POST" action="{{ url_for('admin.logo_elimina') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="text-sm text-red-600 hover:text-red-800">Rimuovi logo</button>
