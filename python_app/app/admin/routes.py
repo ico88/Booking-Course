@@ -864,3 +864,18 @@ def backup_scarica(filename):
         abort(400)
     backup_dir = os.path.join(current_app.instance_path, "backups")
     return send_from_directory(backup_dir, filename, as_attachment=True)
+
+
+# ===========================================================================
+# CHANGELOG
+# ===========================================================================
+
+@admin_bp.route("/changelog")
+@admin_required
+def changelog():
+    import pathlib, mistune
+    changelog_path = pathlib.Path(current_app.root_path).parent / "CHANGELOG.md"
+    md_text = changelog_path.read_text(encoding="utf-8") if changelog_path.exists() else "_Changelog non trovato._"
+    html = mistune.html(md_text)
+    version = current_app.config.get("APP_VERSION", "—")
+    return render_template("admin/changelog.html", changelog_html=html, version=version)

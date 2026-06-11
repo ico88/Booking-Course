@@ -1,0 +1,203 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Manuale utente{% endblock %}
+
+{% block head %}
+<style>
+.man-section{margin-bottom:2rem}
+.man-section h2{font-size:1.1rem;font-weight:700;color:#111827;margin-bottom:.75rem;padding-bottom:.4rem;border-bottom:2px solid #e5e7eb;display:flex;align-items:center;gap:.5rem}
+.man-section h3{font-size:.95rem;font-weight:600;color:#374151;margin:.9rem 0 .3rem}
+.man-section p,.man-section li{font-size:.875rem;color:#4b5563;line-height:1.6}
+.man-section ul{list-style:disc;padding-left:1.3rem;margin:.25rem 0}
+.man-section li{margin:.2rem 0}
+.man-section .tip{background:#eff6ff;border-left:3px solid #3b82f6;border-radius:0 .4rem .4rem 0;padding:.6rem .9rem;font-size:.8rem;color:#1e40af;margin:.6rem 0}
+.man-section .warn{background:#fffbeb;border-left:3px solid #f59e0b;border-radius:0 .4rem .4rem 0;padding:.6rem .9rem;font-size:.8rem;color:#92400e;margin:.6rem 0}
+.badge{display:inline-block;font-size:.7rem;font-weight:600;padding:.15rem .5rem;border-radius:9999px}
+</style>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-bold">Manuale utente</h1>
+  {% if current_user.is_admin() %}
+  <a href="{{ url_for('admin.changelog') }}" class="text-sm text-blue-600 hover:underline flex items-center gap-1">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+    </svg>
+    v{{ app_version }} — Changelog
+  </a>
+  {% endif %}
+</div>
+
+<div class="max-w-2xl space-y-6">
+
+{# ── SEZIONE COMUNE A TUTTI ─────────────────────────────────────── #}
+<div class="man-section bg-white border border-gray-200 rounded-xl p-6">
+  <h2>
+    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+    Il tuo account
+  </h2>
+  <h3>Accesso e uscita</h3>
+  <ul>
+    <li>Accedi con email e password dalla pagina di login.</li>
+    <li>Per uscire clicca <strong>Esci</strong> in fondo alla barra laterale.</li>
+  </ul>
+  <h3>Recupero password</h3>
+  <ul>
+    <li>Dalla pagina di login clicca <em>Password dimenticata</em>.</li>
+    <li>Riceverai un'email con un link valido per 1 ora.</li>
+  </ul>
+  <h3>Dati personali</h3>
+  <ul>
+    <li>Vai su <strong>Dati personali</strong> per aggiornare nome, telefono, codice fiscale e password.</li>
+    <li>Da qui puoi anche gestire il consenso alle comunicazioni di marketing.</li>
+  </ul>
+</div>
+
+{# ── SEZIONE UTENTE ─────────────────────────────────────────────── #}
+<div class="man-section bg-white border border-gray-200 rounded-xl p-6">
+  <h2>
+    <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+    Prenotazioni
+  </h2>
+  <h3>Iscriversi a un corso</h3>
+  <ul>
+    <li>Dal catalogo corsi clicca il corso desiderato e poi <strong>Prenota</strong>.</li>
+    <li>Inserisci i dati dei partecipanti e scegli il metodo di pagamento.</li>
+    <li>Riceverai un'email di conferma con le istruzioni per il pagamento.</li>
+  </ul>
+  <h3>Pagare con bonifico</h3>
+  <ul>
+    <li>Effettua il bonifico usando le coordinate bancarie ricevute via email.</li>
+    <li>Dalla tua prenotazione carica la <strong>ricevuta</strong> (PDF o immagine).</li>
+    <li>La segreteria verificherà il pagamento e confermerà l'iscrizione.</li>
+  </ul>
+  <div class="warn">La prenotazione ha una scadenza: se non carichi la ricevuta entro il termine indicato, i posti vengono liberati automaticamente.</div>
+  <h3>Pagare con carta / PayPal</h3>
+  <ul>
+    <li>Seleziona Stripe (carta) o PayPal al momento della prenotazione.</li>
+    <li>Il pagamento viene verificato automaticamente: nessun caricamento necessario.</li>
+  </ul>
+  <h3>Attestato</h3>
+  <ul>
+    <li>A completamento del corso la segreteria emette l'attestato.</li>
+    <li>Riceverai un'email; puoi scaricarlo dalla pagina della prenotazione.</li>
+  </ul>
+  <h3>Annullare una prenotazione</h3>
+  <ul>
+    <li>Contatta la segreteria: solo admin e segreteria possono annullare prenotazioni confermate.</li>
+  </ul>
+</div>
+
+{# ── SEZIONE SEGRETERIA + ADMIN ─────────────────────────────────── #}
+{% if current_user.is_admin() %}
+<div class="man-section bg-white border border-gray-200 rounded-xl p-6">
+  <h2>
+    <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+    Gestione prenotazioni
+    <span class="badge bg-purple-100 text-purple-700">Segreteria</span>
+  </h2>
+  <h3>Lista prenotazioni</h3>
+  <ul>
+    <li>Dal pannello admin vai su <strong>Prenotazioni</strong> per vedere tutte le prenotazioni con filtri per stato, corso e utente.</li>
+    <li>Gli stati possibili sono: <em>In attesa di pagamento</em>, <em>Pagamento caricato</em>, <em>Confermata</em>, <em>Annullata</em>, <em>Scaduta</em>.</li>
+  </ul>
+  <h3>Verificare un pagamento</h3>
+  <ul>
+    <li>Quando un utente carica la ricevuta, lo stato diventa <strong>Pagamento caricato</strong>.</li>
+    <li>Apri la prenotazione, scarica la ricevuta e clicca <strong>Conferma prenotazione</strong> per accettare, oppure <strong>Annulla</strong> se non valida.</li>
+    <li>L'utente riceve automaticamente un'email di conferma.</li>
+  </ul>
+  <h3>Emettere un attestato</h3>
+  <ul>
+    <li>Dalla prenotazione confermata clicca <strong>Emetti attestato</strong>.</li>
+    <li>L'attestato viene generato automaticamente e l'utente riceve una notifica email.</li>
+  </ul>
+  <h3>Iscrivere un utente manualmente</h3>
+  <ul>
+    <li>Dal dettaglio corso clicca <strong>Aggiungi prenotazione</strong> e seleziona l'utente.</li>
+  </ul>
+</div>
+
+<div class="man-section bg-white border border-gray-200 rounded-xl p-6">
+  <h2>
+    <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+    Gestione corsi
+    <span class="badge bg-green-100 text-green-700">Admin</span>
+  </h2>
+  <h3>Creare un corso</h3>
+  <ul>
+    <li>Vai su <strong>Corsi → Nuovo corso</strong>. Compila titolo, date, luogo, costo, posti e descrizione.</li>
+    <li>Carica un'immagine di copertina (PNG/JPG/WebP, max 5 MB).</li>
+    <li>Assegna uno o più <strong>tag</strong> (es. <code>fulld</code>) per collegare il corso alle categorie newsletter.</li>
+    <li>Il corso è visibile al pubblico solo dopo aver spuntato <strong>Pubblica</strong>.</li>
+  </ul>
+  <h3>Modificare o duplicare un corso</h3>
+  <ul>
+    <li>Dal dettaglio corso usa i pulsanti <strong>Modifica</strong> o <strong>Duplica</strong>.</li>
+    <li>La duplicazione copia tutte le impostazioni ma non le prenotazioni.</li>
+  </ul>
+  <h3>Template attestato</h3>
+  <ul>
+    <li>Nella scheda corso puoi caricare un template HTML o PDF per l'attestato.</li>
+    <li>Attiva l'opzione <strong>Attestato abilitato</strong> per permetterne l'emissione.</li>
+  </ul>
+</div>
+
+<div class="man-section bg-white border border-gray-200 rounded-xl p-6">
+  <h2>
+    <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+    Marketing e newsletter
+    <span class="badge bg-orange-100 text-orange-700">Admin</span>
+  </h2>
+  <h3>Gestione tag</h3>
+  <ul>
+    <li>Vai su <strong>Marketing → Gestione Tag</strong> e inserisci i tag nel formato <code>Nome visualizzato | slug</code> (uno per riga).</li>
+    <li>Il nome è quello che vedono gli iscritti; lo slug deve corrispondere ai tag assegnati ai corsi.</li>
+  </ul>
+  <h3>Lead esterni</h3>
+  <ul>
+    <li>Le persone che si iscrivono dal form pubblico <em>Ricevi notifiche</em> diventano lead.</li>
+    <li>Devono verificare la propria email prima di ricevere comunicazioni.</li>
+    <li>Puoi importare lead da file CSV (colonne: <code>email</code>, <code>nome</code>, <code>cognome</code>).</li>
+  </ul>
+  <h3>Inviare una notifica corso</h3>
+  <ul>
+    <li>Clicca <strong>Invia notifica</strong>, seleziona il corso e conferma.</li>
+    <li>L'email viene inviata solo ai lead con tag corrispondenti (o a tutti se il corso non ha tag).</li>
+    <li>I lead senza tag ricevono sempre tutte le notifiche.</li>
+  </ul>
+</div>
+
+<div class="man-section bg-white border border-gray-200 rounded-xl p-6">
+  <h2>
+    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/></svg>
+    Impostazioni di sistema
+    <span class="badge bg-gray-100 text-gray-700">Admin</span>
+  </h2>
+  <h3>Email SMTP</h3>
+  <ul>
+    <li>Vai su <strong>Impostazioni → Email</strong>. Inserisci host, porta, utente e password.</li>
+    <li>Per Gmail usa una <em>App Password</em> (non la password del tuo account Google).</li>
+    <li>Clicca <strong>Invia email di test</strong> per verificare la configurazione.</li>
+  </ul>
+  <h3>Logo</h3>
+  <ul>
+    <li>Vai su <strong>Impostazioni → Generale</strong> e carica il logo (PNG/JPG/SVG/WebP, max 5 MB).</li>
+    <li>Appare nella barra di navigazione pubblica e nel pannello admin.</li>
+  </ul>
+  <h3>Pagamenti</h3>
+  <ul>
+    <li><strong>Stripe</strong>: inserisci la chiave pubblica (<code>pk_...</code>) e la chiave segreta (<code>sk_...</code>).</li>
+    <li><strong>PayPal</strong>: inserisci Client ID e Client Secret; imposta <em>live</em> per la produzione.</li>
+  </ul>
+  <h3>Backup</h3>
+  <ul>
+    <li>Vai su <strong>Backup</strong> per scaricare una copia del database.</li>
+    <li>Esegui backup regolari prima di ogni aggiornamento importante.</li>
+  </ul>
+  <div class="tip">Per aggiornare il software: sul server esegui <code>sudo git pull && sudo bash update_python.sh</code>.</div>
+</div>
+{% endif %}
+
+</div>
+{% endblock %}

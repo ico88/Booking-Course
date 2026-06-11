@@ -83,6 +83,11 @@ def create_app(config_name=None):
     app.jinja_env.globals["format_date"] = format_date
     app.jinja_env.globals["format_datetime"] = format_datetime
 
+    # Read version once at startup
+    import pathlib as _pl
+    _ver_file = _pl.Path(__file__).parent.parent / "VERSION"
+    app.config["APP_VERSION"] = _ver_file.read_text().strip() if _ver_file.exists() else "—"
+
     @app.context_processor
     def inject_globals():
         from .models import Impostazione, Corso
@@ -120,6 +125,7 @@ def create_app(config_name=None):
             "color_scheme": color_scheme,
             "corsi_pubblicati": corsi_pubblicati,
             "turnstile_site_key": turnstile_site_key,
+            "app_version": app.config.get("APP_VERSION", "—"),
         }
 
     return app

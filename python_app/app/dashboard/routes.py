@@ -159,3 +159,9 @@ def cancella_account():
     logger.info("Account eliminato: %s", email)
     flash("Account eliminato.", "info")
     return redirect(url_for("public.index"))
+
+
+@dashboard_bp.route("/manuale")
+@login_required
+def manuale():
+    return render_template("dashboard/manuale.html")
