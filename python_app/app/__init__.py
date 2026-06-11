@@ -87,8 +87,20 @@ def create_app(config_name=None):
     def inject_globals():
         from .models import Impostazione, Corso
         try:
+            from flask import url_for as _url_for
             app_name = Impostazione.get("app_name") or app.config.get("APP_NAME", "Gestione Corsi")
-            logo_url = Impostazione.get("logo_url")
+            _logo_raw = Impostazione.get("logo_url")
+            if _logo_raw:
+                if _logo_raw.startswith("/"):
+                    # Legacy absolute path stored in DB
+                    logo_url = _logo_raw
+                else:
+                    try:
+                        logo_url = _url_for("static", filename=_logo_raw)
+                    except Exception:
+                        logo_url = f"/static/{_logo_raw}"
+            else:
+                logo_url = None
             color_scheme = Impostazione.get("color_scheme") or "blu"
             try:
                 corsi_pubblicati = Corso.query.filter_by(pubblicato=True).order_by(Corso.data_inizio.asc()).all()

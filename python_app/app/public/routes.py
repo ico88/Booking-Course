@@ -157,9 +157,18 @@ def notifiche_corsi():
         flash("Il tuo profilo è già abilitato a ricevere notifiche sui corsi.", "success")
         return redirect(url_for("dashboard.dati_personali"))
 
-    # Gather unique tags from published courses to offer as interest categories
-    corsi = Corso.query.filter_by(pubblicato=True).all()
-    tag_disponibili = sorted({t for c in corsi for t in (c.tags or [])})
+    # Use centralized newsletter tags; fall back to tags from published courses
+    import json as _json
+    _raw_tags = Impostazione.get("newsletter_tags")
+    if _raw_tags:
+        try:
+            _parsed = _json.loads(_raw_tags)
+            tag_disponibili = sorted(t for t in _parsed if t) if isinstance(_parsed, list) else []
+        except Exception:
+            tag_disponibili = []
+    else:
+        corsi = Corso.query.filter_by(pubblicato=True).all()
+        tag_disponibili = sorted({t for c in corsi for t in (c.tags or [])})
 
     if request.method == "POST":
         email = validate_email_address((request.form.get("email") or "").strip())
@@ -169,7 +178,7 @@ def notifiche_corsi():
 
         nome = (request.form.get("nome") or "").strip()[:100]
         cognome = (request.form.get("cognome") or "").strip()[:100]
-        # Accept only tags that actually exist in courses
+        # Accept only tags that exist in the centralized list
         tags_selezionati = [t for t in request.form.getlist("tags") if t in tag_disponibili]
 
         lead = LeadMarketing.query.filter_by(email=email).first()

@@ -47,6 +47,10 @@
     Utenti con consenso marketing
     {% if utenti_marketing %}<span class="ml-1 bg-purple-100 text-purple-700 text-xs px-1.5 py-0.5 rounded-full">{{ utenti_marketing|length }}</span>{% endif %}
   </button>
+  <button id="tab-tags" onclick="switchTab('tags')"
+          class="px-4 py-2 rounded-lg text-sm font-medium transition-colors text-gray-600 hover:text-gray-900">
+    Gestione Tag
+  </button>
 </div>
 
 <!-- Pannello lead esterni -->
@@ -168,6 +172,37 @@
   </p>
 </div>
 
+<!-- Pannello gestione tag newsletter -->
+<div id="panel-tags" class="hidden">
+  <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+    <h2 class="font-semibold text-gray-800">Tag newsletter centralizzati</h2>
+    <p class="text-sm text-gray-500">
+      Questi tag vengono mostrati nel form di iscrizione alla newsletter e usati per filtrare le notifiche per corso.<br>
+      Inserisci un tag per riga (oppure separati da virgola).
+    </p>
+    <form method="POST" action="{{ url_for('admin.marketing_tags') }}" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div>
+        <label class="block text-sm font-medium mb-1">Tag disponibili</label>
+        <textarea name="newsletter_tags" rows="6"
+                  placeholder="fulld&#10;mdp&#10;online&#10;..."
+                  class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-blue-500">{{ newsletter_tags|join('\n') }}</textarea>
+      </div>
+      {% if newsletter_tags %}
+      <div class="flex flex-wrap gap-2">
+        {% for tag in newsletter_tags %}
+        <span class="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-lg font-medium">{{ tag }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+      <button type="submit" class="bg-blue-700 text-white px-5 py-2 rounded-lg text-sm hover:bg-blue-800 font-medium">Salva tag</button>
+    </form>
+  </div>
+  <p class="text-xs text-gray-400 mt-2">
+    I lead senza tag ricevono sempre tutte le notifiche, indipendentemente dai tag del corso.
+  </p>
+</div>
+
 {# Modal invio notifica #}
 <div id="modal-notifica" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
   <div class="bg-white rounded-xl p-6 w-full max-w-sm shadow-xl">
@@ -193,13 +228,13 @@
 
 <script>
 function switchTab(tab) {
-  const isLead = tab === 'lead';
-  document.getElementById('panel-lead').classList.toggle('hidden', !isLead);
-  document.getElementById('panel-utenti').classList.toggle('hidden', isLead);
+  const panels = ['lead', 'utenti', 'tags'];
   const active = 'bg-white text-gray-900 shadow-sm';
   const inactive = 'text-gray-600 hover:text-gray-900';
-  document.getElementById('tab-lead').className = `px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isLead ? active : inactive}`;
-  document.getElementById('tab-utenti').className = `px-4 py-2 rounded-lg text-sm font-medium transition-colors ${!isLead ? active : inactive}`;
+  panels.forEach(p => {
+    document.getElementById('panel-' + p).classList.toggle('hidden', p !== tab);
+    document.getElementById('tab-' + p).className = `px-4 py-2 rounded-lg text-sm font-medium transition-colors ${p === tab ? active : inactive}`;
+  });
 }
 
 function importCsv(input) {

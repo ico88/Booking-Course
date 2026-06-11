@@ -522,15 +522,30 @@ def iscrivi_utente():
 # MARKETING LEADS
 # ===========================================================================
 
+def _get_newsletter_tags() -> list:
+    """Return centralized newsletter tags from Impostazione."""
+    import json
+    raw = Impostazione.get("newsletter_tags")
+    if raw:
+        try:
+            tags = json.loads(raw)
+            if isinstance(tags, list):
+                return sorted(t for t in tags if t)
+        except Exception:
+            pass
+    return []
+
+
 @admin_bp.route("/marketing")
 @admin_required
 def marketing():
     leads = LeadMarketing.query.order_by(LeadMarketing.created_at.desc()).all()
     corsi_pubblicati = Corso.query.filter_by(pubblicato=True).order_by(Corso.data_inizio.desc()).all()
     all_tags = sorted({t for lead in leads for t in (lead.tags or [])})
+    newsletter_tags = _get_newsletter_tags()
     utenti_marketing = Utente.query.filter_by(consenso_marketing=True).order_by(Utente.data_consenso.desc()).all()
     return render_template("admin/marketing/lista.html", leads=leads, corsi_pubblicati=corsi_pubblicati,
-                           all_tags=all_tags, utenti_marketing=utenti_marketing)
+                           all_tags=all_tags, newsletter_tags=newsletter_tags, utenti_marketing=utenti_marketing)
 
 
 @admin_bp.route("/marketing/leads/<string:lead_id>/elimina", methods=["POST"])
@@ -571,6 +586,19 @@ def marketing_notifica():
             pass
     logger.info("Admin %s: notifica marketing per corso %s a %d lead (tag filter: %s)", current_user.email, corso.id, sent, bool(corso_tags))
     flash(f"Notifica inviata a {sent} lead.", "success")
+    return redirect(url_for("admin.marketing"))
+
+
+@admin_bp.route("/marketing/tags", methods=["POST"])
+@admin_required
+def marketing_tags():
+    import json
+    raw_tags = request.form.get("newsletter_tags", "")
+    tags = sorted({t.strip() for t in raw_tags.replace(",", "\n").splitlines() if t.strip()})
+    Impostazione.set("newsletter_tags", json.dumps(tags), gruppo="marketing")
+    db.session.commit()
+    logger.info("Admin %s: tag newsletter aggiornati: %s", current_user.email, tags)
+    flash("Tag aggiornati.", "success")
     return redirect(url_for("admin.marketing"))
 
 
@@ -658,16 +686,22 @@ def impostazioni():
 def test_email():
     from ..email_service import send_email, _html_wrapper, _ctx
     app_name, app_url = _ctx()
+    dest = (request.form.get("test_email_to") or "").strip() or current_user.email
+    dest = validate_email_address(dest) or current_user.email
     try:
         send_email(
-            current_user.email,
+            dest,
             f"Test email - {app_name}",
-            _html_wrapper("<h2>Email di test</h2><p>La configurazione SMTP funziona correttamente.</p>", app_name, app_url),
+            _html_wrapper(
+                "<h2>Email di test</h2><p>La configurazione SMTP funziona correttamente.</p>"
+                f"<p style='color:#6b7280;font-size:13px;'>Inviata da: {app_name}</p>",
+                app_name, app_url,
+            ),
         )
-        flash(f"Email di test inviata a {current_user.email}.", "success")
+        flash(f"Email di test inviata a {dest}.", "success")
     except Exception as e:
         flash(f"Errore invio email: {e}", "error")
-    return redirect(url_for("admin.impostazioni"))
+    return redirect(url_for("admin.impostazioni", tab="email"))
 
 
 @admin_bp.route("/impostazioni/logo", methods=["POST"])
@@ -686,7 +720,8 @@ def upload_logo():
     filename = f"logo.{ext}"
     upload_dir = current_app.config["UPLOAD_FOLDER"]
     file.save(os.path.join(upload_dir, filename))
-    Impostazione.set("logo_url", f"/static/uploads/{filename}")
+    # Store relative-to-static path so url_for resolves correctly on any deployment
+    Impostazione.set("logo_url", f"uploads/{filename}")
     db.session.commit()
     flash("Logo aggiornato.", "success")
     return redirect(url_for("admin.impostazioni"))
@@ -695,9 +730,14 @@ def upload_logo():
 @admin_bp.route("/impostazioni/logo/elimina", methods=["POST"])
 @admin_required
 def logo_elimina():
-    logo_url = Impostazione.get("logo_url", "")
-    if logo_url:
-        logo_path = os.path.join(current_app.root_path, "static", logo_url.lstrip("/static/"))
+    logo_rel = Impostazione.get("logo_url", "")
+    if logo_rel:
+        # logo_rel is "uploads/logo.ext" (relative to static dir)
+        # handle legacy "/static/uploads/..." format too
+        rel = logo_rel.lstrip("/")
+        if rel.startswith("static/"):
+            rel = rel[len("static/"):]
+        logo_path = os.path.join(current_app.root_path, "static", rel)
         if os.path.exists(logo_path):
             os.remove(logo_path)
         Impostazione.set("logo_url", "")

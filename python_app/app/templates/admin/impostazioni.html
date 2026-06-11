@@ -133,10 +133,19 @@
     <button type="submit" class="w-full bg-blue-700 text-white py-2.5 rounded-xl font-medium hover:bg-blue-800">Salva</button>
   </form>
   <!-- Test email — separate form -->
-  <form method="POST" action="{{ url_for('admin.test_email') }}">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <button type="submit" class="w-full bg-gray-100 hover:bg-gray-200 py-2.5 rounded-xl text-sm font-medium">Invia email di test a {{ current_user.email }}</button>
-  </form>
+  <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-3">
+    <h2 class="font-semibold text-gray-800">Test invio email</h2>
+    <p class="text-sm text-gray-500">Invia un'email di prova per verificare che la configurazione SMTP funzioni correttamente.</p>
+    <form method="POST" action="{{ url_for('admin.test_email') }}" class="flex gap-3 items-end">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="flex-1">
+        <label class="block text-sm font-medium mb-1">Destinatario</label>
+        <input type="email" name="test_email_to" value="{{ current_user.email }}"
+               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 text-sm">
+      </div>
+      <button type="submit" class="bg-gray-800 text-white px-5 py-2 rounded-lg text-sm hover:bg-gray-900 whitespace-nowrap">Invia email di test</button>
+    </form>
+  </div>
 </div>
 
 <!-- Pagamenti -->
