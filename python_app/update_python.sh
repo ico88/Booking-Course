@@ -11,6 +11,7 @@ PYTHON_BIN="${PYTHON_BIN:-}"
 
 info()  { echo "[INFO]  $*"; }
 ok()    { echo "[OK]    $*"; }
+warn()  { echo "[WARN]  $*"; }
 error() { echo "[ERROR] $*" >&2; exit 1; }
 
 # Deriva APP_DIR dal servizio systemd installato (fonte di verità).
