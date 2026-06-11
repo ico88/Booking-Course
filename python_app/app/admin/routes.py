@@ -527,14 +527,21 @@ def iscrivi_utente():
 # ===========================================================================
 
 def _get_newsletter_tags() -> list:
-    """Return centralized newsletter tags from Impostazione."""
+    """Return centralized newsletter tags as list of {slug, label} dicts."""
     import json
     raw = Impostazione.get("newsletter_tags")
     if raw:
         try:
             tags = json.loads(raw)
             if isinstance(tags, list):
-                return sorted(t for t in tags if t)
+                result = []
+                for t in tags:
+                    if isinstance(t, dict) and t.get("slug"):
+                        result.append({"slug": t["slug"].strip(), "label": t.get("label", t["slug"]).strip()})
+                    elif isinstance(t, str) and t.strip():
+                        # legacy: plain string
+                        result.append({"slug": t.strip(), "label": t.strip()})
+                return sorted(result, key=lambda x: x["label"])
         except Exception:
             pass
     return []
@@ -598,8 +605,23 @@ def marketing_notifica():
 def marketing_tags():
     import json
     raw_tags = request.form.get("newsletter_tags", "")
-    tags = sorted({t.strip() for t in raw_tags.replace(",", "\n").splitlines() if t.strip()})
-    Impostazione.set("newsletter_tags", json.dumps(tags), gruppo="marketing")
+    tags = []
+    seen_slugs = set()
+    for line in raw_tags.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        if "|" in line:
+            label, slug = line.split("|", 1)
+            label, slug = label.strip(), slug.strip().lower()
+        else:
+            label = line
+            slug = line.lower()
+        if slug and slug not in seen_slugs:
+            tags.append({"slug": slug, "label": label})
+            seen_slugs.add(slug)
+    tags.sort(key=lambda x: x["label"])
+    Impostazione.set("newsletter_tags", json.dumps(tags, ensure_ascii=False), gruppo="marketing")
     db.session.commit()
     logger.info("Admin %s: tag newsletter aggiornati: %s", current_user.email, tags)
     flash("Tag aggiornati.", "success")

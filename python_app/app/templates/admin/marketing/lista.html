@@ -177,29 +177,41 @@
   <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
     <h2 class="font-semibold text-gray-800">Tag newsletter centralizzati</h2>
     <p class="text-sm text-gray-500">
-      Questi tag vengono mostrati nel form di iscrizione alla newsletter e usati per filtrare le notifiche per corso.<br>
-      Inserisci un tag per riga (oppure separati da virgola).
+      Ogni riga definisce un'area di interesse nel formato <code class="bg-gray-100 px-1 rounded text-xs font-mono">Nome visualizzato | slug</code><br>
+      Il <strong>nome</strong> è quello che vedono gli iscritti. Lo <strong>slug</strong> è il codice interno usato per filtrare le notifiche (deve coincidere con i tag assegnati ai corsi).
     </p>
+    <div class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-xs text-blue-700 font-mono space-y-1">
+      <div>Corsi BLSD (Adulto e pediatrico) | fulld</div>
+      <div>Corsi di disostruzione | mdped</div>
+      <div>Corsi online | online</div>
+    </div>
     <form method="POST" action="{{ url_for('admin.marketing_tags') }}" class="space-y-4">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div>
         <label class="block text-sm font-medium mb-1">Tag disponibili</label>
-        <textarea name="newsletter_tags" rows="6"
-                  placeholder="fulld&#10;mdp&#10;online&#10;..."
-                  class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-blue-500">{{ newsletter_tags|join('\n') }}</textarea>
+        <textarea name="newsletter_tags" rows="8"
+                  placeholder="Corsi BLSD (Adulto e pediatrico) | fulld&#10;Corsi di disostruzione | mdped&#10;Corsi online | online"
+                  class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-blue-500">{% for tag in newsletter_tags %}{{ tag.label }} | {{ tag.slug }}
+{% endfor %}</textarea>
       </div>
       {% if newsletter_tags %}
-      <div class="flex flex-wrap gap-2">
-        {% for tag in newsletter_tags %}
-        <span class="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-lg font-medium">{{ tag }}</span>
-        {% endfor %}
+      <div>
+        <p class="text-xs text-gray-500 mb-2">Anteprima come appare agli iscritti:</p>
+        <div class="flex flex-wrap gap-2">
+          {% for tag in newsletter_tags %}
+          <span class="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 text-blue-800 text-sm px-3 py-1.5 rounded-lg">
+            {{ tag.label }}
+            <span class="text-blue-400 text-xs font-mono">({{ tag.slug }})</span>
+          </span>
+          {% endfor %}
+        </div>
       </div>
       {% endif %}
       <button type="submit" class="bg-blue-700 text-white px-5 py-2 rounded-lg text-sm hover:bg-blue-800 font-medium">Salva tag</button>
     </form>
   </div>
   <p class="text-xs text-gray-400 mt-2">
-    I lead senza tag ricevono sempre tutte le notifiche, indipendentemente dai tag del corso.
+    Gli iscritti senza tag selezionati ricevono sempre tutte le notifiche.
   </p>
 </div>
 

@@ -26,8 +26,8 @@
       <div class="flex flex-wrap gap-2">
         {% for tag in tag_disponibili %}
         <label class="flex items-center gap-1.5 cursor-pointer bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-blue-50 hover:border-blue-300 text-sm">
-          <input type="checkbox" name="tags" value="{{ tag }}" class="accent-blue-600">
-          {{ tag }}
+          <input type="checkbox" name="tags" value="{{ tag.slug }}" class="accent-blue-600">
+          {{ tag.label }}
         </label>
         {% endfor %}
       </div>

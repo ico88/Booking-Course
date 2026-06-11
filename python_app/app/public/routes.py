@@ -163,12 +163,19 @@ def notifiche_corsi():
     if _raw_tags:
         try:
             _parsed = _json.loads(_raw_tags)
-            tag_disponibili = sorted(t for t in _parsed if t) if isinstance(_parsed, list) else []
+            if isinstance(_parsed, list) and _parsed and isinstance(_parsed[0], dict):
+                tag_disponibili = [t for t in _parsed if t.get("slug")]
+            else:
+                # legacy plain strings
+                tag_disponibili = [{"slug": t, "label": t} for t in _parsed if t]
         except Exception:
             tag_disponibili = []
     else:
         corsi = Corso.query.filter_by(pubblicato=True).all()
-        tag_disponibili = sorted({t for c in corsi for t in (c.tags or [])})
+        slugs = sorted({t for c in corsi for t in (c.tags or [])})
+        tag_disponibili = [{"slug": s, "label": s} for s in slugs]
+
+    valid_slugs = {t["slug"] for t in tag_disponibili}
 
     if request.method == "POST":
         email = validate_email_address((request.form.get("email") or "").strip())
@@ -178,8 +185,8 @@ def notifiche_corsi():
 
         nome = (request.form.get("nome") or "").strip()[:100]
         cognome = (request.form.get("cognome") or "").strip()[:100]
-        # Accept only tags that exist in the centralized list
-        tags_selezionati = [t for t in request.form.getlist("tags") if t in tag_disponibili]
+        # Accept only slugs that exist in the centralized list
+        tags_selezionati = [t for t in request.form.getlist("tags") if t in valid_slugs]
 
         lead = LeadMarketing.query.filter_by(email=email).first()
         if not lead:
