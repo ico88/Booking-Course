@@ -123,9 +123,43 @@ ok "Dipendenze aggiornate"
 chown -R "$APP_USER:$APP_USER" "$APP_DIR"
 grant_parent_traversal
 
-# ── Verifica .env ────────────────────────────────────────────
+# ── Verifica / ripristino .env ───────────────────────────────
 if [[ ! -f "$APP_DIR/.env" ]]; then
-  error ".env non trovato in $APP_DIR. Esegui prima l'installazione: sudo bash install_python.sh"
+  warn ".env mancante — rigenerazione automatica dai dati dell'installazione esistente..."
+
+  # Recupera dominio e SSL da nginx
+  NGINX_CONF="/etc/nginx/sites-available/${SERVICE_NAME}"
+  RECOVERED_DOMAIN=""
+  RECOVERED_SSL=false
+  if [[ -f "$NGINX_CONF" ]]; then
+    RECOVERED_DOMAIN="$(grep 'server_name' "$NGINX_CONF" | awk '{print $2}' | tr -d ';' | grep -v '^_$' | head -1 || true)"
+    grep -q 'listen 443\|ssl_certificate' "$NGINX_CONF" 2>/dev/null && RECOVERED_SSL=true || true
+  fi
+
+  NEW_SECRET="$(openssl rand -base64 32)"
+  if [[ -n "$RECOVERED_DOMAIN" && "$RECOVERED_SSL" == "true" ]]; then
+    RECOVERED_URL="https://$RECOVERED_DOMAIN"
+    RECOVERED_SECURE=true
+  elif [[ -n "$RECOVERED_DOMAIN" ]]; then
+    RECOVERED_URL="http://$RECOVERED_DOMAIN"
+    RECOVERED_SECURE=false
+  else
+    RECOVERED_URL="http://$(hostname -I | awk '{print $1}')"
+    RECOVERED_SECURE=false
+  fi
+
+  cat > "$APP_DIR/.env" <<EOF
+FLASK_ENV=production
+SECRET_KEY=$NEW_SECRET
+DATABASE_URL=sqlite:///$APP_DIR/booking.db
+APP_URL=$RECOVERED_URL
+APP_NAME=Gestione Corsi
+PORT=5000
+SESSION_COOKIE_SECURE=$RECOVERED_SECURE
+EOF
+  chown "$APP_USER:$APP_USER" "$APP_DIR/.env"
+  chmod 600 "$APP_DIR/.env"
+  ok ".env ricreato (URL: $RECOVERED_URL) — le impostazioni SMTP/pagamenti vanno riconfigurate nel pannello admin"
 fi
 
 # ── Migrazione DB ────────────────────────────────────────────
