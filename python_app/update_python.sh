@@ -23,6 +23,10 @@ if [[ -f "$_SERVICE_FILE" ]]; then
     error "WorkingDirectory nel servizio systemd non trovata o inesistente: '$APP_DIR'. Controlla $_SERVICE_FILE"
   fi
   info "APP_DIR dal servizio systemd: $APP_DIR"
+  if [[ "$APP_DIR" != /opt/* ]]; then
+    warn "L'app è installata in '$APP_DIR' (fuori da /opt)."
+    warn "Considera di reinstallare in /opt/booking-corsi per evitare problemi di permessi con nginx."
+  fi
 else
   APP_DIR="$(cd "$(dirname "$0")" && pwd)"
   info "Servizio non trovato, uso directory dello script: $APP_DIR"
@@ -67,13 +71,15 @@ ensure_service_user() {
 }
 
 grant_parent_traversal() {
+  # Only needed if app is installed outside /opt (e.g. under /home)
+  if [[ "$APP_DIR" == /opt/* ]]; then
+    return
+  fi
   local dir
   dir="$(dirname "$APP_DIR")"
-
   while [[ "$dir" != "/" && -n "$dir" ]]; do
     setfacl -m "u:${APP_USER}:--x" "$dir" 2>/dev/null || true
-    # nginx (www-data) needs traverse access to reach the static files
-    setfacl -m "u:www-data:--x" "$dir" 2>/dev/null || true
+    setfacl -m "u:www-data:--x"   "$dir" 2>/dev/null || true
     dir="$(dirname "$dir")"
   done
 }

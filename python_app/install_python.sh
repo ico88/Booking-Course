@@ -5,6 +5,11 @@ set -euo pipefail
 # install_python.sh — Installa l'app Python su VPS
 # Debian/Ubuntu, Python 3.11-3.13, SQLite, Nginx, Gunicorn
 # SSL Let's Encrypt via certbot
+#
+# Percorso consigliato:
+#   git clone https://github.com/ico88/Booking-Course /opt/booking-corsi
+#   cd /opt/booking-corsi/python_app
+#   sudo bash install_python.sh
 # ============================================================
 
 APP_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -51,20 +56,8 @@ ensure_service_user() {
     info "Utente servizio già esistente: $APP_USER"
   else
     info "Creazione utente servizio: $APP_USER"
-    useradd --system --home-dir "$APP_DIR" --shell /usr/sbin/nologin "$APP_USER"
+    useradd --system --no-create-home --shell /usr/sbin/nologin "$APP_USER"
   fi
-}
-
-grant_parent_traversal() {
-  local dir
-  dir="$(dirname "$APP_DIR")"
-
-  while [[ "$dir" != "/" && -n "$dir" ]]; do
-    setfacl -m "u:${APP_USER}:--x" "$dir" 2>/dev/null || true
-    # nginx (www-data) needs traverse access to reach the static files
-    setfacl -m "u:www-data:--x" "$dir" 2>/dev/null || true
-    dir="$(dirname "$dir")"
-  done
 }
 
 select_python() {
@@ -88,7 +81,18 @@ select_python() {
 }
 
 [[ $EUID -eq 0 ]] || error "Esegui come root: sudo bash install_python.sh"
-info "Utente servizio dedicato: $APP_USER"
+
+# ── Verifica percorso consigliato ────────────────────────────
+if [[ "$APP_DIR" != /opt/* ]]; then
+  warn "ATTENZIONE: stai installando in '$APP_DIR'."
+  warn "Il percorso consigliato è /opt/booking-corsi/python_app."
+  warn "Installare sotto /home può causare problemi di permessi con nginx."
+  echo ""
+  read -rp "[INPUT] Vuoi continuare comunque in '$APP_DIR'? [s/N]: " CONFIRM_PATH
+  [[ "${CONFIRM_PATH,,}" == "s" ]] || error "Installazione annullata. Clona il repo in /opt/booking-corsi e rilancia."
+fi
+
+info "Installazione in: $APP_DIR"
 
 # ── Dominio per SSL ──────────────────────────────────────────
 if [[ -z "$DOMAIN" ]]; then
@@ -106,7 +110,7 @@ fi
 info "Installazione dipendenze sistema..."
 apt-get update -qq
 apt-get install -y -qq \
-  gcc build-essential nginx curl cron certbot python3-certbot-nginx acl \
+  gcc build-essential nginx curl cron certbot python3-certbot-nginx \
   python3-pip python3-venv python3-dev \
   libjpeg-dev zlib1g-dev libpng-dev libwebp-dev libfreetype6-dev liblcms2-dev
 if command -v systemctl >/dev/null 2>&1; then
@@ -122,7 +126,7 @@ SELECTED_PYTHON="$(select_python)"
 if [[ -z "$SELECTED_PYTHON" ]]; then
   apt-get install -y -qq python3.12 python3.12-venv python3.12-dev || \
     apt-get install -y -qq python3.11 python3.11-venv python3.11-dev || \
-    error "Installa Python 3.11, 3.12 o 3.13 e rilancia lo script. Python 3.14 non è ancora supportato dalle dipendenze."
+    error "Installa Python 3.11, 3.12 o 3.13 e rilancia lo script."
   SELECTED_PYTHON="$(select_python)"
 fi
 [[ -n "$SELECTED_PYTHON" ]] || error "Nessun Python supportato trovato. Usa PYTHON_BIN=/percorso/python3.12 sudo -E bash install_python.sh"
@@ -179,10 +183,13 @@ else
 fi
 
 # ── Permessi ─────────────────────────────────────────────────
+# /opt è world-traversable (755) per default: nessun ACL hack necessario
 chown -R "$APP_USER:$APP_USER" "$APP_DIR"
-grant_parent_traversal
+chmod 750 "$APP_DIR"
+chmod 600 "$APP_DIR/.env"
 mkdir -p "$APP_DIR/app/static/uploads"
 chown -R "$APP_USER:$APP_USER" "$APP_DIR/app/static/uploads"
+# uploads deve essere leggibile da nginx
 chmod 755 "$APP_DIR/app/static/uploads"
 
 # ── Migrazione DB ────────────────────────────────────────────
@@ -317,7 +324,11 @@ if [[ "$USE_SSL" == "true" ]]; then
 else
   echo "  App: http://$(hostname -I | awk '{print $1}')"
 fi
-echo "  Database: SQLite ($APP_DIR/booking.db)"
-echo "  Admin: admin@example.com / Admin1234!"
+echo "  Directory: $APP_DIR"
+echo "  Database:  $APP_DIR/booking.db"
+echo "  Admin:     admin@example.com / Admin1234!"
 echo "  CAMBIA LA PASSWORD ADMIN SUBITO!"
+echo ""
+echo "  Per aggiornare in futuro:"
+echo "    cd $APP_DIR && sudo git pull && sudo bash update_python.sh"
 echo "========================================================"
