@@ -109,10 +109,15 @@ ok "Dipendenze aggiornate"
 chown -R "$APP_USER:$APP_USER" "$APP_DIR"
 grant_parent_traversal
 
+# ── Verifica .env ────────────────────────────────────────────
+if [[ ! -f "$APP_DIR/.env" ]]; then
+  error ".env non trovato in $APP_DIR. Esegui prima l'installazione: sudo bash install_python.sh"
+fi
+
 # ── Migrazione DB ────────────────────────────────────────────
 info "Migrazione database..."
 cd "$APP_DIR"
-export $(grep -v '^#' .env | xargs)
+# Flask loads .env via python-dotenv in config.py — no need to export here
 sudo -u "$APP_USER" "$VENV_DIR/bin/python" -m flask --app wsgi:app db migrate -m "auto" 2>/dev/null || true
 sudo -u "$APP_USER" "$VENV_DIR/bin/python" -m flask --app wsgi:app db upgrade
 ok "Database aggiornato"

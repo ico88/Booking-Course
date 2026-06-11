@@ -185,7 +185,7 @@ chown -R "$APP_USER:$APP_USER" "$APP_DIR/app/static/uploads"
 # ── Migrazione DB ────────────────────────────────────────────
 info "Migrazione database..."
 cd "$APP_DIR"
-export $(grep -v '^#' .env | xargs)
+# Flask loads .env via python-dotenv in config.py — no need to export here
 
 if [[ ! -d "migrations" || ! -f "migrations/env.py" ]]; then
   sudo -u "$APP_USER" "$VENV_DIR/bin/python" -m flask --app wsgi:app db init
