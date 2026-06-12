@@ -65,6 +65,35 @@
                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
       </div>
     </div>
+    <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+      <h2 class="font-semibold text-gray-800">Hero page pubblica <span class="text-xs font-normal text-gray-400">(testi della sezione iniziale)</span></h2>
+      <div>
+        <label class="block text-sm font-medium mb-1">Badge sopra il titolo</label>
+        <input type="text" name="hero_badge" value="{{ settings.get('hero_badge', '') }}" maxlength="80"
+               placeholder="Es. Portale Formazione"
+               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Sottotitolo</label>
+        <textarea name="hero_subtitle" maxlength="300" rows="2"
+                  placeholder="Es. Benvenuto nel portale di formazione professionale..."
+                  class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">{{ settings.get('hero_subtitle', '') }}</textarea>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium mb-1">Testo pulsante principale</label>
+          <input type="text" name="hero_btn_primary" value="{{ settings.get('hero_btn_primary', '') }}" maxlength="50"
+                 placeholder="Es. Accedi al portale"
+                 class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Testo pulsante secondario</label>
+          <input type="text" name="hero_btn_secondary" value="{{ settings.get('hero_btn_secondary', '') }}" maxlength="50"
+                 placeholder="Es. Scopri i corsi"
+                 class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+        </div>
+      </div>
+    </div>
     <button type="submit" class="w-full bg-blue-700 text-white py-2.5 rounded-xl font-medium hover:bg-blue-800">Salva</button>
   </form>
 

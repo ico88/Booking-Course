@@ -133,6 +133,10 @@ def create_app(config_name=None):
             "app_version": app.config.get("APP_VERSION", "—"),
             "impostazione_ragione_sociale": Impostazione.get("ragione_sociale") or "",
             "impostazione_app_url": (Impostazione.get("app_url") or "").rstrip("/"),
+            "hero_badge": Impostazione.get("hero_badge") or "Portale Formazione",
+            "hero_subtitle": Impostazione.get("hero_subtitle") or "Benvenuto nel portale di formazione professionale. Accedi per gestire le tue iscrizioni, consultare il calendario e scaricare gli attestati.",
+            "hero_btn_primary": Impostazione.get("hero_btn_primary") or "Accedi al portale",
+            "hero_btn_secondary": Impostazione.get("hero_btn_secondary") or "Scopri i corsi",
         }
 
     return app

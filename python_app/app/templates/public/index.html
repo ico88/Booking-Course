@@ -149,7 +149,7 @@
       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
       </svg>
-      Portale Formazione
+      {{ hero_badge }}
     </div>
 
     <h1 class="hero-title text-4xl md:text-5xl font-extrabold tracking-tight mb-5 leading-tight">
@@ -157,7 +157,7 @@
     </h1>
 
     <p class="text-lg text-gray-500 mb-10 max-w-xl mx-auto leading-relaxed">
-      Benvenuto nel portale di formazione professionale. Accedi per gestire le tue iscrizioni, consultare il calendario e scaricare gli attestati.
+      {{ hero_subtitle }}
     </p>
 
     <div class="flex flex-wrap gap-4 justify-center">
@@ -170,7 +170,7 @@
       {% else %}
         <a href="{{ url_for('auth.login') }}"
            class="hero-btn-primary inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold shadow-md hover:shadow-lg transition-all">
-          Accedi al portale
+          {{ hero_btn_primary }}
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </a>
         <a href="{{ url_for('auth.registrazione') }}"
@@ -180,7 +180,7 @@
       {% endif %}
       <a href="#corsi"
          class="inline-flex items-center gap-2 bg-white text-gray-600 px-6 py-3 rounded-xl font-semibold border border-gray-200 hover:border-gray-300 shadow-sm transition-all">
-        Scopri i corsi
+        {{ hero_btn_secondary }}
       </a>
     </div>
   </div>
