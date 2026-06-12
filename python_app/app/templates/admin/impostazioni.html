@@ -37,6 +37,12 @@
         <input type="email" name="email_segreteria" value="{{ settings.get('email_segreteria', '') }}" maxlength="200"
                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
       </div>
+      <div class="flex items-center gap-3 pt-1">
+        <input type="checkbox" name="navbar_hide_name" id="navbar_hide_name" value="1"
+               {{ 'checked' if settings.get('navbar_hide_name') == '1' }}
+               class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+        <label for="navbar_hide_name" class="text-sm text-gray-700 cursor-pointer">Nascondi nome applicazione nell'header</label>
+      </div>
     </div>
     <button type="submit" class="w-full bg-blue-700 text-white py-2.5 rounded-xl font-medium hover:bg-blue-800">Salva</button>
   </form>

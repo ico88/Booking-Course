@@ -672,7 +672,7 @@ _SENSITIVE_KEYS = {"smtp_password", "stripe_secret_key", "paypal_client_secret",
 _MASK = "••••••••"
 
 _TAB_KEYS = {
-    "generale":  ["app_name", "app_url", "email_segreteria"],
+    "generale":  ["app_name", "app_url", "email_segreteria", "navbar_hide_name"],
     "aspetto":   ["color_scheme"],
     "email":     ["smtp_host", "smtp_port", "smtp_user", "smtp_password", "smtp_from_name"],
     "pagamenti": ["stripe_publishable_key", "stripe_secret_key",
@@ -689,7 +689,11 @@ def impostazioni():
     if request.method == "POST":
         saved_tab = request.form.get("_tab", "generale")
         keys = _TAB_KEYS.get(saved_tab, _TAB_KEYS["generale"])
+        _checkbox_keys = {"navbar_hide_name"}
         for key in keys:
+            if key in _checkbox_keys:
+                Impostazione.set(key, "1" if request.form.get(key) else "0")
+                continue
             val = request.form.get(key, "").strip()[:2000]
             if val == _MASK:
                 continue
