@@ -30,34 +30,32 @@ def _html_wrapper(content: str, app_name: str, app_url: str, logo_url: str = "",
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 </head>
-<body style="margin:0;padding:0;background-color:#111111;font-family:Arial,Helvetica,sans-serif">
-<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#111111;padding:32px 16px">
+<body style="margin:0;padding:0;background-color:#f9fafb;font-family:Arial,Helvetica,sans-serif">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f9fafb;padding:32px 16px">
   <tr><td align="center">
-    <table width="100%" style="max-width:600px" cellpadding="0" cellspacing="0">
+    <table width="100%" style="max-width:600px;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.1)" cellpadding="0" cellspacing="0">
 
       <!-- HEADER -->
-      <tr><td style="background:linear-gradient(135deg,#6d28d9 0%,#4f46e5 50%,#2563eb 100%);border-radius:16px 16px 0 0;padding:32px 40px;text-align:center">
+      <tr><td style="background-color:#1d4ed8;padding:24px 32px;text-align:center">
         {logo_html}
-        <div style="color:#ffffff;font-size:22px;font-weight:700;letter-spacing:-0.3px">{app_name}</div>
+        <div style="color:#ffffff;font-size:20px;font-weight:700">{app_name}</div>
       </td></tr>
 
       <!-- BODY -->
-      <tr><td style="background-color:#1c1c1e;padding:40px;color:#e5e7eb;font-size:15px;line-height:1.7">
+      <tr><td style="background-color:#ffffff;padding:32px;color:#374151;font-size:15px;line-height:1.7">
         {content}
       </td></tr>
 
       <!-- FOOTER -->
-      <tr><td style="background-color:#18181b;border-radius:0 0 16px 16px;padding:24px 40px;text-align:center">
-        <div style="font-size:15px;font-weight:700;color:#ffffff;margin-bottom:4px">{app_name}</div>
-        <div style="font-size:12px;color:#71717a;margin-bottom:16px">Sistema di Gestione Corsi e Formazione</div>
-        <div style="margin-bottom:16px">
-          <a href="{app_url}" style="color:#f472b6;text-decoration:none;font-size:13px;font-weight:500">Sito Web</a>
-          <span style="color:#3f3f46;margin:0 8px">|</span>
-          <a href="{app_url}/dashboard" style="color:#f472b6;text-decoration:none;font-size:13px;font-weight:500">Portale</a>
-          <span style="color:#3f3f46;margin:0 8px">|</span>
-          <a href="{app_url}/dashboard" style="color:#f472b6;text-decoration:none;font-size:13px;font-weight:500">Dashboard</a>
+      <tr><td style="background-color:#f3f4f6;padding:20px 32px;text-align:center">
+        <div style="margin-bottom:12px">
+          <a href="{app_url}" style="color:#2563eb;text-decoration:none;font-size:13px;font-weight:500">Sito Web</a>
+          <span style="color:#d1d5db;margin:0 8px">|</span>
+          <a href="{app_url}/dashboard" style="color:#2563eb;text-decoration:none;font-size:13px;font-weight:500">Portale</a>
+          <span style="color:#d1d5db;margin:0 8px">|</span>
+          <a href="{app_url}/dashboard" style="color:#2563eb;text-decoration:none;font-size:13px;font-weight:500">Dashboard</a>
         </div>
-        <div style="font-size:11px;color:#52525b;line-height:1.6">
+        <div style="font-size:11px;color:#9ca3af;line-height:1.6">
           Questa email è stata inviata da {app_name}.<br>
           Se hai ricevuto questa email per errore, ti preghiamo di ignorarla.<br>
           &copy; 2026 {app_name}. Tutti i diritti riservati.
@@ -122,56 +120,56 @@ def _legal_block(legal: dict, app_url: str) -> str:
         return ""
     lines = []
     if rs:
-        lines.append(f'<strong style="color:#a1a1aa">{rs}</strong>')
+        lines.append(f'<strong style="color:#374151">{rs}</strong>')
     if piva:
         lines.append(f'P.IVA: {piva}')
     if addr:
         lines.append(addr)
     content = "<br>".join(lines)
     return (
-        f'<div style="border-top:1px solid #27272a;margin-top:20px;padding-top:16px">'
-        f'<div style="font-size:12px;color:#71717a;line-height:1.8;margin-bottom:10px">{content}</div>'
+        f'<div style="border-top:1px solid #e5e7eb;margin-top:16px;padding-top:14px">'
+        f'<div style="font-size:12px;color:#6b7280;line-height:1.8;margin-bottom:8px">{content}</div>'
         f'<div>'
-        f'<a href="{app_url}/privacy-policy" style="color:#7c3aed;font-size:12px;text-decoration:none">Privacy Policy</a>'
-        f'<span style="color:#3f3f46;margin:0 6px">|</span>'
-        f'<a href="{app_url}/termini-e-condizioni" style="color:#7c3aed;font-size:12px;text-decoration:none">Termini di Servizio</a>'
+        f'<a href="{app_url}/privacy-policy" style="color:#2563eb;font-size:12px;text-decoration:none">Privacy Policy</a>'
+        f'<span style="color:#d1d5db;margin:0 6px">|</span>'
+        f'<a href="{app_url}/termini-e-condizioni" style="color:#2563eb;font-size:12px;text-decoration:none">Termini di Servizio</a>'
         f'</div></div>'
     )
 
 
 def _btn(url: str, label: str) -> str:
     return (
-        f'<div style="text-align:center;margin:28px 0">'
-        f'<a href="{url}" style="display:inline-block;background:#7c3aed;color:#ffffff;'
-        f'padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:700;'
-        f'font-size:15px;letter-spacing:0.2px">{label}</a></div>'
+        f'<div style="margin:24px 0">'
+        f'<a href="{url}" style="display:inline-block;background:#1d4ed8;color:#ffffff !important;'
+        f'padding:12px 24px;border-radius:6px;text-decoration:none !important;font-weight:600;'
+        f'font-size:15px">{label}</a></div>'
     )
 
 
 def _info_box(html: str) -> str:
     return (
-        f'<div style="background:#27272a;border:1px solid #3f3f46;border-radius:10px;'
-        f'padding:16px 20px;margin:20px 0;font-size:14px;color:#d4d4d8;line-height:1.7">{html}</div>'
+        f'<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;'
+        f'padding:16px;margin:16px 0;font-size:14px;color:#374151;line-height:1.7">{html}</div>'
     )
 
 
 def _h2(text: str) -> str:
-    return f'<h2 style="color:#ffffff;font-size:22px;font-weight:700;margin:0 0 16px 0">{text}</h2>'
+    return f'<h2 style="color:#111827;font-size:20px;font-weight:700;margin:0 0 16px 0">{text}</h2>'
 
 
 def _p(text: str) -> str:
-    return f'<p style="color:#a1a1aa;font-size:14px;margin:0 0 12px 0;line-height:1.7">{text}</p>'
+    return f'<p style="color:#374151;font-size:14px;margin:0 0 12px 0;line-height:1.7">{text}</p>'
 
 
 def _small(text: str) -> str:
-    return f'<p style="color:#71717a;font-size:12px;margin:20px 0 0 0;line-height:1.6">{text}</p>'
+    return f'<p style="color:#6b7280;font-size:12px;margin:20px 0 0 0;line-height:1.6">{text}</p>'
 
 
 def invia_email_benvenuto(utente):
     app_name, app_url, logo_url, legal = _ctx()
     body = (
         _h2(f"Benvenuto, {utente.nome}!")
-        + _p(f"Il tuo account è stato creato con successo su <strong style='color:#e5e7eb'>{app_name}</strong>.")
+        + _p(f"Il tuo account è stato creato con successo su <strong style='color:#111827'>{app_name}</strong>.")
         + _p("Puoi accedere alla tua area personale cliccando il pulsante qui sotto:")
         + _btn(f"{app_url}/dashboard", "Vai alla dashboard")
     )
@@ -182,7 +180,7 @@ def invia_email_verifica_account(utente, link: str):
     app_name, app_url, logo_url, legal = _ctx()
     body = (
         _h2(f"Verifica il tuo account")
-        + _p(f"Ciao <strong style='color:#e5e7eb'>{utente.nome}</strong>,")
+        + _p(f"Ciao <strong style='color:#111827'>{utente.nome}</strong>,")
         + _p(f"Grazie per esserti registrato al nostro sistema. Per completare la registrazione, clicca sul pulsante qui sotto:")
         + _btn(link, "Verifica Account")
         + _p(f"Se il pulsante non funziona, copia e incolla questo link nel browser:")
@@ -200,16 +198,16 @@ def invia_email_prenotazione(prenotazione):
     scadenza = prenotazione.scadenza_pagamento.strftime("%d/%m/%Y %H:%M") if prenotazione.scadenza_pagamento else "N/D"
     coord = c.coordinate_bancarie or ""
     riepilogo = (
-        f"Corso: <strong style='color:#e5e7eb'>{c.titolo}</strong><br>"
+        f"Corso: <strong style='color:#111827'>{c.titolo}</strong><br>"
         f"Posti: {prenotazione.numero_posti}<br>"
-        f"Importo totale: <strong style='color:#e5e7eb'>€ {importo:.2f}</strong><br>"
+        f"Importo totale: <strong style='color:#111827'>€ {importo:.2f}</strong><br>"
         f"Scadenza pagamento: {scadenza}"
     )
     body = (
         _h2("Prenotazione ricevuta")
-        + _p(f"Ciao <strong style='color:#e5e7eb'>{u.nome}</strong>, la tua prenotazione per <strong style='color:#e5e7eb'>{c.titolo}</strong> è stata registrata.")
+        + _p(f"Ciao <strong style='color:#111827'>{u.nome}</strong>, la tua prenotazione per <strong style='color:#111827'>{c.titolo}</strong> è stata registrata.")
         + _info_box(riepilogo)
-        + (_info_box(f"<strong style='color:#e5e7eb'>Dati bonifico:</strong><br><code style='font-size:13px;color:#a1a1aa'>{coord}</code>") if coord else "")
+        + (_info_box(f"<strong style='color:#111827'>Dati bonifico:</strong><br><code style='font-size:13px;color:#a1a1aa'>{coord}</code>") if coord else "")
         + _btn(f"{app_url}/dashboard/prenotazioni/{prenotazione.id}", "Gestisci prenotazione")
     )
     send_email(u.email, f"Prenotazione per {c.titolo}", _html_wrapper(body, app_name, app_url, logo_url, legal))
@@ -221,7 +219,7 @@ def invia_email_contabile_caricata(prenotazione):
     c = prenotazione.corso
     body = (
         _h2("Pagamento ricevuto")
-        + _p(f"Ciao <strong style='color:#e5e7eb'>{u.nome}</strong>, abbiamo ricevuto la tua ricevuta di pagamento per <strong style='color:#e5e7eb'>{c.titolo}</strong>.")
+        + _p(f"Ciao <strong style='color:#111827'>{u.nome}</strong>, abbiamo ricevuto la tua ricevuta di pagamento per <strong style='color:#111827'>{c.titolo}</strong>.")
         + _p("La segreteria verificherà il pagamento e confermerà la tua iscrizione a breve.")
         + _btn(f"{app_url}/dashboard/prenotazioni/{prenotazione.id}", "Visualizza prenotazione")
     )
@@ -234,7 +232,7 @@ def invia_email_conferma_prenotazione(prenotazione):
     c = prenotazione.corso
     body = (
         _h2("Iscrizione confermata!")
-        + _p(f"Ciao <strong style='color:#e5e7eb'>{u.nome}</strong>, la tua iscrizione al corso <strong style='color:#e5e7eb'>{c.titolo}</strong> è stata <strong style='color:#4ade80'>confermata</strong>.")
+        + _p(f"Ciao <strong style='color:#111827'>{u.nome}</strong>, la tua iscrizione al corso <strong style='color:#111827'>{c.titolo}</strong> è stata <strong style='color:#16a34a'>confermata</strong>.")
         + _p("Ti aspettiamo!")
         + _btn(f"{app_url}/dashboard/prenotazioni/{prenotazione.id}", "Dettagli iscrizione")
     )
@@ -247,7 +245,7 @@ def invia_email_attestato(prenotazione):
     c = prenotazione.corso
     body = (
         _h2("Il tuo attestato è disponibile")
-        + _p(f"Ciao <strong style='color:#e5e7eb'>{u.nome}</strong>, il tuo attestato di partecipazione al corso <strong style='color:#e5e7eb'>{c.titolo}</strong> è ora disponibile.")
+        + _p(f"Ciao <strong style='color:#111827'>{u.nome}</strong>, il tuo attestato di partecipazione al corso <strong style='color:#111827'>{c.titolo}</strong> è ora disponibile.")
         + _btn(f"{app_url}/dashboard/prenotazioni/{prenotazione.id}", "Scarica attestato")
     )
     send_email(u.email, f"Attestato disponibile - {c.titolo}", _html_wrapper(body, app_name, app_url, logo_url, legal))
@@ -257,7 +255,7 @@ def invia_email_reset_password(utente, link: str):
     app_name, app_url, logo_url, legal = _ctx()
     body = (
         _h2("Recupero password")
-        + _p(f"Ciao <strong style='color:#e5e7eb'>{utente.nome}</strong>, hai richiesto il recupero della password.")
+        + _p(f"Ciao <strong style='color:#111827'>{utente.nome}</strong>, hai richiesto il recupero della password.")
         + _p("Clicca il pulsante qui sotto per impostare una nuova password (il link scade tra 1 ora):")
         + _btn(link, "Reimposta password")
         + _p(f"Se il pulsante non funziona, copia e incolla questo link nel browser:")
@@ -288,7 +286,7 @@ def invia_email_marketing(lead, corso, unsub_token: str):
         full_img = corso.immagine_url if corso.immagine_url.startswith("http") else f"{app_url}{corso.immagine_url}"
         img_html = f'<img src="{full_img}" style="max-width:100%;border-radius:10px;margin:0 0 20px 0;display:block" alt="">'
     riepilogo = (
-        f"Data: <strong style='color:#e5e7eb'>{data_str}</strong><br>"
+        f"Data: <strong style='color:#111827'>{data_str}</strong><br>"
         f"Luogo: {corso.luogo or 'Da definire'}<br>"
         f"Costo: {corso.costo_formattato}"
     )
@@ -309,7 +307,7 @@ def invia_email_verifica_lead(lead, verifica_url: str):
     app_name, app_url, logo_url, legal = _ctx()
     body = (
         _h2("Conferma la tua email")
-        + _p(f"Ciao{' <strong style=\"color:#e5e7eb\">' + lead.nome + '</strong>' if lead.nome else ''}! Clicca il pulsante per confermare la tua iscrizione alle notifiche di <strong style='color:#e5e7eb'>{app_name}</strong>.")
+        + _p(f"Ciao{' <strong style=\"color:#e5e7eb\">' + lead.nome + '</strong>' if lead.nome else ''}! Clicca il pulsante per confermare la tua iscrizione alle notifiche di <strong style='color:#111827'>{app_name}</strong>.")
         + _btn(verifica_url, "Conferma email")
         + _small("Il link scade tra 7 giorni.")
     )
