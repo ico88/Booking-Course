@@ -307,7 +307,7 @@ def invia_email_verifica_lead(lead, verifica_url: str):
     app_name, app_url, logo_url, legal = _ctx()
     body = (
         _h2("Conferma la tua email")
-        + _p(f"Ciao{' <strong style=\"color:#e5e7eb\">' + lead.nome + '</strong>' if lead.nome else ''}! Clicca il pulsante per confermare la tua iscrizione alle notifiche di <strong style='color:#111827'>{app_name}</strong>.")
+        + _p(f"Ciao{(' <strong>' + lead.nome + '</strong>') if lead.nome else ''}! Clicca il pulsante per confermare la tua iscrizione alle notifiche di <strong>{app_name}</strong>.")
         + _btn(verifica_url, "Conferma email")
         + _small("Il link scade tra 7 giorni.")
     )
