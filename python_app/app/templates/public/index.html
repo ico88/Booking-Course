@@ -103,32 +103,37 @@
 
 {% block head %}
 <style>
-.hero-section {
-  background: linear-gradient(135deg, {{ _p.bg1 }} 0%, {{ _p.bg2 }} 45%, {{ _p.bg3 }} 100%);
-}
-.hero-title {
-  background: linear-gradient(135deg, {{ _p.h1 }}, {{ _p.h2 }});
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-.hero-btn-primary {
-  background: {{ _p.btn }};
-  color: #ffffff !important;
-}
-.hero-btn-primary:hover { background: {{ _p.btnhov }}; }
-.hero-badge {
-  background: rgba(255,255,255,0.8);
-  border: 1px solid {{ _p.h1 }}30;
-  color: {{ _p.h1 }};
-}
-.stats-value { color: {{ _p.h1 }}; }
-.notifiche-banner {
-  background: {{ _p.badge_bg }};
-  border: 1px solid {{ _p.h1 }}20;
-}
-.notifiche-title { color: {{ _p.h2 }}; }
-.notifiche-text { color: {{ _p.h1 }}; }
+{% if color_scheme == 'rosso' %}
+.hero-section{background:linear-gradient(135deg,#fef2f2 0%,#fee2e2 45%,#fce7f3 100%)}
+.hero-title{background:linear-gradient(135deg,#dc2626,#991b1b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-btn-primary{background:#dc2626 !important;color:#ffffff !important}
+.hero-btn-primary:hover{background:#b91c1c !important}
+.hero-badge{background:rgba(255,255,255,0.8);border:1px solid rgba(220,38,38,0.25);color:#dc2626}
+.stats-value{color:#dc2626}
+.notifiche-banner{background:rgba(220,38,38,0.06);border:1px solid rgba(220,38,38,0.15)}
+.notifiche-title{color:#991b1b}
+.notifiche-text{color:#dc2626}
+{% elif color_scheme == 'verde' %}
+.hero-section{background:linear-gradient(135deg,#f0fdf4 0%,#dcfce7 45%,#d1fae5 100%)}
+.hero-title{background:linear-gradient(135deg,#16a34a,#14532d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-btn-primary{background:#16a34a !important;color:#ffffff !important}
+.hero-btn-primary:hover{background:#15803d !important}
+.hero-badge{background:rgba(255,255,255,0.8);border:1px solid rgba(22,163,74,0.25);color:#16a34a}
+.stats-value{color:#16a34a}
+.notifiche-banner{background:rgba(22,163,74,0.06);border:1px solid rgba(22,163,74,0.15)}
+.notifiche-title{color:#14532d}
+.notifiche-text{color:#16a34a}
+{% else %}
+.hero-section{background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 45%,#ede9fe 100%)}
+.hero-title{background:linear-gradient(135deg,#2563eb,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-btn-primary{background:#1d4ed8 !important;color:#ffffff !important}
+.hero-btn-primary:hover{background:#1e40af !important}
+.hero-badge{background:rgba(255,255,255,0.8);border:1px solid rgba(37,99,235,0.25);color:#2563eb}
+.stats-value{color:#2563eb}
+.notifiche-banner{background:rgba(37,99,235,0.06);border:1px solid rgba(37,99,235,0.15)}
+.notifiche-title{color:#1e40af}
+.notifiche-text{color:#2563eb}
+{% endif %}
 </style>
 {% endblock %}
 
@@ -138,7 +143,7 @@
 
 {# ═══════════════════════════════════════ HERO ═══════════════════════════════════════ #}
 <section class="hero-section">
-  <div class="max-w-3xl mx-auto px-6 py-24 text-center">
+  <div class="max-w-3xl mx-auto px-6 py-14 text-center">
 
     <div class="hero-badge inline-flex items-center gap-2 text-xs font-semibold px-4 py-1.5 rounded-full mb-6 shadow-sm">
       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -147,7 +152,7 @@
       Portale Formazione
     </div>
 
-    <h1 class="hero-title text-5xl md:text-6xl font-extrabold tracking-tight mb-6 leading-tight">
+    <h1 class="hero-title text-4xl md:text-5xl font-extrabold tracking-tight mb-5 leading-tight">
       {{ app_name }}
     </h1>
 
@@ -158,23 +163,23 @@
     <div class="flex flex-wrap gap-4 justify-center">
       {% if current_user.is_authenticated %}
         <a href="{{ url_for('dashboard.index') }}"
-           class="hero-btn-primary inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold shadow-md hover:shadow-lg transition-all">
+           class="hero-btn-primary inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold shadow-md hover:shadow-lg transition-all">
           La mia area
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </a>
       {% else %}
         <a href="{{ url_for('auth.login') }}"
-           class="hero-btn-primary inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold shadow-md hover:shadow-lg transition-all">
+           class="hero-btn-primary inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold shadow-md hover:shadow-lg transition-all">
           Accedi al portale
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </a>
         <a href="{{ url_for('auth.registrazione') }}"
-           class="inline-flex items-center gap-2 bg-white text-gray-700 px-7 py-3.5 rounded-xl font-semibold border border-gray-200 hover:border-gray-300 shadow-sm transition-all">
+           class="inline-flex items-center gap-2 bg-white text-gray-700 px-6 py-3 rounded-xl font-semibold border border-gray-200 hover:border-gray-300 shadow-sm transition-all">
           Prima registrazione
         </a>
       {% endif %}
       <a href="#corsi"
-         class="inline-flex items-center gap-2 bg-white text-gray-600 px-7 py-3.5 rounded-xl font-semibold border border-gray-200 hover:border-gray-300 shadow-sm transition-all">
+         class="inline-flex items-center gap-2 bg-white text-gray-600 px-6 py-3 rounded-xl font-semibold border border-gray-200 hover:border-gray-300 shadow-sm transition-all">
         Scopri i corsi
       </a>
     </div>
