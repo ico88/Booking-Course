@@ -672,7 +672,8 @@ _SENSITIVE_KEYS = {"smtp_password", "stripe_secret_key", "paypal_client_secret",
 _MASK = "••••••••"
 
 _TAB_KEYS = {
-    "generale":  ["app_name", "app_url", "email_segreteria", "navbar_hide_name"],
+    "generale":  ["app_name", "app_url", "email_segreteria", "navbar_hide_name",
+                   "ragione_sociale", "partita_iva", "indirizzo_sede"],
     "aspetto":   ["color_scheme"],
     "email":     ["smtp_host", "smtp_port", "smtp_user", "smtp_password", "smtp_from_name"],
     "pagamenti": ["stripe_publishable_key", "stripe_secret_key",
