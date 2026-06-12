@@ -1,5 +1,17 @@
 {% extends "base.html" %}
-{% block title %}Corsi disponibili{% endblock %}
+{% block title %}{{ app_name }}{% endblock %}
+
+{# ── Palette per hero/gradiente in base allo schema colori ── #}
+{% set _pal = {
+  'rosso': {'h1': '#dc2626', 'h2': '#991b1b', 'bg1': '#fef2f2', 'bg2': '#fee2e2', 'bg3': '#fce7f3',
+            'btn': '#dc2626', 'btnhov': '#b91c1c', 'badge_bg': 'rgba(220,38,38,0.08)', 'badge_c': '#b91c1c'},
+  'verde': {'h1': '#16a34a', 'h2': '#14532d', 'bg1': '#f0fdf4', 'bg2': '#dcfce7', 'bg3': '#d1fae5',
+            'btn': '#16a34a', 'btnhov': '#15803d', 'badge_bg': 'rgba(22,163,74,0.08)', 'badge_c': '#15803d'},
+} %}
+{% set _p = _pal.get(color_scheme, {
+  'h1': '#2563eb', 'h2': '#7c3aed', 'bg1': '#eff6ff', 'bg2': '#dbeafe', 'bg3': '#ede9fe',
+  'btn': '#1d4ed8', 'btnhov': '#1e40af', 'badge_bg': 'rgba(37,99,235,0.08)', 'badge_c': '#1d4ed8'
+}) %}
 
 {% macro badge(text, color) %}
   <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
@@ -14,7 +26,8 @@
 {% set posti_liberi = corso.posti_disponibili if corso.posti_totali else None %}
 {% set perc = [100, ((corso.posti_occupati or 0) * 100 // corso.posti_totali)]|min if corso.posti_totali else 0 %}
 <a href="{{ url_for('public.corso_dettaglio', corso_id=corso.id) }}"
-   class="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all overflow-hidden flex flex-col {{ 'opacity-60' if stato == 'passato' }}">
+   class="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col {{ 'opacity-60' if stato == 'passato' }}"
+   style="{{ 'border-color:' + _p.h1 + '40' if stato != 'passato' else '' }}">
 
   {% if corso.immagine_url %}
     <div class="h-44 overflow-hidden">
@@ -24,7 +37,7 @@
   {% else %}
     {% set _ph_colors = {'rosso': ('#dc2626','#991b1b'), 'verde': ('#16a34a','#14532d')} %}
     {% set _c1, _c2 = _ph_colors.get(color_scheme, ('#2563eb','#1e3a8a')) %}
-    <div class="h-32 flex items-center justify-center shrink-0"
+    <div class="h-44 flex items-center justify-center shrink-0"
          style="background:linear-gradient(135deg,{{ _c1 }},{{ _c2 }})">
       <svg class="w-12 h-12" style="color:rgba(255,255,255,0.5)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
@@ -34,16 +47,11 @@
 
   <div class="p-5 flex flex-col flex-1">
     <div class="flex items-start justify-between gap-2 mb-2">
-      <h3 class="font-semibold text-gray-900 text-base leading-tight group-hover:text-blue-700 transition-colors">{{ corso.titolo }}</h3>
-      {% if stato == 'passato' %}
-        {{ badge('Terminato', 'gray') }}
-      {% elif stato == 'completo' %}
-        {{ badge('Completo', 'red') }}
-      {% elif posti_liberi is not none and posti_liberi <= 3 %}
-        {{ badge('Ultimi posti', 'amber') }}
-      {% else %}
-        {{ badge('Disponibile', 'green') }}
-      {% endif %}
+      <h3 class="font-semibold text-gray-900 text-base leading-tight group-hover:transition-colors" style="group-hover:color:{{ _p.h1 }}">{{ corso.titolo }}</h3>
+      {% if stato == 'passato' %}{{ badge('Terminato', 'gray') }}
+      {% elif stato == 'completo' %}{{ badge('Completo', 'red') }}
+      {% elif posti_liberi is not none and posti_liberi <= 3 %}{{ badge('Ultimi posti', 'amber') }}
+      {% else %}{{ badge('Disponibile', 'green') }}{% endif %}
     </div>
 
     <div class="space-y-1.5 text-sm text-gray-600 mb-4">
@@ -61,11 +69,9 @@
       {% endif %}
       <div class="flex items-center gap-2">
         <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-        <span>
-          {% if stato == 'completo' %}Tutti i posti occupati
+        <span>{% if stato == 'completo' %}Tutti i posti occupati
           {% elif posti_liberi is not none %}{{ posti_liberi }} posto{{ 'i' if posti_liberi != 1 }} disponibili
-          {% else %}Posti illimitati{% endif %}
-        </span>
+          {% else %}Posti illimitati{% endif %}</span>
       </div>
     </div>
 
@@ -95,64 +101,151 @@
 </a>
 {% endmacro %}
 
+{% block main_class %}{% endblock %}
+
 {% block content %}
 
-{% set tot = corsi_aperti|length + corsi_completi|length + corsi_passati|length %}
+{# ═══════════════════════════════════════ HERO ═══════════════════════════════════════ #}
+<section style="background:linear-gradient(135deg,{{ _p.bg1 }} 0%,{{ _p.bg2 }} 45%,{{ _p.bg3 }} 100%)">
+  <div class="max-w-3xl mx-auto px-6 py-24 text-center">
 
-{% if tot == 0 %}
-<div class="text-center py-24 text-gray-400">
-  <svg class="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-  <p class="text-lg font-semibold text-gray-500">Nessun corso disponibile al momento</p>
-  <p class="text-sm mt-1">Torna presto, nuovi corsi saranno pubblicati a breve.</p>
+    <div class="inline-flex items-center gap-2 border text-xs font-semibold px-4 py-1.5 rounded-full mb-6 shadow-sm"
+         style="background:rgba(255,255,255,0.7);border-color:{{ _p.h1 }}30;color:{{ _p.h1 }}">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+      </svg>
+      Portale Formazione
+    </div>
+
+    <h1 class="text-5xl md:text-6xl font-extrabold tracking-tight mb-6 leading-tight"
+        style="background:linear-gradient(135deg,{{ _p.h1 }},{{ _p.h2 }});-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">
+      {{ app_name }}
+    </h1>
+
+    <p class="text-lg text-gray-500 mb-10 max-w-xl mx-auto leading-relaxed">
+      Benvenuto nel portale di formazione professionale. Accedi per gestire le tue iscrizioni, consultare il calendario e scaricare gli attestati.
+    </p>
+
+    <div class="flex flex-wrap gap-4 justify-center">
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('dashboard.index') }}"
+           class="inline-flex items-center gap-2 text-white px-7 py-3.5 rounded-xl font-semibold shadow-md hover:shadow-lg transition-all"
+           style="background:{{ _p.btn }}">
+          La mia area
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </a>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}"
+           class="inline-flex items-center gap-2 text-white px-7 py-3.5 rounded-xl font-semibold shadow-md hover:shadow-lg transition-all"
+           style="background:{{ _p.btn }}">
+          Accedi al portale
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </a>
+        <a href="{{ url_for('auth.registrazione') }}"
+           class="inline-flex items-center gap-2 bg-white text-gray-700 px-7 py-3.5 rounded-xl font-semibold border border-gray-200 hover:border-gray-300 shadow-sm transition-all">
+          Prima registrazione
+        </a>
+      {% endif %}
+      <a href="#corsi"
+         class="inline-flex items-center gap-2 bg-white text-gray-600 px-7 py-3.5 rounded-xl font-semibold border border-gray-200 hover:border-gray-300 shadow-sm transition-all">
+        Scopri i corsi
+      </a>
+    </div>
+  </div>
+</section>
+
+{# ═══════════════════════════════════════ STATS BAR ══════════════════════════════════ #}
+<div class="bg-white border-b border-gray-100 py-6">
+  <div class="max-w-4xl mx-auto px-6 flex flex-wrap justify-center gap-12 text-center">
+    <div>
+      <div class="text-2xl font-bold" style="color:{{ _p.h1 }}">{{ n_corsi }}</div>
+      <div class="text-xs text-gray-500 mt-0.5">Corsi disponibili</div>
+    </div>
+    <div>
+      <div class="text-2xl font-bold" style="color:{{ _p.h1 }}">{{ n_iscritti }}+</div>
+      <div class="text-xs text-gray-500 mt-0.5">Partecipanti formati</div>
+    </div>
+    <div>
+      <div class="text-2xl font-bold" style="color:{{ _p.h1 }}">
+        <svg class="w-6 h-6 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+      </div>
+      <div class="text-xs text-gray-500 mt-0.5">Attestati rilasciati</div>
+    </div>
+    <div>
+      <div class="text-2xl font-bold" style="color:{{ _p.h1 }}">
+        <svg class="w-6 h-6 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+      </div>
+      <div class="text-xs text-gray-500 mt-0.5">Notifiche via email</div>
+    </div>
+  </div>
 </div>
-{% else %}
 
-{% if corsi_aperti %}
-<section class="mb-12">
-  <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-    <span class="w-2 h-7 bg-green-500 rounded-full"></span>
-    Iscrizioni aperte
-    <span class="text-sm font-normal text-gray-400">({{ corsi_aperti|length }})</span>
-  </h2>
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    {% for corso in corsi_aperti %}{{ card_corso(corso, 'aperto') }}{% endfor %}
+{# ═══════════════════════════════════════ CORSI ══════════════════════════════════════ #}
+<div id="corsi" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+
+  {% set tot = corsi_aperti|length + corsi_completi|length + corsi_passati|length %}
+
+  {% if tot == 0 %}
+  <div class="text-center py-24 text-gray-400">
+    <svg class="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+    <p class="text-lg font-semibold text-gray-500">Nessun corso disponibile al momento</p>
+    <p class="text-sm mt-1">Torna presto, nuovi corsi saranno pubblicati a breve.</p>
   </div>
-</section>
-{% endif %}
+  {% else %}
 
-{% if corsi_completi %}
-<section class="mb-12">
-  <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-    <span class="w-2 h-7 bg-red-400 rounded-full"></span>
-    Corsi al completo
-    <span class="text-sm font-normal text-gray-400">({{ corsi_completi|length }})</span>
-  </h2>
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    {% for corso in corsi_completi %}{{ card_corso(corso, 'completo') }}{% endfor %}
+  {% if corsi_aperti %}
+  <section class="mb-12">
+    <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+      <span class="w-2 h-7 bg-green-500 rounded-full"></span>
+      Iscrizioni aperte
+      <span class="text-sm font-normal text-gray-400">({{ corsi_aperti|length }})</span>
+    </h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {% for corso in corsi_aperti %}{{ card_corso(corso, 'aperto') }}{% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if corsi_completi %}
+  <section class="mb-12">
+    <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+      <span class="w-2 h-7 bg-red-400 rounded-full"></span>
+      Corsi al completo
+      <span class="text-sm font-normal text-gray-400">({{ corsi_completi|length }})</span>
+    </h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {% for corso in corsi_completi %}{{ card_corso(corso, 'completo') }}{% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if corsi_passati %}
+  <section>
+    <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+      <span class="w-2 h-7 bg-gray-300 rounded-full"></span>
+      Corsi passati
+      <span class="text-sm font-normal text-gray-400">({{ corsi_passati|length }})</span>
+    </h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {% for corso in corsi_passati %}{{ card_corso(corso, 'passato') }}{% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% endif %}
+
+  {# Banner notifiche #}
+  <div class="mt-16 rounded-xl p-8 text-center border"
+       style="background:{{ _p.badge_bg }};border-color:{{ _p.h1 }}20">
+    <h3 class="text-lg font-semibold mb-2" style="color:{{ _p.h2 }}">Vuoi essere avvisato dei prossimi corsi?</h3>
+    <p class="mb-4 text-sm" style="color:{{ _p.h1 }}">Iscriviti alle notifiche e ricevi aggiornamenti via email.</p>
+    <a href="{{ url_for('public.notifiche_corsi') }}"
+       class="inline-block text-white px-6 py-2.5 rounded-lg font-medium transition-all"
+       style="background:{{ _p.btn }}">
+      Iscriviti alle notifiche
+    </a>
   </div>
-</section>
-{% endif %}
 
-{% if corsi_passati %}
-<section>
-  <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-    <span class="w-2 h-7 bg-gray-300 rounded-full"></span>
-    Corsi passati
-    <span class="text-sm font-normal text-gray-400">({{ corsi_passati|length }})</span>
-  </h2>
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    {% for corso in corsi_passati %}{{ card_corso(corso, 'passato') }}{% endfor %}
-  </div>
-</section>
-{% endif %}
-
-{% endif %}
-
-<div class="mt-16 bg-blue-50 border border-blue-100 rounded-xl p-8 text-center">
-  <h3 class="text-lg font-semibold text-blue-900 mb-2">Vuoi essere avvisato dei prossimi corsi?</h3>
-  <p class="text-blue-700 mb-4">Iscriviti alle notifiche e ricevi aggiornamenti via email.</p>
-  <a href="{{ url_for('public.notifiche_corsi') }}" class="bg-blue-700 text-white px-6 py-2.5 rounded-lg hover:bg-blue-800 font-medium">
-    Iscriviti alle notifiche
-  </a>
 </div>
+
 {% endblock %}

@@ -28,10 +28,17 @@ def index():
     corsi_aperti = [c for c in corsi if c.data_inizio and _dt(c.data_inizio) > now and (not c.posti_totali or c.posti_disponibili > 0)]
     corsi_completi = [c for c in corsi if c.data_inizio and _dt(c.data_inizio) > now and c.posti_totali and c.posti_disponibili <= 0]
     corsi_passati = [c for c in corsi if not c.data_inizio or _dt(c.data_inizio) <= now]
+
+    n_iscritti = Prenotazione.query.filter(
+        Prenotazione.stato == StatoPrenotazione.CONFERMATA
+    ).with_entities(Prenotazione.utente_id).distinct().count()
+
     return render_template("public/index.html",
                            corsi_aperti=corsi_aperti,
                            corsi_completi=corsi_completi,
-                           corsi_passati=corsi_passati)
+                           corsi_passati=corsi_passati,
+                           n_corsi=len(corsi_aperti),
+                           n_iscritti=n_iscritti)
 
 
 @public_bp.route("/corsi/<string:corso_id>")
