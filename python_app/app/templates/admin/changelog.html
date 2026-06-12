@@ -3,14 +3,13 @@
 
 {% block head %}
 <style>
-.changelog-body h2{font-size:1.25rem;font-weight:700;margin:2rem 0 .75rem;padding-bottom:.4rem;border-bottom:2px solid #e5e7eb;color:#111827}
-.changelog-body h3{font-size:1rem;font-weight:600;margin:1.25rem 0 .4rem;color:#374151}
-.changelog-body ul{list-style:disc;padding-left:1.4rem;margin:.4rem 0;space-y:.25rem}
-.changelog-body li{margin:.2rem 0;font-size:.875rem;color:#374151}
-.changelog-body strong{color:#111827}
-.changelog-body p{font-size:.875rem;color:#6b7280;margin:.4rem 0}
-.changelog-body code{background:#f3f4f6;border-radius:.25rem;padding:.1rem .35rem;font-size:.8rem;font-family:monospace}
-.changelog-body hr{border:none;border-top:1px solid #e5e7eb;margin:2rem 0}
+.cl-body h3{font-size:.95rem;font-weight:600;margin:1rem 0 .35rem;color:#374151}
+.cl-body ul{list-style:disc;padding-left:1.25rem;margin:.35rem 0}
+.cl-body li{margin:.2rem 0;font-size:.875rem;color:#374151;line-height:1.5}
+.cl-body strong{color:#111827}
+.cl-body p{font-size:.875rem;color:#6b7280;margin:.4rem 0}
+.cl-body code{background:#f3f4f6;border-radius:.25rem;padding:.1rem .35rem;font-size:.8rem;font-family:monospace}
+.cl-body hr{border:none;border-top:1px solid #e5e7eb;margin:1.5rem 0}
 </style>
 {% endblock %}
 
@@ -28,9 +27,38 @@
   </span>
 </div>
 
-<div class="bg-white border border-gray-200 rounded-xl p-8 max-w-3xl">
-  <div class="changelog-body">
-    {{ changelog_html | safe }}
+<div class="max-w-3xl space-y-3">
+  {% for section in sections %}
+  {% set is_first = loop.first %}
+  <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+    <button onclick="toggleCl(this)"
+      class="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-gray-50 transition-colors"
+      aria-expanded="{{ 'true' if is_first else 'false' }}">
+      <span class="font-semibold text-gray-900 text-sm">{{ section.title }}</span>
+      <svg class="w-4 h-4 text-gray-400 shrink-0 transition-transform duration-200 {{ '' if is_first else '-rotate-90' }}"
+           fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+      </svg>
+    </button>
+    <div class="cl-panel {{ '' if is_first else 'hidden' }} px-6 pb-6 border-t border-gray-100">
+      <div class="cl-body pt-4">
+        {{ section.html | safe }}
+      </div>
+    </div>
   </div>
+  {% else %}
+  <p class="text-gray-500 text-sm">Nessun changelog disponibile.</p>
+  {% endfor %}
 </div>
+
+<script>
+function toggleCl(btn) {
+  var panel = btn.nextElementSibling;
+  var arrow = btn.querySelector('svg');
+  var open = btn.getAttribute('aria-expanded') === 'true';
+  panel.classList.toggle('hidden', open);
+  arrow.classList.toggle('-rotate-90', open);
+  btn.setAttribute('aria-expanded', String(!open));
+}
+</script>
 {% endblock %}

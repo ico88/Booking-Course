@@ -878,9 +878,21 @@ def backup_scarica(filename):
 @admin_bp.route("/changelog")
 @admin_required
 def changelog():
-    import pathlib, mistune
+    import pathlib, mistune, re
     changelog_path = pathlib.Path(current_app.root_path).parent / "CHANGELOG.md"
     md_text = changelog_path.read_text(encoding="utf-8") if changelog_path.exists() else "_Changelog non trovato._"
-    html = mistune.html(md_text)
+
+    # Split into per-version sections on "## " headings
+    parts = re.split(r'(?=^## )', md_text, flags=re.MULTILINE)
+    sections = []
+    for part in parts:
+        part = part.strip()
+        if not part or part.startswith("# "):
+            continue
+        lines = part.splitlines()
+        title = lines[0].lstrip("# ").strip()
+        body_md = "\n".join(lines[1:]).strip()
+        sections.append({"title": title, "html": mistune.html(body_md) if body_md else ""})
+
     version = current_app.config.get("APP_VERSION", "—")
-    return render_template("admin/changelog.html", changelog_html=html, version=version)
+    return render_template("admin/changelog.html", sections=sections, version=version)
