@@ -101,24 +101,53 @@
 </a>
 {% endmacro %}
 
+{% block head %}
+<style>
+.hero-section {
+  background: linear-gradient(135deg, {{ _p.bg1 }} 0%, {{ _p.bg2 }} 45%, {{ _p.bg3 }} 100%);
+}
+.hero-title {
+  background: linear-gradient(135deg, {{ _p.h1 }}, {{ _p.h2 }});
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero-btn-primary {
+  background: {{ _p.btn }};
+  color: #ffffff !important;
+}
+.hero-btn-primary:hover { background: {{ _p.btnhov }}; }
+.hero-badge {
+  background: rgba(255,255,255,0.8);
+  border: 1px solid {{ _p.h1 }}30;
+  color: {{ _p.h1 }};
+}
+.stats-value { color: {{ _p.h1 }}; }
+.notifiche-banner {
+  background: {{ _p.badge_bg }};
+  border: 1px solid {{ _p.h1 }}20;
+}
+.notifiche-title { color: {{ _p.h2 }}; }
+.notifiche-text { color: {{ _p.h1 }}; }
+</style>
+{% endblock %}
+
 {% block main_class %}{% endblock %}
 
 {% block content %}
 
 {# ═══════════════════════════════════════ HERO ═══════════════════════════════════════ #}
-<section style="background:linear-gradient(135deg,{{ _p.bg1 }} 0%,{{ _p.bg2 }} 45%,{{ _p.bg3 }} 100%)">
+<section class="hero-section">
   <div class="max-w-3xl mx-auto px-6 py-24 text-center">
 
-    <div class="inline-flex items-center gap-2 border text-xs font-semibold px-4 py-1.5 rounded-full mb-6 shadow-sm"
-         style="background:rgba(255,255,255,0.7);border-color:{{ _p.h1 }}30;color:{{ _p.h1 }}">
+    <div class="hero-badge inline-flex items-center gap-2 text-xs font-semibold px-4 py-1.5 rounded-full mb-6 shadow-sm">
       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
       </svg>
       Portale Formazione
     </div>
 
-    <h1 class="text-5xl md:text-6xl font-extrabold tracking-tight mb-6 leading-tight"
-        style="background:linear-gradient(135deg,{{ _p.h1 }},{{ _p.h2 }});-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">
+    <h1 class="hero-title text-5xl md:text-6xl font-extrabold tracking-tight mb-6 leading-tight">
       {{ app_name }}
     </h1>
 
@@ -129,15 +158,13 @@
     <div class="flex flex-wrap gap-4 justify-center">
       {% if current_user.is_authenticated %}
         <a href="{{ url_for('dashboard.index') }}"
-           class="inline-flex items-center gap-2 text-white px-7 py-3.5 rounded-xl font-semibold shadow-md hover:shadow-lg transition-all"
-           style="background:{{ _p.btn }}">
+           class="hero-btn-primary inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold shadow-md hover:shadow-lg transition-all">
           La mia area
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </a>
       {% else %}
         <a href="{{ url_for('auth.login') }}"
-           class="inline-flex items-center gap-2 text-white px-7 py-3.5 rounded-xl font-semibold shadow-md hover:shadow-lg transition-all"
-           style="background:{{ _p.btn }}">
+           class="hero-btn-primary inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold shadow-md hover:shadow-lg transition-all">
           Accedi al portale
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </a>
@@ -158,21 +185,21 @@
 <div class="bg-white border-b border-gray-100 py-6">
   <div class="max-w-4xl mx-auto px-6 flex flex-wrap justify-center gap-12 text-center">
     <div>
-      <div class="text-2xl font-bold" style="color:{{ _p.h1 }}">{{ n_corsi }}</div>
+      <div class="stats-value text-2xl font-bold">{{ n_corsi }}</div>
       <div class="text-xs text-gray-500 mt-0.5">Corsi disponibili</div>
     </div>
     <div>
-      <div class="text-2xl font-bold" style="color:{{ _p.h1 }}">{{ n_iscritti }}+</div>
+      <div class="stats-value text-2xl font-bold">{{ n_iscritti }}+</div>
       <div class="text-xs text-gray-500 mt-0.5">Partecipanti formati</div>
     </div>
     <div>
-      <div class="text-2xl font-bold" style="color:{{ _p.h1 }}">
+      <div class="stats-value text-2xl font-bold">
         <svg class="w-6 h-6 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
       </div>
       <div class="text-xs text-gray-500 mt-0.5">Attestati rilasciati</div>
     </div>
     <div>
-      <div class="text-2xl font-bold" style="color:{{ _p.h1 }}">
+      <div class="stats-value text-2xl font-bold">
         <svg class="w-6 h-6 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
       </div>
       <div class="text-xs text-gray-500 mt-0.5">Notifiche via email</div>
@@ -235,13 +262,11 @@
   {% endif %}
 
   {# Banner notifiche #}
-  <div class="mt-16 rounded-xl p-8 text-center border"
-       style="background:{{ _p.badge_bg }};border-color:{{ _p.h1 }}20">
-    <h3 class="text-lg font-semibold mb-2" style="color:{{ _p.h2 }}">Vuoi essere avvisato dei prossimi corsi?</h3>
-    <p class="mb-4 text-sm" style="color:{{ _p.h1 }}">Iscriviti alle notifiche e ricevi aggiornamenti via email.</p>
+  <div class="notifiche-banner mt-16 rounded-xl p-8 text-center">
+    <h3 class="notifiche-title text-lg font-semibold mb-2">Vuoi essere avvisato dei prossimi corsi?</h3>
+    <p class="notifiche-text mb-4 text-sm">Iscriviti alle notifiche e ricevi aggiornamenti via email.</p>
     <a href="{{ url_for('public.notifiche_corsi') }}"
-       class="inline-block text-white px-6 py-2.5 rounded-lg font-medium transition-all"
-       style="background:{{ _p.btn }}">
+       class="hero-btn-primary inline-block px-6 py-2.5 rounded-lg font-medium transition-all">
       Iscriviti alle notifiche
     </a>
   </div>
