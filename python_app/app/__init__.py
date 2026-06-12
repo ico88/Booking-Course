@@ -91,6 +91,7 @@ def create_app(config_name=None):
     @app.context_processor
     def inject_globals():
         from .models import Impostazione, Corso
+        from datetime import datetime as _dt
         try:
             from flask import url_for as _url_for
             app_name = Impostazione.get("app_name") or app.config.get("APP_NAME", "Gestione Corsi")
@@ -126,6 +127,7 @@ def create_app(config_name=None):
             "logo_url": logo_url,
             "color_scheme": color_scheme,
             "navbar_hide_name": navbar_hide_name,
+            "now": _dt.utcnow(),
             "corsi_pubblicati": corsi_pubblicati,
             "turnstile_site_key": turnstile_site_key,
             "app_version": app.config.get("APP_VERSION", "—"),
