@@ -161,10 +161,17 @@
       </ul>
     </div>
 
-    <!-- Legale -->
+    <!-- Azienda -->
     <div>
-      <h4 class="text-white font-semibold text-sm mb-4">Legale</h4>
+      {% set ragione_sociale = impostazione_ragione_sociale %}
+      <h4 class="text-white font-semibold text-sm mb-4">{{ ragione_sociale or app_name }}</h4>
       <ul class="space-y-2 text-sm">
+        {% set app_url_val = impostazione_app_url %}
+        {% if app_url_val %}
+        <li><a href="{{ app_url_val }}" target="_blank" class="hover:text-white transition-colors">Sito Web</a></li>
+        {% else %}
+        <li><a href="{{ url_for('public.index') }}" class="hover:text-white transition-colors">Sito Web</a></li>
+        {% endif %}
         <li><a href="{{ url_for('public.termini_condizioni') }}" class="hover:text-white transition-colors">Termini di Servizio</a></li>
         <li><a href="{{ url_for('public.privacy_policy') }}" class="hover:text-white transition-colors">Privacy Policy</a></li>
         <li><a href="{{ url_for('public.cookie_policy') }}" class="hover:text-white transition-colors">Cookie Policy</a></li>

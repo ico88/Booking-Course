@@ -131,6 +131,8 @@ def create_app(config_name=None):
             "corsi_pubblicati": corsi_pubblicati,
             "turnstile_site_key": turnstile_site_key,
             "app_version": app.config.get("APP_VERSION", "—"),
+            "impostazione_ragione_sociale": Impostazione.get("ragione_sociale") or "",
+            "impostazione_app_url": (Impostazione.get("app_url") or "").rstrip("/"),
         }
 
     return app
