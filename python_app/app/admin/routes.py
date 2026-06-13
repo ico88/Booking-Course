@@ -821,7 +821,7 @@ _MASK = "••••••••"
 _TAB_KEYS = {
     "generale":  ["app_name", "app_url", "email_segreteria", "navbar_hide_name"],
     "azienda":   ["ragione_sociale", "partita_iva", "indirizzo_sede"],
-    "aspetto":   ["color_scheme", "hero_badge", "hero_subtitle", "hero_btn_primary", "hero_btn_secondary"],
+    "aspetto":   ["color_scheme", "hero_subtitle", "hero_btn_primary", "hero_btn_secondary"],
     "email":     ["smtp_host", "smtp_port", "smtp_user", "smtp_password", "smtp_from_name"],
     "pagamenti": ["stripe_publishable_key", "stripe_secret_key",
                   "paypal_client_id", "paypal_client_secret", "paypal_mode"],
