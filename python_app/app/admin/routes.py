@@ -864,7 +864,7 @@ def impostazioni():
 @admin_required
 def test_email():
     from ..email_service import send_email, _html_wrapper, _ctx
-    app_name, app_url = _ctx()
+    app_name, app_url, logo_url, legal = _ctx()
     dest = (request.form.get("test_email_to") or "").strip() or current_user.email
     dest = validate_email_address(dest) or current_user.email
     try:
@@ -874,7 +874,7 @@ def test_email():
             _html_wrapper(
                 "<h2>Email di test</h2><p>La configurazione SMTP funziona correttamente.</p>"
                 f"<p style='color:#6b7280;font-size:13px;'>Inviata da: {app_name}</p>",
-                app_name, app_url,
+                app_name, app_url, logo_url, legal,
             ),
         )
         flash(f"Email di test inviata a {dest}.", "success")
