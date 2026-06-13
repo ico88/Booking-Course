@@ -194,45 +194,49 @@ def notifiche_corsi():
             flash("Devi accettare il consenso al trattamento dei dati per iscriverti.", "error")
             return render_template("public/notifiche_corsi.html", tag_disponibili=tag_disponibili)
 
-        nome = (request.form.get("nome") or "").strip()[:100]
-        cognome = (request.form.get("cognome") or "").strip()[:100]
-        tags_selezionati = [t for t in request.form.getlist("tags") if t in valid_slugs]
-        app_url = (Impostazione.get("app_url") or current_app.config.get("APP_URL", "")).rstrip("/")
+        try:
+            nome = (request.form.get("nome") or "").strip()[:100]
+            cognome = (request.form.get("cognome") or "").strip()[:100]
+            tags_selezionati = [t for t in request.form.getlist("tags") if t in valid_slugs]
+            app_url = (Impostazione.get("app_url") or current_app.config.get("APP_URL", "")).rstrip("/")
 
-        lead = LeadMarketing.query.filter_by(email=email).first()
-        if not lead:
-            token = secrets.token_urlsafe(32)
-            lead = LeadMarketing(
-                email=email, nome=nome, cognome=cognome,
-                tags=tags_selezionati,
-                token_verifica=token,
-                token_scadenza=datetime.now(timezone.utc) + timedelta(days=7),
-            )
-            db.session.add(lead)
-            db.session.commit()
-            verifica_url = f"{app_url}/conferma-iscrizione?token={token}"
-            try:
-                invia_email_verifica_lead(lead, verifica_url)
-            except Exception as exc:
-                logger.error("Errore email verifica lead: %s", exc)
-        elif not lead.verificato:
-            # Lead già presente ma non ancora verificato: rigenera token e riinvia email
-            token = secrets.token_urlsafe(32)
-            lead.token_verifica = token
-            lead.token_scadenza = datetime.now(timezone.utc) + timedelta(days=7)
-            existing = set(lead.tags or [])
-            lead.tags = list(existing | set(tags_selezionati))
-            db.session.commit()
-            verifica_url = f"{app_url}/conferma-iscrizione?token={token}"
-            try:
-                invia_email_verifica_lead(lead, verifica_url)
-            except Exception as exc:
-                logger.error("Errore email verifica lead: %s", exc)
-        else:
-            # Lead già verificato: aggiorna solo i tag
-            existing = set(lead.tags or [])
-            lead.tags = list(existing | set(tags_selezionati))
-            db.session.commit()
+            lead = LeadMarketing.query.filter_by(email=email).first()
+            if not lead:
+                token = secrets.token_urlsafe(32)
+                lead = LeadMarketing(
+                    email=email, nome=nome, cognome=cognome,
+                    tags=tags_selezionati,
+                    token_verifica=token,
+                    token_scadenza=datetime.now(timezone.utc) + timedelta(days=7),
+                )
+                db.session.add(lead)
+                db.session.commit()
+                verifica_url = f"{app_url}/conferma-iscrizione?token={token}"
+                try:
+                    invia_email_verifica_lead(lead, verifica_url)
+                except Exception as exc:
+                    logger.error("Errore email verifica lead: %s", exc)
+            elif not lead.verificato:
+                token = secrets.token_urlsafe(32)
+                lead.token_verifica = token
+                lead.token_scadenza = datetime.now(timezone.utc) + timedelta(days=7)
+                existing = set(lead.tags or [])
+                lead.tags = list(existing | set(tags_selezionati))
+                db.session.commit()
+                verifica_url = f"{app_url}/conferma-iscrizione?token={token}"
+                try:
+                    invia_email_verifica_lead(lead, verifica_url)
+                except Exception as exc:
+                    logger.error("Errore email verifica lead: %s", exc)
+            else:
+                existing = set(lead.tags or [])
+                lead.tags = list(existing | set(tags_selezionati))
+                db.session.commit()
+        except Exception as exc:
+            db.session.rollback()
+            logger.error("Errore iscrizione newsletter: %s", exc, exc_info=True)
+            flash(f"Errore durante l'iscrizione: {exc}", "error")
+            return render_template("public/notifiche_corsi.html", tag_disponibili=tag_disponibili)
 
         flash("Controlla la tua email per confermare l'iscrizione.", "info")
         return redirect(url_for("public.index"))
