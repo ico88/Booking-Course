@@ -200,6 +200,16 @@ def notifiche_corsi():
             tags_selezionati = [t for t in request.form.getlist("tags") if t in valid_slugs]
             app_url = (Impostazione.get("app_url") or current_app.config.get("APP_URL", "")).rstrip("/")
 
+            # Se l'email appartiene a un utente registrato, suggerisci il login
+            utente_esistente = Utente.query.filter_by(email=email).first()
+            if utente_esistente:
+                flash(
+                    "Questa email è già registrata come account. "
+                    "Accedi e gestisci le preferenze di notifica dal tuo profilo.",
+                    "info",
+                )
+                return redirect(url_for("auth.login"))
+
             lead = LeadMarketing.query.filter_by(email=email).first()
             if not lead:
                 token = secrets.token_urlsafe(32)
@@ -216,6 +226,7 @@ def notifiche_corsi():
                     invia_email_verifica_lead(lead, verifica_url)
                 except Exception as exc:
                     logger.error("Errore email verifica lead: %s", exc)
+                flash("Controlla la tua email per confermare l'iscrizione.", "info")
             elif not lead.verificato:
                 token = secrets.token_urlsafe(32)
                 lead.token_verifica = token
@@ -228,17 +239,18 @@ def notifiche_corsi():
                     invia_email_verifica_lead(lead, verifica_url)
                 except Exception as exc:
                     logger.error("Errore email verifica lead: %s", exc)
+                flash("Ti abbiamo reinviato l'email di conferma. Controlla la tua casella.", "info")
             else:
                 existing = set(lead.tags or [])
                 lead.tags = list(existing | set(tags_selezionati))
                 db.session.commit()
+                flash("Preferenze aggiornate! Sei già iscritto alle notifiche.", "success")
         except Exception as exc:
             db.session.rollback()
             logger.error("Errore iscrizione newsletter: %s", exc, exc_info=True)
             flash(f"Errore durante l'iscrizione: {exc}", "error")
             return render_template("public/notifiche_corsi.html", tag_disponibili=tag_disponibili)
 
-        flash("Controlla la tua email per confermare l'iscrizione.", "info")
         return redirect(url_for("public.index"))
 
     return render_template("public/notifiche_corsi.html", tag_disponibili=tag_disponibili)
