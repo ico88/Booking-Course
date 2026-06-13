@@ -190,12 +190,13 @@ def notifiche_corsi():
             flash("Email non valida.", "error")
             return render_template("public/notifiche_corsi.html", tag_disponibili=tag_disponibili)
 
+        if not request.form.get("consenso_marketing"):
+            flash("Devi accettare il consenso al trattamento dei dati per iscriverti.", "error")
+            return render_template("public/notifiche_corsi.html", tag_disponibili=tag_disponibili)
+
         nome = (request.form.get("nome") or "").strip()[:100]
         cognome = (request.form.get("cognome") or "").strip()[:100]
-        # Accept only slugs that exist in the centralized list
         tags_selezionati = [t for t in request.form.getlist("tags") if t in valid_slugs]
-
-        from ..models import Impostazione
         app_url = (Impostazione.get("app_url") or current_app.config.get("APP_URL", "")).rstrip("/")
 
         lead = LeadMarketing.query.filter_by(email=email).first()
