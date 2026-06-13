@@ -4,94 +4,252 @@
 {% block admin_content %}
 <div class="flex items-center justify-between mb-6">
   <h1 class="text-2xl font-bold">Utenti</h1>
-  <button onclick="document.getElementById('modal-nuovo-utente').classList.remove('hidden')"
-          class="bg-blue-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-800">+ Nuovo utente</button>
+  <button onclick="openModal('modal-nuovo-utente')"
+          class="inline-flex items-center gap-1.5 bg-blue-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-800 transition-colors">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+    Nuovo utente
+  </button>
+</div>
+
+<!-- Ricerca -->
+<div class="mb-4">
+  <div class="relative max-w-sm">
+    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 0 5 11a6 6 0 0 0 12 0z"/></svg>
+    <input id="search-utenti" type="text" placeholder="Cerca per nome o email…"
+           class="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+  </div>
 </div>
 
 <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
-  <table class="w-full text-sm">
+  <table class="w-full text-sm" id="table-utenti">
     <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
       <tr>
-        <th class="px-5 py-3 text-left">Nome</th>
+        <th class="px-5 py-3 text-left">Utente</th>
         <th class="px-5 py-3 text-left">Email</th>
         <th class="px-5 py-3 text-left">Ruolo</th>
         <th class="px-5 py-3 text-left">Registrato</th>
-        <th class="px-5 py-3"></th>
+        <th class="px-5 py-3 text-right">Azioni</th>
       </tr>
     </thead>
     <tbody class="divide-y divide-gray-100">
       {% for u in utenti %}
-      <tr class="hover:bg-gray-50">
-        <td class="px-5 py-3 font-medium">{{ u.nome_completo }}</td>
+      {% set parts = u.nome_completo.split() %}
+      {% set initials = (parts[0][0] ~ parts[-1][0])|upper if parts|length > 1 else u.nome[:2]|upper %}
+      <tr class="hover:bg-gray-50 utente-row" data-search="{{ u.nome_completo|lower }} {{ u.email|lower }}">
+        <td class="px-5 py-3">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold
+              {{ 'bg-red-100 text-red-700' if u.ruolo.value == 'ADMIN' else 'bg-blue-100 text-blue-700' if u.ruolo.value == 'SEGRETERIA' else 'bg-gray-100 text-gray-600' }}">
+              {{ initials }}
+            </div>
+            <span class="font-medium">{{ u.nome_completo }}</span>
+          </div>
+        </td>
         <td class="px-5 py-3 text-gray-500">{{ u.email }}</td>
         <td class="px-5 py-3">
-          <span class="px-2 py-0.5 rounded text-xs {{ 'bg-red-100 text-red-700' if u.ruolo.value == 'ADMIN' else 'bg-blue-100 text-blue-700' if u.ruolo.value == 'SEGRETERIA' else 'bg-gray-100 text-gray-600' }}">
-            {{ u.ruolo.value }}
+          <span class="px-2 py-0.5 rounded-full text-xs font-medium
+            {{ 'bg-red-100 text-red-700' if u.ruolo.value == 'ADMIN' else 'bg-blue-100 text-blue-700' if u.ruolo.value == 'SEGRETERIA' else 'bg-gray-100 text-gray-600' }}">
+            {{ u.ruolo.value|capitalize }}
           </span>
         </td>
         <td class="px-5 py-3 text-gray-400">{{ format_date(u.created_at) }}</td>
         <td class="px-5 py-3">
-          {% if u.id != current_user.id %}
-          <div class="flex items-center gap-2 flex-wrap">
-            <form method="POST" action="{{ url_for('admin.utente_modifica_ruolo', utente_id=u.id) }}" class="flex items-center gap-1">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <select name="ruolo" class="text-xs border border-gray-300 rounded px-1 py-1 focus:ring-1 focus:ring-blue-500">
-                <option value="UTENTE" {{ 'selected' if u.ruolo.value == 'UTENTE' }}>Utente</option>
-                <option value="SEGRETERIA" {{ 'selected' if u.ruolo.value == 'SEGRETERIA' }}>Segreteria</option>
-                <option value="ADMIN" {{ 'selected' if u.ruolo.value == 'ADMIN' }}>Admin</option>
-              </select>
-              <button type="submit" class="text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded">Salva</button>
-            </form>
-            <form method="POST" action="{{ url_for('admin.utente_elimina', utente_id=u.id) }}" onsubmit="return confirm('Eliminare questo utente?')">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <button class="text-red-500 hover:text-red-700 text-xs">Elimina</button>
-            </form>
+          <div class="flex items-center justify-end gap-2">
+            <!-- Modifica dati -->
+            <button onclick="openEditModal('{{ u.id }}','{{ u.nome|e }}','{{ u.cognome|e }}','{{ u.email|e }}','{{ u.telefono or '' }}','{{ u.codice_fiscale or '' }}','{{ u.ruolo.value }}')"
+                    class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5m-1.414-9.414a2 2 0 1 1 2.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+              Modifica
+            </button>
+            {% if u.id != current_user.id %}
+            <!-- Elimina -->
+            <button onclick="openDeleteModal('{{ u.id }}','{{ u.nome_completo|e }}')"
+                    class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-md bg-red-50 text-red-600 hover:bg-red-100 transition-colors">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m2 0H7m2 0V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              Elimina
+            </button>
+            {% endif %}
           </div>
-          {% endif %}
         </td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
+  <p id="no-results" class="hidden text-center text-gray-400 text-sm py-8">Nessun utente trovato.</p>
 </div>
 
-{# Modal nuovo utente #}
-<div id="modal-nuovo-utente" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-  <div class="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
-    <h2 class="font-bold text-lg mb-4">Nuovo utente</h2>
-    <form method="POST" action="{{ url_for('admin.utente_nuovo') }}" class="space-y-3">
+<!-- ============================================================
+     MODAL: Modifica utente
+     ============================================================ -->
+<div id="modal-modifica-utente" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <h2 class="text-base font-semibold">Modifica utente</h2>
+      <button onclick="closeModal('modal-modifica-utente')" class="text-gray-400 hover:text-gray-600">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <form id="form-modifica-utente" method="POST" action="" class="px-6 py-5 space-y-4">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="grid grid-cols-2 gap-3">
         <div>
-          <label class="block text-xs font-medium mb-1">Nome</label>
-          <input type="text" name="nome" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+          <label class="block text-xs font-medium text-gray-600 mb-1">Nome *</label>
+          <input type="text" name="nome" id="edit-nome" required
+                 class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
         <div>
-          <label class="block text-xs font-medium mb-1">Cognome</label>
-          <input type="text" name="cognome" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+          <label class="block text-xs font-medium text-gray-600 mb-1">Cognome *</label>
+          <input type="text" name="cognome" id="edit-cognome" required
+                 class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
       </div>
       <div>
-        <label class="block text-xs font-medium mb-1">Email</label>
-        <input type="email" name="email" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+        <label class="block text-xs font-medium text-gray-600 mb-1">Email *</label>
+        <input type="email" name="email" id="edit-email" required
+               class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
       </div>
-      <div>
-        <label class="block text-xs font-medium mb-1">Password</label>
-        <input type="password" name="password" required minlength="8" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Telefono</label>
+          <input type="text" name="telefono" id="edit-telefono"
+                 class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Codice fiscale</label>
+          <input type="text" name="codice_fiscale" id="edit-cf"
+                 class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
       </div>
-      <div>
-        <label class="block text-xs font-medium mb-1">Ruolo</label>
-        <select name="ruolo" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+      <div id="edit-ruolo-wrap">
+        <label class="block text-xs font-medium text-gray-600 mb-1">Ruolo</label>
+        <select name="ruolo" id="edit-ruolo"
+                class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
           <option value="UTENTE">Utente</option>
           <option value="SEGRETERIA">Segreteria</option>
           <option value="ADMIN">Admin</option>
         </select>
       </div>
-      <div class="flex gap-2 pt-2">
-        <button type="submit" class="flex-1 bg-blue-700 text-white py-2 rounded-lg text-sm hover:bg-blue-800">Crea</button>
-        <button type="button" onclick="document.getElementById('modal-nuovo-utente').classList.add('hidden')" class="flex-1 bg-gray-100 py-2 rounded-lg text-sm hover:bg-gray-200">Annulla</button>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Nuova password <span class="text-gray-400">(lascia vuoto per non cambiarla)</span></label>
+        <input type="password" name="password" minlength="8" autocomplete="new-password"
+               class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div class="flex gap-2 pt-1">
+        <button type="submit" class="flex-1 py-2 bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors">Salva modifiche</button>
+        <button type="button" onclick="closeModal('modal-modifica-utente')"
+                class="flex-1 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">Annulla</button>
       </div>
     </form>
   </div>
 </div>
+
+<!-- ============================================================
+     MODAL: Conferma eliminazione
+     ============================================================ -->
+<div id="modal-elimina-utente" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+    <div class="px-6 py-5 text-center">
+      <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-3">
+        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+      </div>
+      <h2 class="text-base font-semibold mb-1">Elimina utente</h2>
+      <p class="text-sm text-gray-500 mb-5">Sei sicuro di voler eliminare <strong id="delete-nome-label"></strong>? Questa azione è irreversibile.</p>
+      <form id="form-elimina-utente" method="POST" action="" class="flex gap-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="flex-1 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors">Elimina</button>
+        <button type="button" onclick="closeModal('modal-elimina-utente')"
+                class="flex-1 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">Annulla</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     MODAL: Nuovo utente
+     ============================================================ -->
+<div id="modal-nuovo-utente" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <h2 class="text-base font-semibold">Nuovo utente</h2>
+      <button onclick="closeModal('modal-nuovo-utente')" class="text-gray-400 hover:text-gray-600">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <form method="POST" action="{{ url_for('admin.utente_nuovo') }}" class="px-6 py-5 space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Nome *</label>
+          <input type="text" name="nome" required class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Cognome *</label>
+          <input type="text" name="cognome" required class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Email *</label>
+        <input type="email" name="email" required class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Password *</label>
+        <input type="password" name="password" required minlength="8"
+               class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Ruolo</label>
+        <select name="ruolo" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="UTENTE">Utente</option>
+          <option value="SEGRETERIA">Segreteria</option>
+          <option value="ADMIN">Admin</option>
+        </select>
+      </div>
+      <div class="flex gap-2 pt-1">
+        <button type="submit" class="flex-1 py-2 bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors">Crea utente</button>
+        <button type="button" onclick="closeModal('modal-nuovo-utente')"
+                class="flex-1 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">Annulla</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+// ── Ricerca ──────────────────────────────────────────────────────────────────
+document.getElementById('search-utenti').addEventListener('input', function() {
+  const q = this.value.toLowerCase().trim();
+  let visible = 0;
+  document.querySelectorAll('.utente-row').forEach(row => {
+    const match = !q || row.dataset.search.includes(q);
+    row.classList.toggle('hidden', !match);
+    if (match) visible++;
+  });
+  document.getElementById('no-results').classList.toggle('hidden', visible > 0);
+});
+
+// ── Modali generici ──────────────────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+document.querySelectorAll('[id^="modal-"]').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.add('hidden'); });
+});
+
+// ── Modal modifica ────────────────────────────────────────────────────────────
+function openEditModal(id, nome, cognome, email, telefono, cf, ruolo) {
+  document.getElementById('form-modifica-utente').action = '/admin/utenti/' + id + '/modifica';
+  document.getElementById('edit-nome').value = nome;
+  document.getElementById('edit-cognome').value = cognome;
+  document.getElementById('edit-email').value = email;
+  document.getElementById('edit-telefono').value = telefono;
+  document.getElementById('edit-cf').value = cf;
+  document.getElementById('edit-ruolo').value = ruolo;
+  openModal('modal-modifica-utente');
+}
+
+// ── Modal elimina ─────────────────────────────────────────────────────────────
+function openDeleteModal(id, nome) {
+  document.getElementById('form-elimina-utente').action = '/admin/utenti/' + id + '/elimina';
+  document.getElementById('delete-nome-label').textContent = nome;
+  openModal('modal-elimina-utente');
+}
+</script>
 {% endblock %}

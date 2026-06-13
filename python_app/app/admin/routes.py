@@ -560,6 +560,53 @@ def utente_nuovo():
     return redirect(url_for("admin.utenti"))
 
 
+@admin_bp.route("/utenti/<string:utente_id>/modifica", methods=["POST"])
+@admin_required
+def utente_modifica(utente_id):
+    u = Utente.query.get_or_404(utente_id)
+    raw_email = (request.form.get("email") or "").strip()
+    email = validate_email_address(raw_email)
+    if not email:
+        flash("Indirizzo email non valido.", "error")
+        return redirect(url_for("admin.utenti"))
+    nome = (request.form.get("nome") or "").strip()[:100]
+    cognome = (request.form.get("cognome") or "").strip()[:100]
+    telefono = (request.form.get("telefono") or "").strip()[:30] or None
+    cf = (request.form.get("codice_fiscale") or "").strip()[:20] or None
+    password = request.form.get("password") or ""
+
+    # Email uniqueness check (exclude self)
+    existing = Utente.query.filter_by(email=email).first()
+    if existing and existing.id != utente_id:
+        flash("Email già utilizzata da un altro utente.", "error")
+        return redirect(url_for("admin.utenti"))
+
+    u.nome = nome
+    u.cognome = cognome
+    u.email = email
+    u.telefono = telefono
+    u.codice_fiscale = cf
+
+    # Ruolo solo se non è se stesso (protezione)
+    if utente_id != current_user.id:
+        ruolo_str = request.form.get("ruolo", "UTENTE")
+        try:
+            u.ruolo = Ruolo(ruolo_str)
+        except ValueError:
+            pass
+
+    if password:
+        if len(password) < 8:
+            flash("La password deve avere almeno 8 caratteri.", "error")
+            return redirect(url_for("admin.utenti"))
+        u.set_password(password)
+
+    db.session.commit()
+    logger.info("Admin %s: utente %s modificato", current_user.email, u.email)
+    flash(f"Dati di {u.nome_completo} aggiornati.", "success")
+    return redirect(url_for("admin.utenti"))
+
+
 @admin_bp.route("/utenti/<string:utente_id>/ruolo", methods=["POST"])
 @admin_required
 def utente_modifica_ruolo(utente_id):
