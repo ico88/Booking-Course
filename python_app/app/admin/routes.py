@@ -838,6 +838,125 @@ def marketing_importa():
 
 
 # ===========================================================================
+# GDPR — RETENTION AUTOMATICA
+# ===========================================================================
+
+@admin_bp.route("/gdpr/retention", methods=["GET", "POST"])
+@admin_required
+def gdpr_retention():
+    from ..models import LeadMarketing, Prenotazione, StatoPrenotazione
+    from datetime import datetime, timezone, timedelta
+    stats = {}
+    if request.method == "POST":
+        action = request.form.get("action")
+        now = datetime.now(timezone.utc)
+
+        if action == "purga_lead_non_verificati":
+            # Lead non verificati con token scaduto da più di 7 giorni
+            cutoff = now - timedelta(days=7)
+            to_delete = LeadMarketing.query.filter(
+                LeadMarketing.verificato == False,
+                LeadMarketing.token_scadenza != None,
+                LeadMarketing.token_scadenza < cutoff,
+            ).all()
+            count = len(to_delete)
+            for l in to_delete:
+                db.session.delete(l)
+            db.session.commit()
+            logger.info("Admin %s: eliminati %d lead non verificati scaduti", current_user.email, count)
+            flash(f"Eliminati {count} lead non verificati con token scaduto.", "success")
+
+        elif action == "purga_lead_inattivi":
+            # Lead verificati che non interagiscono da 2 anni
+            cutoff = now - timedelta(days=730)
+            to_delete = LeadMarketing.query.filter(
+                LeadMarketing.verificato == True,
+                LeadMarketing.updated_at < cutoff,
+            ).all()
+            count = len(to_delete)
+            for l in to_delete:
+                db.session.delete(l)
+            db.session.commit()
+            logger.info("Admin %s: eliminati %d lead inattivi (>2 anni)", current_user.email, count)
+            flash(f"Eliminati {count} lead inattivi (nessuna attività da 2 anni).", "success")
+
+        elif action == "purga_prenotazioni_scadute":
+            # Prenotazioni scadute/annullate con scadenza > 90 giorni fa
+            cutoff = now - timedelta(days=90)
+            to_delete = Prenotazione.query.filter(
+                Prenotazione.stato.in_([StatoPrenotazione.SCADUTA, StatoPrenotazione.ANNULLATA]),
+                Prenotazione.updated_at < cutoff,
+            ).all()
+            count = len(to_delete)
+            for p in to_delete:
+                db.session.delete(p)
+            db.session.commit()
+            logger.info("Admin %s: eliminate %d prenotazioni scadute/annullate", current_user.email, count)
+            flash(f"Eliminate {count} prenotazioni scadute/annullate (>90 giorni).", "success")
+
+        return redirect(url_for("admin.gdpr_retention"))
+
+    # Statistiche
+    from datetime import datetime, timezone, timedelta
+    now = datetime.now(timezone.utc)
+    stats["lead_non_verificati_scaduti"] = LeadMarketing.query.filter(
+        LeadMarketing.verificato == False,
+        LeadMarketing.token_scadenza != None,
+        LeadMarketing.token_scadenza < now - timedelta(days=7),
+    ).count()
+    stats["lead_inattivi_2anni"] = LeadMarketing.query.filter(
+        LeadMarketing.verificato == True,
+        LeadMarketing.updated_at < now - timedelta(days=730),
+    ).count()
+    stats["prenotazioni_scadute_90gg"] = Prenotazione.query.filter(
+        Prenotazione.stato.in_([StatoPrenotazione.SCADUTA, StatoPrenotazione.ANNULLATA]),
+        Prenotazione.updated_at < now - timedelta(days=90),
+    ).count()
+    return render_template("admin/gdpr_retention.html", stats=stats)
+
+
+# ===========================================================================
+# GDPR — DATA BREACH
+# ===========================================================================
+
+@admin_bp.route("/gdpr/breach", methods=["GET", "POST"])
+@admin_required
+def gdpr_breach():
+    from ..email_service import invia_email_notifica_segreteria
+    if request.method == "POST":
+        descrizione = (request.form.get("descrizione") or "").strip()[:2000]
+        data_scoperta = (request.form.get("data_scoperta") or "").strip()
+        dati_coinvolti = (request.form.get("dati_coinvolti") or "").strip()[:500]
+        stima_persone = (request.form.get("stima_persone") or "").strip()[:100]
+        misure = (request.form.get("misure") or "").strip()[:1000]
+        if not descrizione:
+            flash("La descrizione è obbligatoria.", "error")
+            return render_template("admin/gdpr_breach.html")
+        logger.warning(
+            "DATA BREACH REGISTRATO da %s — Scoperta: %s — Dati: %s — Persone: %s — Misure: %s — Descrizione: %s",
+            current_user.email, data_scoperta, dati_coinvolti, stima_persone, misure, descrizione
+        )
+        try:
+            corpo = (
+                f"<h2>⚠️ Violazione dei dati personali registrata</h2>"
+                f"<p><strong>Data scoperta:</strong> {data_scoperta}</p>"
+                f"<p><strong>Dati coinvolti:</strong> {dati_coinvolti}</p>"
+                f"<p><strong>Stima persone interessate:</strong> {stima_persone}</p>"
+                f"<p><strong>Misure adottate:</strong> {misure}</p>"
+                f"<p><strong>Descrizione:</strong><br>{descrizione}</p>"
+                f"<hr><p style='color:#b91c1c'><strong>ATTENZIONE:</strong> In caso di violazione grave, "
+                f"il titolare deve notificare il Garante entro 72 ore dalla scoperta "
+                f"(Art. 33 GDPR) tramite <a href='https://www.garanteprivacy.it'>garanteprivacy.it</a>.</p>"
+            )
+            invia_email_notifica_segreteria("⚠️ Violazione dati personali (Data Breach)", corpo)
+        except Exception as exc:
+            logger.error("Errore invio notifica breach: %s", exc)
+        flash("Violazione registrata e notifica inviata alla segreteria. Valuta se notificare il Garante entro 72 ore.", "warning")
+        return redirect(url_for("admin.gdpr_breach"))
+    return render_template("admin/gdpr_breach.html")
+
+
+# ===========================================================================
 # IMPOSTAZIONI
 # ===========================================================================
 
@@ -846,7 +965,7 @@ _MASK = "••••••••"
 
 _TAB_KEYS = {
     "generale":  ["app_name", "app_url", "email_segreteria", "navbar_hide_name"],
-    "azienda":   ["ragione_sociale", "partita_iva", "indirizzo_sede"],
+    "azienda":   ["ragione_sociale", "partita_iva", "indirizzo_sede", "privacy_email"],
     "aspetto":   ["color_scheme", "hero_subtitle", "hero_btn_primary", "hero_btn_secondary"],
     "email":     ["smtp_host", "smtp_port", "smtp_user", "smtp_password", "smtp_from_name"],
     "pagamenti": ["stripe_publishable_key", "stripe_secret_key",

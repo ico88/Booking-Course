@@ -107,10 +107,13 @@ def registrazione():
         raw_email = (request.form.get("email") or "").strip()
         password = request.form.get("password") or ""
         conferma_password = request.form.get("conferma_password") or ""
+        eta_minima = request.form.get("eta_minima") == "on"
         consenso = request.form.get("consenso_privacy") == "on"
         marketing = request.form.get("consenso_marketing") == "on"
 
         errors = []
+        if not eta_minima:
+            errors.append("Devi dichiarare di avere almeno 16 anni.")
         if not (1 <= len(nome) <= 100):
             errors.append("Il nome è obbligatorio (max 100 caratteri).")
         if not (1 <= len(cognome) <= 100):

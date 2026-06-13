@@ -1,0 +1,50 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}GDPR — Violazione dati{% endblock %}
+{% block admin_content %}
+<div class="mb-6">
+  <a href="{{ url_for('admin.gdpr_retention') }}" class="text-sm text-blue-600 hover:underline">← Pulizia dati GDPR</a>
+  <h1 class="text-2xl font-bold mt-1">Registrazione violazione dati personali</h1>
+  <p class="text-sm text-gray-500 mt-1">Data Breach — Art. 33-34 GDPR</p>
+</div>
+
+<div class="bg-red-50 border border-red-200 rounded-xl p-5 mb-6">
+  <p class="text-sm text-red-800 font-medium">⚠️ In caso di violazione grave che comporti un rischio per i diritti e le libertà delle persone, il titolare del trattamento è tenuto a <strong>notificare il Garante entro 72 ore</strong> dalla scoperta tramite <a href="https://www.garanteprivacy.it" target="_blank" class="underline">garanteprivacy.it</a>.</p>
+</div>
+
+<form method="POST" class="bg-white border border-gray-200 rounded-xl p-6 space-y-4 max-w-2xl">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div>
+    <label class="block text-sm font-medium mb-1">Data e ora della scoperta *</label>
+    <input type="datetime-local" name="data_scoperta" required
+           class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500">
+  </div>
+  <div>
+    <label class="block text-sm font-medium mb-1">Tipologia di dati coinvolti *</label>
+    <input type="text" name="dati_coinvolti" required maxlength="500"
+           placeholder="Es. email, nome, dati di pagamento, codice fiscale..."
+           class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500">
+  </div>
+  <div>
+    <label class="block text-sm font-medium mb-1">Stima del numero di persone interessate</label>
+    <input type="text" name="stima_persone" maxlength="100"
+           placeholder="Es. circa 50 utenti"
+           class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500">
+  </div>
+  <div>
+    <label class="block text-sm font-medium mb-1">Misure adottate / in corso</label>
+    <textarea name="misure" rows="3" maxlength="1000"
+              placeholder="Es. reset password forzato, notifica agli utenti, blocco accessi..."
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500"></textarea>
+  </div>
+  <div>
+    <label class="block text-sm font-medium mb-1">Descrizione dell'evento *</label>
+    <textarea name="descrizione" rows="5" required maxlength="2000"
+              placeholder="Descrivere come è avvenuta la violazione, cosa è stato compromesso, chi potrebbe essere interessato..."
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500"></textarea>
+  </div>
+  <button type="submit" onclick="return confirm('Registrare la violazione e inviare notifica alla segreteria?')"
+          class="bg-red-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-red-700">
+    Registra violazione e notifica segreteria
+  </button>
+</form>
+{% endblock %}

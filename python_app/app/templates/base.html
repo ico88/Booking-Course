@@ -194,6 +194,31 @@
 </footer>
 
 {% block scripts %}{% endblock %}
+
+{# ── Cookie Banner GDPR ── #}
+{% if not request.cookies.get('cookie_consenso') %}
+<div id="cookie-banner" class="fixed bottom-0 left-0 right-0 z-50 bg-gray-900 text-white shadow-xl border-t border-gray-700">
+  <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+    <div class="flex-1 text-sm text-gray-300 leading-relaxed">
+      Utilizziamo <strong class="text-white">cookie tecnici</strong> strettamente necessari al funzionamento del sito (sessione e protezione CSRF). Non raccogliamo dati analitici né pubblicitari.
+      <a href="{{ url_for('public.cookie_policy') }}" class="text-blue-400 hover:text-blue-300 underline ml-1">Cookie Policy</a>
+    </div>
+    <div class="flex gap-2 shrink-0">
+      <button onclick="accettaCookie()" class="bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">Accetto</button>
+      <a href="{{ url_for('public.cookie_policy') }}" class="text-gray-400 hover:text-white text-sm px-3 py-2 rounded-lg transition-colors">Maggiori info</a>
+    </div>
+  </div>
+</div>
+<script>
+function accettaCookie() {
+  var d = new Date();
+  d.setFullYear(d.getFullYear() + 1);
+  document.cookie = 'cookie_consenso=1; expires=' + d.toUTCString() + '; path=/; SameSite=Strict';
+  document.getElementById('cookie-banner').remove();
+}
+</script>
+{% endif %}
+
 <script>
 function toggleUserMenu() {
   var d = document.getElementById('user-menu-dropdown');

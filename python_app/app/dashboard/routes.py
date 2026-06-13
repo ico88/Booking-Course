@@ -1,9 +1,9 @@
-import os, uuid, logging
+import os, uuid, logging, json
 from datetime import datetime, timezone
-from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app, abort, send_from_directory
+from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app, abort, send_from_directory, Response
 from flask_login import login_required, current_user
 from ..models import db, Prenotazione, Utente, StatoPrenotazione, MetodoPagamento
-from ..email_service import invia_email_contabile_caricata, invia_email_notifica_segreteria
+from ..email_service import invia_email_contabile_caricata, invia_email_notifica_segreteria, invia_email_conferma_consenso_marketing
 from ..utils import allowed_file, validate_email_address
 from .. import limiter
 
@@ -137,6 +137,7 @@ def dati_personali():
                 return render_template("dashboard/dati_personali.html")
             current_user.set_password(nuova_pw)
         consenso_marketing = request.form.get("consenso_marketing") == "on"
+        marketing_appena_attivato = consenso_marketing and not current_user.consenso_marketing
         if consenso_marketing != current_user.consenso_marketing:
             current_user.consenso_marketing = consenso_marketing
             if consenso_marketing:
@@ -145,6 +146,11 @@ def dati_personali():
         selected_tags = request.form.getlist("tags_marketing")
         current_user.tags_marketing = selected_tags
         db.session.commit()
+        if marketing_appena_attivato:
+            try:
+                invia_email_conferma_consenso_marketing(current_user)
+            except Exception as exc:
+                logger.error("Errore email conferma marketing: %s", exc)
         flash("Dati aggiornati con successo.", "success")
         return redirect(url_for("dashboard.dati_personali"))
     from ..models import Impostazione
@@ -169,6 +175,60 @@ def cancella_account():
     logger.info("Account eliminato: %s", email)
     flash("Account eliminato.", "info")
     return redirect(url_for("public.index"))
+
+
+@dashboard_bp.route("/esporta-dati")
+@login_required
+def esporta_dati():
+    u = current_user
+    prenotazioni = Prenotazione.query.filter_by(utente_id=u.id).all()
+    export = {
+        "esportato_il": datetime.now(timezone.utc).isoformat(),
+        "profilo": {
+            "nome": u.nome,
+            "cognome": u.cognome,
+            "email": u.email,
+            "telefono": u.telefono or "",
+            "codice_fiscale": u.codice_fiscale or "",
+            "ruolo": u.ruolo.value,
+            "consenso_privacy": u.consenso_privacy,
+            "consenso_marketing": u.consenso_marketing,
+            "tags_marketing": u.tags_marketing or [],
+            "data_consenso": u.data_consenso.isoformat() if u.data_consenso else None,
+            "registrato_il": u.created_at.isoformat() if u.created_at else None,
+        },
+        "prenotazioni": [
+            {
+                "id": p.id,
+                "corso": p.corso.titolo if p.corso else "",
+                "data_corso": p.corso.data_inizio.isoformat() if p.corso and p.corso.data_inizio else None,
+                "luogo": p.corso.luogo if p.corso else "",
+                "numero_posti": p.numero_posti,
+                "stato": p.stato.value,
+                "metodo_pagamento": p.metodo_pagamento.value if p.metodo_pagamento else None,
+                "importo_pagato": float(p.importo_pagato) if p.importo_pagato else None,
+                "note": p.note or "",
+                "creata_il": p.created_at.isoformat() if p.created_at else None,
+                "partecipanti": [
+                    {
+                        "nome": part.nome,
+                        "cognome": part.cognome,
+                        "email": part.email or "",
+                        "telefono": part.telefono or "",
+                        "codice_fiscale": part.codice_fiscale or "",
+                    }
+                    for part in p.partecipanti
+                ],
+            }
+            for p in prenotazioni
+        ],
+    }
+    logger.info("Esportazione dati personali: %s", u.email)
+    return Response(
+        json.dumps(export, ensure_ascii=False, indent=2),
+        mimetype="application/json",
+        headers={"Content-Disposition": f"attachment; filename=miei-dati-{u.id[:8]}.json"},
+    )
 
 
 @dashboard_bp.route("/manuale")

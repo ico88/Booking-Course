@@ -34,12 +34,16 @@
     </div>
     <div class="space-y-2 pt-2">
       <label class="flex items-start gap-2 cursor-pointer">
+        <input type="checkbox" name="eta_minima" required class="mt-0.5">
+        <span class="text-sm text-gray-700">Dichiaro di avere almeno <strong>16 anni</strong> *</span>
+      </label>
+      <label class="flex items-start gap-2 cursor-pointer">
         <input type="checkbox" name="consenso_privacy" required class="mt-0.5">
         <span class="text-sm text-gray-700">Ho letto e accetto la <a href="{{ url_for('public.privacy_policy') }}" class="text-blue-700 hover:underline" target="_blank">Privacy Policy</a> *</span>
       </label>
       <label class="flex items-start gap-2 cursor-pointer">
         <input type="checkbox" name="consenso_marketing" class="mt-0.5">
-        <span class="text-sm text-gray-700">Accetto di ricevere comunicazioni di marketing</span>
+        <span class="text-sm text-gray-700">Accetto di ricevere comunicazioni di marketing sui corsi disponibili</span>
       </label>
     </div>
     {% if turnstile_site_key %}

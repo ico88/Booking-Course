@@ -1,53 +1,73 @@
 DEFAULT_PRIVACY_POLICY = """
 <h2>Informativa sulla Privacy</h2>
-<p><em>Ultimo aggiornamento: aggiornare con la data effettiva</em></p>
+<p><em>Ultimo aggiornamento: {{DATA_AGGIORNAMENTO}}</em></p>
 
 <h3>1. Titolare del trattamento</h3>
-<p>Il titolare del trattamento dei dati personali è l'ente erogatore dei corsi. Per qualsiasi informazione relativa al trattamento dei dati è possibile contattarci tramite l'email indicata nella sezione contatti del sito.</p>
+<p><strong>{{RAGIONE_SOCIALE}}</strong><br>
+{{INDIRIZZO_SEDE}}<br>
+Email: <a href="mailto:{{PRIVACY_EMAIL}}">{{PRIVACY_EMAIL}}</a></p>
+<p>Per qualsiasi richiesta relativa ai dati personali scrivere all'indirizzo email sopra indicato.</p>
 
 <h3>2. Dati raccolti</h3>
 <p>Raccogliamo i seguenti dati personali:</p>
 <ul>
   <li>Dati anagrafici (nome, cognome) forniti in fase di registrazione o prenotazione</li>
-  <li>Indirizzo email utilizzato come credenziale di accesso</li>
+  <li>Indirizzo email utilizzato come credenziale di accesso e per le comunicazioni</li>
+  <li>Numero di telefono e codice fiscale (opzionali, forniti in fase di prenotazione)</li>
+  <li>Dati dei partecipanti ai corsi (nome, cognome, email, codice fiscale)</li>
   <li>Dati di pagamento (trattati esclusivamente dal provider di pagamento; non vengono memorizzati sul nostro server)</li>
   <li>Dati di navigazione (log tecnici del server web)</li>
+  <li>Preferenze di comunicazione (aree di interesse per le notifiche sui corsi)</li>
 </ul>
 
 <h3>3. Finalità del trattamento</h3>
 <p>I dati raccolti vengono utilizzati per:</p>
 <ul>
-  <li>Gestire l'account utente e le prenotazioni ai corsi</li>
-  <li>Inviare comunicazioni relative ai corsi prenotati (conferme, promemoria, attestati)</li>
-  <li>Inviare comunicazioni di marketing sui prossimi corsi, previo consenso esplicito</li>
-  <li>Adempiere agli obblighi di legge</li>
+  <li>Gestire l'account utente e le prenotazioni ai corsi (base giuridica: esecuzione del contratto)</li>
+  <li>Inviare comunicazioni relative ai corsi prenotati: conferme, promemoria, attestati (base giuridica: esecuzione del contratto)</li>
+  <li>Adempiere agli obblighi di legge fiscali e contabili (base giuridica: obbligo legale)</li>
+  <li>Inviare comunicazioni di marketing sui prossimi corsi, <em>solo previo consenso esplicito</em> (base giuridica: consenso)</li>
 </ul>
 
-<h3>4. Base giuridica</h3>
-<p>Il trattamento è basato sull'esecuzione di un contratto (prenotazione e fruizione dei corsi), sull'adempimento di obblighi legali e, per le comunicazioni di marketing, sul consenso esplicito dell'interessato.</p>
+<h3>4. Età minima</h3>
+<p>La piattaforma è destinata a persone di età pari o superiore a 16 anni. Non raccogliamo consapevolmente dati di minori di 16 anni. Se ritieni che un minore abbia fornito dati senza il consenso del genitore, contattaci all'indirizzo indicato.</p>
 
 <h3>5. Conservazione dei dati</h3>
-<p>I dati personali vengono conservati per il tempo strettamente necessario alle finalità per cui sono stati raccolti e comunque non oltre 10 anni dalla cessazione del rapporto contrattuale, salvo diversi obblighi di legge.</p>
+<ul>
+  <li><strong>Dati account e prenotazioni:</strong> 10 anni dalla cessazione del rapporto contrattuale, salvo diversi obblighi di legge</li>
+  <li><strong>Dati di marketing (lead non registrati):</strong> fino alla revoca del consenso o a 2 anni dall'ultima interazione</li>
+  <li><strong>Log tecnici:</strong> 90 giorni</li>
+  <li><strong>Token temporanei (reset password, verifica email):</strong> 1–7 giorni</li>
+</ul>
 
 <h3>6. Destinatari dei dati</h3>
 <p>I dati non vengono ceduti a terzi per finalità commerciali. Possono essere comunicati a:</p>
 <ul>
-  <li>Provider di servizi email per l'invio delle comunicazioni</li>
-  <li>Provider di pagamento per la gestione delle transazioni</li>
+  <li>Provider di servizi email (per l'invio delle comunicazioni)</li>
+  <li>Provider di pagamento Stripe / PayPal (per la gestione delle transazioni; soggetti a proprie informative)</li>
+  <li>Cloudflare (CAPTCHA antibot, se abilitato; soggetto a propria informativa)</li>
   <li>Autorità competenti se richiesto dalla legge</li>
 </ul>
 
 <h3>7. Diritti dell'interessato</h3>
 <p>In conformità al Regolamento UE 2016/679 (GDPR), l'interessato ha diritto di:</p>
 <ul>
-  <li>Accedere ai propri dati personali</li>
-  <li>Rettificare dati inesatti o incompleti</li>
-  <li>Richiedere la cancellazione dei dati ("diritto all'oblio")</li>
-  <li>Opporsi al trattamento per finalità di marketing</li>
-  <li>Richiedere la portabilità dei dati</li>
-  <li>Proporre reclamo all'Autorità Garante per la protezione dei dati personali</li>
+  <li><strong>Accesso</strong> — ottenere conferma che siano trattati dati che lo riguardano e riceverne copia</li>
+  <li><strong>Rettifica</strong> — correggere dati inesatti o incompleti</li>
+  <li><strong>Cancellazione</strong> ("diritto all'oblio") — richiedere la cancellazione dei propri dati</li>
+  <li><strong>Opposizione</strong> — opporsi al trattamento, in particolare per finalità di marketing</li>
+  <li><strong>Portabilità</strong> — ricevere i propri dati in formato strutturato e leggibile da macchina</li>
+  <li><strong>Limitazione</strong> — chiedere la sospensione temporanea del trattamento</li>
+  <li><strong>Reclamo</strong> — proporre reclamo al Garante per la Protezione dei Dati Personali (<a href="https://www.garanteprivacy.it" target="_blank">garanteprivacy.it</a>)</li>
 </ul>
-<p>Per esercitare i propri diritti è sufficiente inviare una richiesta all'email del titolare del trattamento.</p>
+<p>Per esercitare i propri diritti è sufficiente inviare una richiesta a: <a href="mailto:{{PRIVACY_EMAIL}}">{{PRIVACY_EMAIL}}</a>. Risponderemo entro 30 giorni.</p>
+<p>Gli utenti registrati possono inoltre:</p>
+<ul>
+  <li>Modificare i propri dati personali dalla sezione "Dati personali" del portale</li>
+  <li>Scaricare una copia dei propri dati in formato JSON dalla sezione "Dati personali"</li>
+  <li>Eliminare il proprio account dalla sezione "Dati personali"</li>
+  <li>Revocare il consenso al marketing dalla sezione "Privacy e comunicazioni"</li>
+</ul>
 """
 
 DEFAULT_COOKIE_POLICY = """

@@ -291,24 +291,40 @@ def disiscrivi():
 @public_bp.route("/privacy-policy")
 def privacy_policy():
     from ..pagine_legali_defaults import DEFAULT_PRIVACY_POLICY
+    from datetime import date
     stored = Impostazione.get("pagina_privacy")
     content = sanitize_html(stored) if stored else DEFAULT_PRIVACY_POLICY
+    ragione_sociale = Impostazione.get("ragione_sociale") or current_app.config.get("APP_NAME", "")
+    indirizzo_sede = Impostazione.get("indirizzo_sede") or "—"
+    privacy_email = Impostazione.get("privacy_email") or Impostazione.get("email_segreteria") or current_app.config.get("MAIL_DEFAULT_SENDER", "")
+    content = (content
+        .replace("{{RAGIONE_SOCIALE}}", ragione_sociale)
+        .replace("{{INDIRIZZO_SEDE}}", indirizzo_sede)
+        .replace("{{PRIVACY_EMAIL}}", privacy_email)
+        .replace("{{DATA_AGGIORNAMENTO}}", date.today().strftime("%d/%m/%Y"))
+    )
     return render_template("public/pagina_legale.html", titolo="Privacy Policy", content=content)
 
 
 @public_bp.route("/cookie-policy")
 def cookie_policy():
     from ..pagine_legali_defaults import DEFAULT_COOKIE_POLICY, genera_tabella_cookie
+    from datetime import date
     tabella = genera_tabella_cookie(Impostazione.get("app_name") or current_app.config.get("APP_NAME", ""))
     stored = Impostazione.get("pagina_cookie")
     content = sanitize_html(stored) if stored else DEFAULT_COOKIE_POLICY
-    content = content.replace("{{TABELLA_COOKIE}}", tabella)
+    content = (content
+        .replace("{{TABELLA_COOKIE}}", tabella)
+        .replace("aggiornare con la data effettiva", date.today().strftime("%d/%m/%Y"))
+    )
     return render_template("public/pagina_legale.html", titolo="Cookie Policy", content=content)
 
 
 @public_bp.route("/termini-condizioni")
 def termini_condizioni():
     from ..pagine_legali_defaults import DEFAULT_TERMINI
+    from datetime import date
     stored = Impostazione.get("pagina_termini")
     content = sanitize_html(stored) if stored else DEFAULT_TERMINI
+    content = content.replace("aggiornare con la data effettiva", date.today().strftime("%d/%m/%Y"))
     return render_template("public/pagina_legale.html", titolo="Termini e Condizioni", content=content)

@@ -323,3 +323,20 @@ def invia_email_verifica_lead(lead, verifica_url: str):
         + _small("Il link scade tra 7 giorni.")
     )
     send_email(lead.email, f"Conferma la tua email - {app_name}", _html_wrapper(body, app_name, app_url, logo_url, legal, color_scheme))
+
+
+def invia_email_conferma_consenso_marketing(utente):
+    app_name, app_url, logo_url, legal, color_scheme = _ctx()
+    body = (
+        _h2("Iscrizione alle notifiche confermata")
+        + _p(f"Ciao <strong style='color:#111827'>{utente.nome}</strong>,")
+        + _p(f"Hai attivato le comunicazioni di marketing su <strong style='color:#111827'>{app_name}</strong>. "
+             f"Ti invieremo aggiornamenti sui nuovi corsi disponibili.")
+        + _p("Puoi revocare il consenso o aggiornare le tue preferenze in qualsiasi momento dalla tua area personale:")
+        + _btn(f"{app_url}/dashboard/dati-personali", "Gestisci preferenze")
+        + _small(
+            f"Hai ricevuto questa email perché hai attivato le comunicazioni di marketing su {app_name}. "
+            f"Se non sei stato tu, <a href='{app_url}/dashboard/dati-personali'>accedi al portale</a> e disattiva il consenso."
+        )
+    )
+    send_email(utente.email, f"Iscrizione alle notifiche - {app_name}", _html_wrapper(body, app_name, app_url, logo_url, legal, color_scheme))
