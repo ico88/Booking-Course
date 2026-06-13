@@ -17,10 +17,21 @@ def _get_smtp_config() -> dict:
     }
 
 
-def _html_wrapper(content: str, app_name: str, app_url: str, logo_url: str = "", legal: dict = None) -> str:
+_SCHEME_COLORS = {
+    "rosso": "#b91c1c",
+    "verde": "#15803d",
+    "blu": "#1d4ed8",
+}
+
+
+def _html_wrapper(content: str, app_name: str, app_url: str, logo_url: str = "", legal: dict = None, color_scheme: str = "blu") -> str:
     legal = legal or {}
+    header_color = _SCHEME_COLORS.get(color_scheme, "#1d4ed8")
+    # Recolor buttons in content to match scheme
+    content = content.replace("background:#1d4ed8", f"background:{header_color}")
     logo_html = ""
     if logo_url:
+        # Ensure absolute URL for email clients
         full_logo = logo_url if logo_url.startswith("http") else f"{app_url}{logo_url}"
         logo_html = f'<img src="{full_logo}" alt="{app_name}" style="max-height:48px;max-width:180px;object-fit:contain;display:block;margin:0 auto 12px auto">'
 
@@ -36,7 +47,7 @@ def _html_wrapper(content: str, app_name: str, app_url: str, logo_url: str = "",
     <table width="100%" style="max-width:600px;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.1)" cellpadding="0" cellspacing="0">
 
       <!-- HEADER -->
-      <tr><td style="background-color:#1d4ed8;padding:24px 32px;text-align:center">
+      <tr><td style="background-color:{header_color};padding:24px 32px;text-align:center">
         {logo_html}
         <div style="color:#ffffff;font-size:20px;font-weight:700">{app_name}</div>
       </td></tr>
@@ -109,7 +120,8 @@ def _ctx():
         "partita_iva": Impostazione.get("partita_iva") or "",
         "indirizzo_sede": Impostazione.get("indirizzo_sede") or "",
     }
-    return app_name, app_url, logo_url, legal
+    color_scheme = Impostazione.get("color_scheme") or "blu"
+    return app_name, app_url, logo_url, legal, color_scheme
 
 
 def _legal_block(legal: dict, app_url: str) -> str:
@@ -137,10 +149,10 @@ def _legal_block(legal: dict, app_url: str) -> str:
     )
 
 
-def _btn(url: str, label: str) -> str:
+def _btn(url: str, label: str, color: str = "#1d4ed8") -> str:
     return (
         f'<div style="margin:24px 0">'
-        f'<a href="{url}" style="display:inline-block;background:#1d4ed8;color:#ffffff !important;'
+        f'<a href="{url}" style="display:inline-block;background:{color};color:#ffffff !important;'
         f'padding:12px 24px;border-radius:6px;text-decoration:none !important;font-weight:600;'
         f'font-size:15px">{label}</a></div>'
     )
@@ -166,32 +178,32 @@ def _small(text: str) -> str:
 
 
 def invia_email_benvenuto(utente):
-    app_name, app_url, logo_url, legal = _ctx()
+    app_name, app_url, logo_url, legal, color_scheme = _ctx()
     body = (
         _h2(f"Benvenuto, {utente.nome}!")
         + _p(f"Il tuo account è stato creato con successo su <strong style='color:#111827'>{app_name}</strong>.")
         + _p("Puoi accedere alla tua area personale cliccando il pulsante qui sotto:")
-        + _btn(f"{app_url}/dashboard", "Vai alla dashboard")
+        + lambda_placeholder
     )
-    send_email(utente.email, f"Benvenuto su {app_name}!", _html_wrapper(body, app_name, app_url, logo_url, legal))
+    send_email(utente.email, f"Benvenuto su {app_name}!", _html_wrapper(body, app_name, app_url, logo_url, legal, color_scheme))
 
 
 def invia_email_verifica_account(utente, link: str):
-    app_name, app_url, logo_url, legal = _ctx()
+    app_name, app_url, logo_url, legal, color_scheme = _ctx()
     body = (
         _h2(f"Verifica il tuo account")
         + _p(f"Ciao <strong style='color:#111827'>{utente.nome}</strong>,")
         + _p(f"Grazie per esserti registrato al nostro sistema. Per completare la registrazione, clicca sul pulsante qui sotto:")
-        + _btn(link, "Verifica Account")
+        + lambda_placeholder
         + _p(f"Se il pulsante non funziona, copia e incolla questo link nel browser:")
         + f'<p style="color:#7c3aed;font-size:13px;word-break:break-all;margin:0 0 16px 0">{link}</p>'
         + _small(f"Se non hai richiesto questa registrazione, ignora questa email.")
     )
-    send_email(utente.email, f"Verifica il tuo account - {app_name}", _html_wrapper(body, app_name, app_url, logo_url, legal))
+    send_email(utente.email, f"Verifica il tuo account - {app_name}", _html_wrapper(body, app_name, app_url, logo_url, legal, color_scheme))
 
 
 def invia_email_prenotazione(prenotazione):
-    app_name, app_url, logo_url, legal = _ctx()
+    app_name, app_url, logo_url, legal, color_scheme = _ctx()
     u = prenotazione.utente
     c = prenotazione.corso
     importo = prenotazione.importo_totale
@@ -208,77 +220,77 @@ def invia_email_prenotazione(prenotazione):
         + _p(f"Ciao <strong style='color:#111827'>{u.nome}</strong>, la tua prenotazione per <strong style='color:#111827'>{c.titolo}</strong> è stata registrata.")
         + _info_box(riepilogo)
         + (_info_box(f"<strong style='color:#111827'>Dati bonifico:</strong><br><code style='font-size:13px;color:#a1a1aa'>{coord}</code>") if coord else "")
-        + _btn(f"{app_url}/dashboard/prenotazioni/{prenotazione.id}", "Gestisci prenotazione")
+        + lambda_placeholder
     )
-    send_email(u.email, f"Prenotazione per {c.titolo}", _html_wrapper(body, app_name, app_url, logo_url, legal))
+    send_email(u.email, f"Prenotazione per {c.titolo}", _html_wrapper(body, app_name, app_url, logo_url, legal, color_scheme))
 
 
 def invia_email_contabile_caricata(prenotazione):
-    app_name, app_url, logo_url, legal = _ctx()
+    app_name, app_url, logo_url, legal, color_scheme = _ctx()
     u = prenotazione.utente
     c = prenotazione.corso
     body = (
         _h2("Pagamento ricevuto")
         + _p(f"Ciao <strong style='color:#111827'>{u.nome}</strong>, abbiamo ricevuto la tua ricevuta di pagamento per <strong style='color:#111827'>{c.titolo}</strong>.")
         + _p("La segreteria verificherà il pagamento e confermerà la tua iscrizione a breve.")
-        + _btn(f"{app_url}/dashboard/prenotazioni/{prenotazione.id}", "Visualizza prenotazione")
+        + lambda_placeholder
     )
-    send_email(u.email, f"Pagamento ricevuto - {c.titolo}", _html_wrapper(body, app_name, app_url, logo_url, legal))
+    send_email(u.email, f"Pagamento ricevuto - {c.titolo}", _html_wrapper(body, app_name, app_url, logo_url, legal, color_scheme))
 
 
 def invia_email_conferma_prenotazione(prenotazione):
-    app_name, app_url, logo_url, legal = _ctx()
+    app_name, app_url, logo_url, legal, color_scheme = _ctx()
     u = prenotazione.utente
     c = prenotazione.corso
     body = (
         _h2("Iscrizione confermata!")
         + _p(f"Ciao <strong style='color:#111827'>{u.nome}</strong>, la tua iscrizione al corso <strong style='color:#111827'>{c.titolo}</strong> è stata <strong style='color:#16a34a'>confermata</strong>.")
         + _p("Ti aspettiamo!")
-        + _btn(f"{app_url}/dashboard/prenotazioni/{prenotazione.id}", "Dettagli iscrizione")
+        + lambda_placeholder
     )
-    send_email(u.email, f"Iscrizione confermata - {c.titolo}", _html_wrapper(body, app_name, app_url, logo_url, legal))
+    send_email(u.email, f"Iscrizione confermata - {c.titolo}", _html_wrapper(body, app_name, app_url, logo_url, legal, color_scheme))
 
 
 def invia_email_attestato(prenotazione):
-    app_name, app_url, logo_url, legal = _ctx()
+    app_name, app_url, logo_url, legal, color_scheme = _ctx()
     u = prenotazione.utente
     c = prenotazione.corso
     body = (
         _h2("Il tuo attestato è disponibile")
         + _p(f"Ciao <strong style='color:#111827'>{u.nome}</strong>, il tuo attestato di partecipazione al corso <strong style='color:#111827'>{c.titolo}</strong> è ora disponibile.")
-        + _btn(f"{app_url}/dashboard/prenotazioni/{prenotazione.id}", "Scarica attestato")
+        + lambda_placeholder
     )
-    send_email(u.email, f"Attestato disponibile - {c.titolo}", _html_wrapper(body, app_name, app_url, logo_url, legal))
+    send_email(u.email, f"Attestato disponibile - {c.titolo}", _html_wrapper(body, app_name, app_url, logo_url, legal, color_scheme))
 
 
 def invia_email_reset_password(utente, link: str):
-    app_name, app_url, logo_url, legal = _ctx()
+    app_name, app_url, logo_url, legal, color_scheme = _ctx()
     body = (
         _h2("Recupero password")
         + _p(f"Ciao <strong style='color:#111827'>{utente.nome}</strong>, hai richiesto il recupero della password.")
         + _p("Clicca il pulsante qui sotto per impostare una nuova password (il link scade tra 1 ora):")
-        + _btn(link, "Reimposta password")
+        + lambda_placeholder
         + _p(f"Se il pulsante non funziona, copia e incolla questo link nel browser:")
         + f'<p style="color:#7c3aed;font-size:13px;word-break:break-all;margin:0 0 16px 0">{link}</p>'
         + _small("Se non hai richiesto il recupero, ignora questa email.")
     )
-    send_email(utente.email, f"Recupero password - {app_name}", _html_wrapper(body, app_name, app_url, logo_url, legal))
+    send_email(utente.email, f"Recupero password - {app_name}", _html_wrapper(body, app_name, app_url, logo_url, legal, color_scheme))
 
 
 def invia_email_notifica_segreteria(soggetto: str, messaggio: str):
-    app_name, app_url, logo_url, legal = _ctx()
+    app_name, app_url, logo_url, legal, color_scheme = _ctx()
     admin_email = Impostazione.get("smtp_user") or current_app.config.get("MAIL_USERNAME", "")
     if not admin_email:
         return
     body = _h2(soggetto) + _p(messaggio)
     try:
-        send_email(admin_email, f"[{app_name}] {soggetto}", _html_wrapper(body, app_name, app_url, logo_url, legal))
+        send_email(admin_email, f"[{app_name}] {soggetto}", _html_wrapper(body, app_name, app_url, logo_url, legal, color_scheme))
     except Exception:
         pass
 
 
 def invia_email_marketing(lead, corso, unsub_token: str):
-    app_name, app_url, logo_url, legal = _ctx()
+    app_name, app_url, logo_url, legal, color_scheme = _ctx()
     unsub_url = f"{app_url}/disiscrivi?email={lead.email}&token={unsub_token}"
     data_str = corso.data_inizio.strftime("%d/%m/%Y") if corso.data_inizio else "Da definire"
     img_html = ""
@@ -295,20 +307,20 @@ def invia_email_marketing(lead, corso, unsub_token: str):
         + img_html
         + f'<h3 style="color:#e5e7eb;font-size:18px;margin:0 0 12px 0">{corso.titolo}</h3>'
         + _info_box(riepilogo)
-        + _btn(f"{app_url}/corsi/{corso.id}", "Scopri il corso")
+        + lambda_placeholder
         + f'<p style="color:#52525b;font-size:11px;margin-top:32px;line-height:1.6">'
         f'Ricevi queste email perché sei iscritto alle notifiche di {app_name}.<br>'
         f'<a href="{unsub_url}" style="color:#7c3aed">Annulla iscrizione</a></p>'
     )
-    send_email(lead.email, f"Nuovo corso: {corso.titolo}", _html_wrapper(body, app_name, app_url, logo_url, legal))
+    send_email(lead.email, f"Nuovo corso: {corso.titolo}", _html_wrapper(body, app_name, app_url, logo_url, legal, color_scheme))
 
 
 def invia_email_verifica_lead(lead, verifica_url: str):
-    app_name, app_url, logo_url, legal = _ctx()
+    app_name, app_url, logo_url, legal, color_scheme = _ctx()
     body = (
         _h2("Conferma la tua email")
         + _p(f"Ciao{(' <strong>' + lead.nome + '</strong>') if lead.nome else ''}! Clicca il pulsante per confermare la tua iscrizione alle notifiche di <strong>{app_name}</strong>.")
-        + _btn(verifica_url, "Conferma email")
+        + lambda_placeholder
         + _small("Il link scade tra 7 giorni.")
     )
-    send_email(lead.email, f"Conferma la tua email - {app_name}", _html_wrapper(body, app_name, app_url, logo_url, legal))
+    send_email(lead.email, f"Conferma la tua email - {app_name}", _html_wrapper(body, app_name, app_url, logo_url, legal, color_scheme))
