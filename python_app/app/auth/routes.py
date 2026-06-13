@@ -20,9 +20,12 @@ _login_attempts: dict = defaultdict(list)
 
 
 def _verify_turnstile(token: str) -> bool:
-    secret = current_app.config.get("TURNSTILE_SECRET_KEY", "")
+    from ..models import Impostazione
+    secret = Impostazione.get("turnstile_secret_key") or current_app.config.get("TURNSTILE_SECRET_KEY", "")
     if not secret:
-        return True  # Not configured → skip verification
+        return True  # Not configured → skip
+    if Impostazione.get("turnstile_enabled") != "1":
+        return True  # Configured but disabled → skip
     if not token:
         return False
     try:

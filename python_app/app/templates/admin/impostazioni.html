@@ -2,333 +2,450 @@
 {% block title %}Impostazioni{% endblock %}
 
 {% block admin_content %}
-<h1 class="text-2xl font-bold mb-6">Impostazioni</h1>
+{% set _nav = [
+  ('generale',   'Generale',   'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z'),
+  ('azienda',    'Azienda',    'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 00-1-1h-2a1 1 0 00-1 1v5m4 0H9'),
+  ('aspetto',    'Aspetto',    'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z'),
+  ('email',      'Email',      'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z'),
+  ('pagamenti',  'Pagamenti',  'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z'),
+  ('notifiche',  'Notifiche',  'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9'),
+  ('sicurezza',  'Sicurezza',  'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z'),
+] %}
+{% set _active = tab or 'generale' %}
 
-<!-- Tabs -->
-<div class="flex gap-1 mb-6 bg-white border border-gray-200 rounded-xl p-1 w-fit flex-wrap">
-  {% for t, label in [('generale','Generale'),('aspetto','Aspetto'),('email','Email'),('pagamenti','Pagamenti'),('notifiche','Notifiche'),('sicurezza','Sicurezza')] %}
-  <button type="button" onclick="showTab('{{ t }}')" id="tab-btn-{{ t }}"
-    class="px-4 py-2 rounded-lg text-sm font-medium transition-colors tab-btn {{ 'bg-blue-600 text-white' if (tab or 'generale') == t else 'text-gray-600 hover:bg-gray-100' }}">
-    {{ label }}
-  </button>
-  {% endfor %}
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-bold">Impostazioni</h1>
 </div>
 
-<!-- Generale -->
-<div id="tab-generale" class="tab-panel space-y-5 {{ 'hidden' if (tab or 'generale') != 'generale' }}">
-  <form method="POST" class="space-y-5">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <input type="hidden" name="_tab" value="generale">
-    <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
-      <h2 class="font-semibold text-gray-800">Impostazioni generali</h2>
-      <div>
-        <label class="block text-sm font-medium mb-1">Nome applicazione</label>
-        <input type="text" name="app_name" value="{{ settings.get('app_name', '') }}" maxlength="100"
-               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-      </div>
-      <div>
-        <label class="block text-sm font-medium mb-1">URL applicazione</label>
-        <input type="url" name="app_url" value="{{ settings.get('app_url', '') }}" maxlength="200"
-               placeholder="https://tuodominio.com"
-               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-      </div>
-      <div>
-        <label class="block text-sm font-medium mb-1">Email segreteria</label>
-        <input type="email" name="email_segreteria" value="{{ settings.get('email_segreteria', '') }}" maxlength="200"
-               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-      </div>
-      <div class="flex items-center gap-3 pt-1">
-        <input type="checkbox" name="navbar_hide_name" id="navbar_hide_name" value="1"
-               {{ 'checked' if settings.get('navbar_hide_name') == '1' }}
-               class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-        <label for="navbar_hide_name" class="text-sm text-gray-700 cursor-pointer">Nascondi nome applicazione nell'header</label>
-      </div>
-    </div>
-    <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
-      <h2 class="font-semibold text-gray-800">Dati societari <span class="text-xs font-normal text-gray-400">(usati nel footer delle email)</span></h2>
-      <div>
-        <label class="block text-sm font-medium mb-1">Ragione sociale</label>
-        <input type="text" name="ragione_sociale" value="{{ settings.get('ragione_sociale', '') }}" maxlength="200"
-               placeholder="Es. Acme S.r.l."
-               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-      </div>
-      <div>
-        <label class="block text-sm font-medium mb-1">Partita IVA</label>
-        <input type="text" name="partita_iva" value="{{ settings.get('partita_iva', '') }}" maxlength="50"
-               placeholder="Es. IT12345678901"
-               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-      </div>
-      <div>
-        <label class="block text-sm font-medium mb-1">Indirizzo sede legale</label>
-        <input type="text" name="indirizzo_sede" value="{{ settings.get('indirizzo_sede', '') }}" maxlength="300"
-               placeholder="Es. Via Roma 1, 00100 Roma RM"
-               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-      </div>
-    </div>
-    <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
-      <h2 class="font-semibold text-gray-800">Hero page pubblica <span class="text-xs font-normal text-gray-400">(testi della sezione iniziale)</span></h2>
-      <div>
-        <label class="block text-sm font-medium mb-1">Badge sopra il titolo</label>
-        <input type="text" name="hero_badge" value="{{ settings.get('hero_badge', '') }}" maxlength="80"
-               placeholder="Es. Portale Formazione"
-               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-      </div>
-      <div>
-        <label class="block text-sm font-medium mb-1">Sottotitolo</label>
-        <textarea name="hero_subtitle" maxlength="300" rows="2"
-                  placeholder="Es. Benvenuto nel portale di formazione professionale..."
-                  class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">{{ settings.get('hero_subtitle', '') }}</textarea>
-      </div>
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm font-medium mb-1">Testo pulsante principale</label>
-          <input type="text" name="hero_btn_primary" value="{{ settings.get('hero_btn_primary', '') }}" maxlength="50"
-                 placeholder="Es. Accedi al portale"
-                 class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">Testo pulsante secondario</label>
-          <input type="text" name="hero_btn_secondary" value="{{ settings.get('hero_btn_secondary', '') }}" maxlength="50"
-                 placeholder="Es. Scopri i corsi"
-                 class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-        </div>
-      </div>
-    </div>
-    <button type="submit" class="w-full bg-blue-700 text-white py-2.5 rounded-xl font-medium hover:bg-blue-800">Salva</button>
-  </form>
+<!-- Mobile select -->
+<div class="sm:hidden mb-4">
+  <select onchange="showTab(this.value)" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+    {% for tid, tlabel, _ in _nav %}
+    <option value="{{ tid }}" {{ 'selected' if _active == tid }}>{{ tlabel }}</option>
+    {% endfor %}
+  </select>
+</div>
 
-  <!-- Logo — separate form, not nested -->
-  <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
-    <h2 class="font-semibold text-gray-800">Logo</h2>
-    {% if logo_url %}
-    <div class="flex items-center gap-4">
-      <img src="{{ logo_url }}" alt="Logo" class="h-14 object-contain border border-gray-100 rounded-lg p-1 bg-white">
-      <form method="POST" action="{{ url_for('admin.logo_elimina') }}">
+<!-- Layout 2 colonne -->
+<div class="flex gap-6 items-start">
+
+  <!-- Sidebar navigazione (desktop) -->
+  <aside class="hidden sm:flex flex-col w-48 shrink-0 bg-white border border-gray-200 rounded-xl overflow-hidden sticky top-24">
+    {% for tid, tlabel, ticon in _nav %}
+    <button type="button" onclick="showTab('{{ tid }}')" id="snav-{{ tid }}"
+      class="flex items-center gap-3 px-4 py-3 text-sm text-left transition-colors border-l-2 w-full
+             {{ 'border-blue-600 bg-blue-50 text-blue-700 font-semibold' if _active == tid else 'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+      <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ ticon }}"/>
+      </svg>
+      {{ tlabel }}
+    </button>
+    {% endfor %}
+  </aside>
+
+  <!-- Contenuto -->
+  <div class="flex-1 min-w-0">
+
+    {# ══════════════════════════════════════════════ GENERALE ══ #}
+    <div id="tab-generale" class="tab-panel space-y-5 {{ 'hidden' if _active != 'generale' }}">
+      <form method="POST" class="space-y-5">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit" class="text-sm text-red-600 hover:text-red-800">Rimuovi logo</button>
+        <input type="hidden" name="_tab" value="generale">
+        <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+          <div class="flex items-center gap-2 mb-1">
+            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <h2 class="font-semibold text-gray-800">Informazioni applicazione</h2>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Nome applicazione</label>
+            <input type="text" name="app_name" value="{{ settings.get('app_name', '') }}" maxlength="100"
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">URL applicazione</label>
+            <input type="url" name="app_url" value="{{ settings.get('app_url', '') }}" maxlength="200"
+                   placeholder="https://tuodominio.com"
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Email segreteria</label>
+            <input type="email" name="email_segreteria" value="{{ settings.get('email_segreteria', '') }}" maxlength="200"
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div class="flex items-center gap-3 pt-1 pb-1">
+            <input type="checkbox" name="navbar_hide_name" id="navbar_hide_name" value="1"
+                   {{ 'checked' if settings.get('navbar_hide_name') == '1' }}
+                   class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+            <label for="navbar_hide_name" class="text-sm text-gray-700 cursor-pointer">Nascondi nome applicazione nell'header</label>
+          </div>
+        </div>
+        <button type="submit" class="bg-blue-700 text-white px-6 py-2.5 rounded-xl font-medium hover:bg-blue-800">Salva</button>
       </form>
     </div>
-    {% endif %}
-    <form method="POST" action="{{ url_for('admin.upload_logo') }}" enctype="multipart/form-data" class="flex gap-3 items-end">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <div class="flex-1">
-        <label class="block text-sm font-medium mb-1">Carica nuovo logo <span class="font-normal text-gray-400">(PNG, JPG, SVG, WebP — max 5 MB)</span></label>
-        <input type="file" name="logo" accept="image/*" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-      </div>
-      <button type="submit" class="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-900 whitespace-nowrap">Carica</button>
-    </form>
-  </div>
-</div>
 
-<!-- Aspetto -->
-<div id="tab-aspetto" class="tab-panel space-y-5 {{ 'hidden' if (tab or 'generale') != 'aspetto' }}">
-  <form method="POST" class="space-y-5">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <input type="hidden" name="_tab" value="aspetto">
-    <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
-      <h2 class="font-semibold text-gray-800">Schema di colori</h2>
-      {% set _active = settings.get('color_scheme', 'blu') %}
-      <p class="text-sm text-gray-500">Schema attivo: <strong>{{ {'blu':'Blu','rosso':'Rosso','verde':'Verde'}.get(_active, _active) }}</strong>. Seleziona e salva per applicare.</p>
-      <div class="grid grid-cols-3 gap-4">
-        {% for scheme_id, scheme_name, scheme_color in [
-          ('blu', 'Blu', '#1d4ed8'),
-          ('rosso', 'Rosso', '#b91c1c'),
-          ('verde', 'Verde', '#15803d'),
-        ] %}
-        <label class="cursor-pointer">
-          <input type="radio" name="color_scheme" value="{{ scheme_id }}" class="sr-only peer"
-                 {{ 'checked' if _active == scheme_id }}>
-          <div class="border-2 rounded-xl p-4 text-center transition-all peer-checked:ring-2 peer-checked:ring-offset-1"
-               style="border-color:{{ scheme_color }};--tw-ring-color:{{ scheme_color }}">
-            <div class="w-10 h-10 rounded-full mx-auto mb-2 shadow-md" style="background:{{ scheme_color }}"></div>
-            <div class="text-sm font-medium" style="color:{{ scheme_color }}">{{ scheme_name }}</div>
+    {# ══════════════════════════════════════════════ AZIENDA ══ #}
+    <div id="tab-azienda" class="tab-panel space-y-5 {{ 'hidden' if _active != 'azienda' }}">
+      <form method="POST" class="space-y-5">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="_tab" value="azienda">
+        <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+          <div class="flex items-center gap-2 mb-1">
+            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 00-1-1h-2a1 1 0 00-1 1v5m4 0H9"/></svg>
+            <h2 class="font-semibold text-gray-800">Dati societari</h2>
+            <span class="text-xs text-gray-400 font-normal">— usati nel footer delle email e del sito</span>
           </div>
-        </label>
-        {% endfor %}
-      </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Ragione sociale</label>
+            <input type="text" name="ragione_sociale" value="{{ settings.get('ragione_sociale', '') }}" maxlength="200"
+                   placeholder="Es. Acme S.r.l."
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-1">Partita IVA</label>
+              <input type="text" name="partita_iva" value="{{ settings.get('partita_iva', '') }}" maxlength="50"
+                     placeholder="Es. IT12345678901"
+                     class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Indirizzo sede legale</label>
+              <input type="text" name="indirizzo_sede" value="{{ settings.get('indirizzo_sede', '') }}" maxlength="300"
+                     placeholder="Es. Via Roma 1, 00100 Roma RM"
+                     class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+        </div>
+        <button type="submit" class="bg-blue-700 text-white px-6 py-2.5 rounded-xl font-medium hover:bg-blue-800">Salva</button>
+      </form>
     </div>
-    <button type="submit" class="w-full bg-blue-700 text-white py-2.5 rounded-xl font-medium hover:bg-blue-800">Salva schema colori</button>
-  </form>
-</div>
 
-<!-- Email -->
-<div id="tab-email" class="tab-panel space-y-5 {{ 'hidden' if (tab or 'generale') != 'email' }}">
-  <form method="POST" class="space-y-5">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <input type="hidden" name="_tab" value="email">
-    <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
-      <h2 class="font-semibold text-gray-800">Email SMTP</h2>
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm font-medium mb-1">Server SMTP</label>
-          <input type="text" name="smtp_host" value="{{ settings.get('smtp_host', '') }}"
-                 placeholder="smtp.gmail.com" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+    {# ══════════════════════════════════════════════ ASPETTO ══ #}
+    <div id="tab-aspetto" class="tab-panel space-y-5 {{ 'hidden' if _active != 'aspetto' }}">
+      <!-- Logo -->
+      <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+        <div class="flex items-center gap-2 mb-1">
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          <h2 class="font-semibold text-gray-800">Logo</h2>
         </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">Porta</label>
-          <input type="number" name="smtp_port" value="{{ settings.get('smtp_port', '587') }}"
-                 class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+        {% if logo_url %}
+        <div class="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+          <img src="{{ logo_url }}" alt="Logo" class="h-14 object-contain">
+          <form method="POST" action="{{ url_for('admin.logo_elimina') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="text-sm text-red-600 hover:text-red-800">Rimuovi</button>
+          </form>
         </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">Utente / Email</label>
-          <input type="text" name="smtp_user" value="{{ settings.get('smtp_user', '') }}"
-                 class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">Password</label>
-          <input type="password" name="smtp_password" value="{{ settings.get('smtp_password', '') }}"
-                 autocomplete="new-password" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-        </div>
-        <div class="col-span-2">
-          <label class="block text-sm font-medium mb-1">Nome mittente</label>
-          <input type="text" name="smtp_from_name" value="{{ settings.get('smtp_from_name', '') }}"
-                 class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-        </div>
+        {% endif %}
+        <form method="POST" action="{{ url_for('admin.upload_logo') }}" enctype="multipart/form-data" class="flex gap-3 items-end">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="flex-1">
+            <label class="block text-sm font-medium mb-1">Carica logo <span class="font-normal text-gray-400">(PNG, JPG, SVG, WebP — max 5 MB)</span></label>
+            <input type="file" name="logo" accept="image/*" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+          </div>
+          <button type="submit" class="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-900 whitespace-nowrap">Carica</button>
+        </form>
       </div>
-    </div>
-    <button type="submit" class="w-full bg-blue-700 text-white py-2.5 rounded-xl font-medium hover:bg-blue-800">Salva</button>
-  </form>
-  <!-- Test email — separate form -->
-  <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-3">
-    <h2 class="font-semibold text-gray-800">Test invio email</h2>
-    <p class="text-sm text-gray-500">Invia un'email di prova per verificare che la configurazione SMTP funzioni correttamente.</p>
-    <form method="POST" action="{{ url_for('admin.test_email') }}" class="flex gap-3 items-end">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <div class="flex-1">
-        <label class="block text-sm font-medium mb-1">Destinatario</label>
-        <input type="email" name="test_email_to" value="{{ current_user.email }}"
-               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 text-sm">
-      </div>
-      <button type="submit" class="bg-gray-800 text-white px-5 py-2 rounded-lg text-sm hover:bg-gray-900 whitespace-nowrap">Invia email di test</button>
-    </form>
-  </div>
-</div>
 
-<!-- Pagamenti -->
-<div id="tab-pagamenti" class="tab-panel space-y-5 {{ 'hidden' if (tab or 'generale') != 'pagamenti' }}">
-  <form method="POST" class="space-y-5">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <input type="hidden" name="_tab" value="pagamenti">
-    <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
-      <h2 class="font-semibold text-gray-800">Stripe</h2>
-      <div>
-        <label class="block text-sm font-medium mb-1">Chiave pubblica <span class="text-gray-400 font-normal">(pk_...)</span></label>
-        <input type="text" name="stripe_publishable_key" value="{{ settings.get('stripe_publishable_key', '') }}"
-               class="w-full border border-gray-300 rounded-lg px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-blue-500">
-      </div>
-      <div>
-        <label class="block text-sm font-medium mb-1">Chiave segreta <span class="text-gray-400 font-normal">(sk_...)</span></label>
-        <input type="password" name="stripe_secret_key" value="{{ settings.get('stripe_secret_key', '') }}"
-               autocomplete="new-password" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-      </div>
-    </div>
-    <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
-      <h2 class="font-semibold text-gray-800">PayPal</h2>
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm font-medium mb-1">Client ID</label>
-          <input type="text" name="paypal_client_id" value="{{ settings.get('paypal_client_id', '') }}"
-                 class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+      <!-- Schema colori + Hero -->
+      <form method="POST" class="space-y-5">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="_tab" value="aspetto">
+        <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+          <div class="flex items-center gap-2 mb-1">
+            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/></svg>
+            <h2 class="font-semibold text-gray-800">Schema di colori</h2>
+          </div>
+          {% set _active_scheme = settings.get('color_scheme', 'blu') %}
+          <div class="grid grid-cols-3 gap-3">
+            {% for sid, sname, scolor in [('blu','Blu','#1d4ed8'),('rosso','Rosso','#b91c1c'),('verde','Verde','#15803d')] %}
+            <label class="cursor-pointer">
+              <input type="radio" name="color_scheme" value="{{ sid }}" class="sr-only peer" {{ 'checked' if _active_scheme == sid }}>
+              <div class="border-2 rounded-xl p-4 text-center transition-all peer-checked:ring-2 peer-checked:ring-offset-1 peer-checked:shadow-md"
+                   style="border-color:{{ scolor }};--tw-ring-color:{{ scolor }}">
+                <div class="w-8 h-8 rounded-full mx-auto mb-2 shadow" style="background:{{ scolor }}"></div>
+                <div class="text-sm font-medium" style="color:{{ scolor }}">{{ sname }}</div>
+              </div>
+            </label>
+            {% endfor %}
+          </div>
         </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">Client Secret</label>
-          <input type="password" name="paypal_client_secret" value="{{ settings.get('paypal_client_secret', '') }}"
-                 autocomplete="new-password" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-        </div>
-        <div class="col-span-2">
-          <label class="block text-sm font-medium mb-1">Modalità</label>
-          <select name="paypal_mode" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-            <option value="sandbox" {{ 'selected' if settings.get('paypal_mode','sandbox') == 'sandbox' }}>Sandbox (test)</option>
-            <option value="live"    {{ 'selected' if settings.get('paypal_mode') == 'live' }}>Live (produzione)</option>
-          </select>
-        </div>
-      </div>
-    </div>
-    <button type="submit" class="w-full bg-blue-700 text-white py-2.5 rounded-xl font-medium hover:bg-blue-800">Salva</button>
-  </form>
-</div>
 
-<!-- Notifiche -->
-<div id="tab-notifiche" class="tab-panel space-y-5 {{ 'hidden' if (tab or 'generale') != 'notifiche' }}">
-  <form method="POST" class="space-y-5">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <input type="hidden" name="_tab" value="notifiche">
-    <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
-      <h2 class="font-semibold text-gray-800">WhatsApp Business API</h2>
-      <div>
-        <label class="block text-sm font-medium mb-1">Phone Number ID</label>
-        <input type="text" name="whatsapp_phone_id" value="{{ settings.get('whatsapp_phone_id', '') }}"
-               placeholder="123456789012345"
-               class="w-full border border-gray-300 rounded-lg px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-blue-500">
-      </div>
-      <div>
-        <label class="block text-sm font-medium mb-1">Token API</label>
-        <input type="password" name="whatsapp_token" value="{{ settings.get('whatsapp_token', '') }}"
-               autocomplete="new-password" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-      </div>
-      <div>
-        <label class="block text-sm font-medium mb-1">Nome template predefinito</label>
-        <input type="text" name="whatsapp_template" value="{{ settings.get('whatsapp_template', '') }}"
-               placeholder="es. booking_confirmation"
-               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-        <p class="text-xs text-gray-400 mt-1">Nome del template approvato su Meta Business Manager</p>
-      </div>
+        <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+          <div class="flex items-center gap-2 mb-1">
+            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.069A1 1 0 0121 8.87V15.13a1 1 0 01-1.447.9L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/></svg>
+            <h2 class="font-semibold text-gray-800">Hero — pagina pubblica</h2>
+            <span class="text-xs text-gray-400 font-normal">— sezione iniziale del sito</span>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Badge sopra il titolo</label>
+            <input type="text" name="hero_badge" value="{{ settings.get('hero_badge', '') }}" maxlength="80"
+                   placeholder="Es. Portale Formazione"
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Sottotitolo</label>
+            <textarea name="hero_subtitle" maxlength="300" rows="2"
+                      placeholder="Es. Benvenuto nel portale di formazione professionale..."
+                      class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 resize-none">{{ settings.get('hero_subtitle', '') }}</textarea>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-1">Pulsante principale</label>
+              <input type="text" name="hero_btn_primary" value="{{ settings.get('hero_btn_primary', '') }}" maxlength="50"
+                     placeholder="Es. Accedi al portale"
+                     class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Pulsante secondario</label>
+              <input type="text" name="hero_btn_secondary" value="{{ settings.get('hero_btn_secondary', '') }}" maxlength="50"
+                     placeholder="Es. Scopri i corsi"
+                     class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+        </div>
+        <button type="submit" class="bg-blue-700 text-white px-6 py-2.5 rounded-xl font-medium hover:bg-blue-800">Salva aspetto</button>
+      </form>
     </div>
-    <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
-      <h2 class="font-semibold text-gray-800">Telegram Bot</h2>
-      <div>
-        <label class="block text-sm font-medium mb-1">Token Bot</label>
-        <input type="password" name="telegram_bot_token" value="{{ settings.get('telegram_bot_token', '') }}"
-               autocomplete="new-password" placeholder="1234567890:AAxxxxxx..."
-               class="w-full border border-gray-300 rounded-lg px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-blue-500">
-        <p class="text-xs text-gray-400 mt-1">Ottenibile da @BotFather su Telegram</p>
-      </div>
-      <div>
-        <label class="block text-sm font-medium mb-1">Chat ID segreteria</label>
-        <input type="text" name="telegram_chat_id" value="{{ settings.get('telegram_chat_id', '') }}"
-               placeholder="-1001234567890"
-               class="w-full border border-gray-300 rounded-lg px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-blue-500">
-        <p class="text-xs text-gray-400 mt-1">ID del gruppo o canale dove inviare le notifiche</p>
-      </div>
-    </div>
-    <button type="submit" class="w-full bg-blue-700 text-white py-2.5 rounded-xl font-medium hover:bg-blue-800">Salva</button>
-  </form>
-</div>
 
-<!-- Sicurezza -->
-<div id="tab-sicurezza" class="tab-panel space-y-5 {{ 'hidden' if (tab or 'generale') != 'sicurezza' }}">
-  <form method="POST" class="space-y-5">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <input type="hidden" name="_tab" value="sicurezza">
-    <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
-      <h2 class="font-semibold text-gray-800">Cloudflare Turnstile <span class="text-xs text-gray-400 font-normal">(CAPTCHA registrazione)</span></h2>
-      <div>
-        <label class="block text-sm font-medium mb-1">Site Key</label>
-        <input type="text" name="turnstile_site_key" value="{{ settings.get('turnstile_site_key', '') }}"
-               class="w-full border border-gray-300 rounded-lg px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-blue-500">
+    {# ══════════════════════════════════════════════ EMAIL ══ #}
+    <div id="tab-email" class="tab-panel space-y-5 {{ 'hidden' if _active != 'email' }}">
+      <form method="POST" class="space-y-5">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="_tab" value="email">
+        <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+          <div class="flex items-center gap-2 mb-1">
+            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            <h2 class="font-semibold text-gray-800">Configurazione SMTP</h2>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-1">Server SMTP</label>
+              <input type="text" name="smtp_host" value="{{ settings.get('smtp_host', '') }}"
+                     placeholder="smtp.gmail.com" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Porta</label>
+              <input type="number" name="smtp_port" value="{{ settings.get('smtp_port', '587') }}"
+                     class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Utente / Email</label>
+              <input type="text" name="smtp_user" value="{{ settings.get('smtp_user', '') }}"
+                     class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Password</label>
+              <input type="password" name="smtp_password" value="{{ settings.get('smtp_password', '') }}"
+                     autocomplete="new-password" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="col-span-2">
+              <label class="block text-sm font-medium mb-1">Nome mittente</label>
+              <input type="text" name="smtp_from_name" value="{{ settings.get('smtp_from_name', '') }}"
+                     class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+        </div>
+        <button type="submit" class="bg-blue-700 text-white px-6 py-2.5 rounded-xl font-medium hover:bg-blue-800">Salva</button>
+      </form>
+      <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-3">
+        <div class="flex items-center gap-2 mb-1">
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <h2 class="font-semibold text-gray-800">Test invio email</h2>
+        </div>
+        <p class="text-sm text-gray-500">Verifica che la configurazione SMTP funzioni correttamente.</p>
+        <form method="POST" action="{{ url_for('admin.test_email') }}" class="flex gap-3 items-end">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="flex-1">
+            <label class="block text-sm font-medium mb-1">Destinatario</label>
+            <input type="email" name="test_email_to" value="{{ current_user.email }}"
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 text-sm">
+          </div>
+          <button type="submit" class="bg-gray-800 text-white px-5 py-2 rounded-lg text-sm hover:bg-gray-900 whitespace-nowrap">Invia test</button>
+        </form>
       </div>
-      <div>
-        <label class="block text-sm font-medium mb-1">Secret Key</label>
-        <input type="password" name="turnstile_secret_key" value="{{ settings.get('turnstile_secret_key', '') }}"
-               autocomplete="new-password" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-      </div>
-      <p class="text-xs text-gray-400">Lascia vuoto per disabilitare il CAPTCHA. Ottenibile da <a href="https://dash.cloudflare.com/" class="underline" target="_blank">dash.cloudflare.com</a></p>
     </div>
-    <button type="submit" class="w-full bg-blue-700 text-white py-2.5 rounded-xl font-medium hover:bg-blue-800">Salva</button>
-  </form>
-</div>
+
+    {# ══════════════════════════════════════════════ PAGAMENTI ══ #}
+    <div id="tab-pagamenti" class="tab-panel space-y-5 {{ 'hidden' if _active != 'pagamenti' }}">
+      <form method="POST" class="space-y-5">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="_tab" value="pagamenti">
+        <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+          <div class="flex items-center gap-2 mb-1">
+            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+            <h2 class="font-semibold text-gray-800">Stripe</h2>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Chiave pubblica <span class="text-gray-400 font-normal">(pk_...)</span></label>
+            <input type="text" name="stripe_publishable_key" value="{{ settings.get('stripe_publishable_key', '') }}"
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Chiave segreta <span class="text-gray-400 font-normal">(sk_...)</span></label>
+            <input type="password" name="stripe_secret_key" value="{{ settings.get('stripe_secret_key', '') }}"
+                   autocomplete="new-password" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+        <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+          <div class="flex items-center gap-2 mb-1">
+            <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z"/></svg>
+            <h2 class="font-semibold text-gray-800">PayPal</h2>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-1">Client ID</label>
+              <input type="text" name="paypal_client_id" value="{{ settings.get('paypal_client_id', '') }}"
+                     class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Client Secret</label>
+              <input type="password" name="paypal_client_secret" value="{{ settings.get('paypal_client_secret', '') }}"
+                     autocomplete="new-password" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="col-span-2">
+              <label class="block text-sm font-medium mb-1">Modalità</label>
+              <select name="paypal_mode" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                <option value="sandbox" {{ 'selected' if settings.get('paypal_mode','sandbox') == 'sandbox' }}>Sandbox (test)</option>
+                <option value="live"    {{ 'selected' if settings.get('paypal_mode') == 'live' }}>Live (produzione)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <button type="submit" class="bg-blue-700 text-white px-6 py-2.5 rounded-xl font-medium hover:bg-blue-800">Salva</button>
+      </form>
+    </div>
+
+    {# ══════════════════════════════════════════════ NOTIFICHE ══ #}
+    <div id="tab-notifiche" class="tab-panel space-y-5 {{ 'hidden' if _active != 'notifiche' }}">
+      <form method="POST" class="space-y-5">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="_tab" value="notifiche">
+        <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+          <div class="flex items-center gap-2 mb-1">
+            <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+            <h2 class="font-semibold text-gray-800">WhatsApp Business API</h2>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Phone Number ID</label>
+            <input type="text" name="whatsapp_phone_id" value="{{ settings.get('whatsapp_phone_id', '') }}"
+                   placeholder="123456789012345" class="w-full border border-gray-300 rounded-lg px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Token API</label>
+            <input type="password" name="whatsapp_token" value="{{ settings.get('whatsapp_token', '') }}"
+                   autocomplete="new-password" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Nome template predefinito</label>
+            <input type="text" name="whatsapp_template" value="{{ settings.get('whatsapp_template', '') }}"
+                   placeholder="es. booking_confirmation" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+            <p class="text-xs text-gray-400 mt-1">Nome del template approvato su Meta Business Manager</p>
+          </div>
+        </div>
+        <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+          <div class="flex items-center gap-2 mb-1">
+            <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+            <h2 class="font-semibold text-gray-800">Telegram Bot</h2>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Token Bot</label>
+            <input type="password" name="telegram_bot_token" value="{{ settings.get('telegram_bot_token', '') }}"
+                   autocomplete="new-password" placeholder="1234567890:AAxxxxxx..."
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-blue-500">
+            <p class="text-xs text-gray-400 mt-1">Ottenibile da @BotFather su Telegram</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Chat ID segreteria</label>
+            <input type="text" name="telegram_chat_id" value="{{ settings.get('telegram_chat_id', '') }}"
+                   placeholder="-1001234567890" class="w-full border border-gray-300 rounded-lg px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-blue-500">
+            <p class="text-xs text-gray-400 mt-1">ID del gruppo o canale dove inviare le notifiche</p>
+          </div>
+        </div>
+        <button type="submit" class="bg-blue-700 text-white px-6 py-2.5 rounded-xl font-medium hover:bg-blue-800">Salva</button>
+      </form>
+    </div>
+
+    {# ══════════════════════════════════════════════ SICUREZZA ══ #}
+    <div id="tab-sicurezza" class="tab-panel space-y-5 {{ 'hidden' if _active != 'sicurezza' }}">
+      {% set _has_keys = settings.get('turnstile_site_key') and settings.get('turnstile_secret_key') %}
+      {% set _enabled = settings.get('turnstile_enabled') == '1' %}
+      <form method="POST" class="space-y-5">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="_tab" value="sicurezza">
+        <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+              <h2 class="font-semibold text-gray-800">Cloudflare Turnstile <span class="text-xs text-gray-400 font-normal">(CAPTCHA registrazione)</span></h2>
+            </div>
+            <!-- Toggle abilitazione -->
+            <label class="flex items-center gap-2 cursor-{{ 'pointer' if _has_keys else 'not-allowed' }}"
+                   title="{{ 'Inserisci prima le chiavi API per abilitare' if not _has_keys else '' }}">
+              <span class="text-xs {{ 'text-gray-400' if not _has_keys else ('text-green-600 font-medium' if _enabled else 'text-gray-500') }}">
+                {{ 'Attivo' if (_has_keys and _enabled) else ('Disabilitato' if _has_keys else 'Chiavi mancanti') }}
+              </span>
+              <div class="relative">
+                <input type="checkbox" name="turnstile_enabled" value="1" id="turnstile_enabled"
+                       class="sr-only peer"
+                       {{ 'checked' if _enabled }}
+                       {{ 'disabled' if not _has_keys }}>
+                <div class="w-10 h-6 rounded-full transition-colors peer-checked:bg-green-500 peer-disabled:opacity-40
+                            {{ 'bg-gray-200' if not _enabled else 'bg-green-500' }}
+                            {{ 'opacity-40' if not _has_keys else '' }}"></div>
+                <div class="absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform
+                            {{ 'translate-x-4' if _enabled else '' }}
+                            peer-checked:translate-x-4"></div>
+              </div>
+            </label>
+          </div>
+
+          {% if not _has_keys %}
+          <div class="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-700">
+            <svg class="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+            Inserisci Site Key e Secret Key per poter attivare il CAPTCHA.
+          </div>
+          {% endif %}
+
+          <div>
+            <label class="block text-sm font-medium mb-1">Site Key</label>
+            <input type="text" name="turnstile_site_key" value="{{ settings.get('turnstile_site_key', '') }}"
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-blue-500"
+                   oninput="checkTurnstileKeys()">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Secret Key</label>
+            <input type="password" name="turnstile_secret_key" value="{{ settings.get('turnstile_secret_key', '') }}"
+                   autocomplete="new-password" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                   oninput="checkTurnstileKeys()">
+          </div>
+          <p class="text-xs text-gray-400">Ottenibile da <a href="https://dash.cloudflare.com/" class="underline" target="_blank">dash.cloudflare.com</a>. Lascia vuoto per non usare il CAPTCHA.</p>
+        </div>
+        <button type="submit" class="bg-blue-700 text-white px-6 py-2.5 rounded-xl font-medium hover:bg-blue-800">Salva</button>
+      </form>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /layout -->
 
 <script>
 function showTab(id) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
-  document.querySelectorAll('.tab-btn').forEach(b => {
-    b.classList.remove('bg-blue-600', 'text-white');
-    b.classList.add('text-gray-600', 'hover:bg-gray-100');
+  document.querySelectorAll('[id^="snav-"]').forEach(b => {
+    b.classList.remove('border-blue-600','bg-blue-50','text-blue-700','font-semibold');
+    b.classList.add('border-transparent','text-gray-600');
   });
   document.getElementById('tab-' + id).classList.remove('hidden');
-  const btn = document.getElementById('tab-btn-' + id);
-  btn.classList.add('bg-blue-600', 'text-white');
-  btn.classList.remove('text-gray-600', 'hover:bg-gray-100');
+  const nav = document.getElementById('snav-' + id);
+  if (nav) {
+    nav.classList.add('border-blue-600','bg-blue-50','text-blue-700','font-semibold');
+    nav.classList.remove('border-transparent','text-gray-600');
+  }
+}
+function checkTurnstileKeys() {
+  const inputs = document.querySelectorAll('[name="turnstile_site_key"],[name="turnstile_secret_key"]');
+  const filled = Array.from(inputs).every(i => i.value.trim().length > 0);
+  const toggle = document.getElementById('turnstile_enabled');
+  if (toggle) toggle.disabled = !filled;
 }
 </script>
 {% endblock %}

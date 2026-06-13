@@ -681,7 +681,7 @@ _TAB_KEYS = {
                   "paypal_client_id", "paypal_client_secret", "paypal_mode"],
     "notifiche": ["whatsapp_phone_id", "whatsapp_token", "whatsapp_template",
                   "telegram_bot_token", "telegram_chat_id"],
-    "sicurezza": ["turnstile_site_key", "turnstile_secret_key"],
+    "sicurezza": ["turnstile_site_key", "turnstile_secret_key", "turnstile_enabled"],
 }
 
 
@@ -691,7 +691,7 @@ def impostazioni():
     if request.method == "POST":
         saved_tab = request.form.get("_tab", "generale")
         keys = _TAB_KEYS.get(saved_tab, _TAB_KEYS["generale"])
-        _checkbox_keys = {"navbar_hide_name"}
+        _checkbox_keys = {"navbar_hide_name", "turnstile_enabled"}
         for key in keys:
             if key in _checkbox_keys:
                 Impostazione.set(key, "1" if request.form.get(key) else "0")
