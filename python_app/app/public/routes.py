@@ -195,6 +195,9 @@ def notifiche_corsi():
         # Accept only slugs that exist in the centralized list
         tags_selezionati = [t for t in request.form.getlist("tags") if t in valid_slugs]
 
+        from ..models import Impostazione
+        app_url = (Impostazione.get("app_url") or current_app.config.get("APP_URL", "")).rstrip("/")
+
         lead = LeadMarketing.query.filter_by(email=email).first()
         if not lead:
             token = secrets.token_urlsafe(32)
@@ -206,13 +209,26 @@ def notifiche_corsi():
             )
             db.session.add(lead)
             db.session.commit()
-            verifica_url = f"{current_app.config['APP_URL']}/conferma-iscrizione?token={token}"
+            verifica_url = f"{app_url}/conferma-iscrizione?token={token}"
+            try:
+                invia_email_verifica_lead(lead, verifica_url)
+            except Exception as exc:
+                logger.error("Errore email verifica lead: %s", exc)
+        elif not lead.verificato:
+            # Lead già presente ma non ancora verificato: rigenera token e riinvia email
+            token = secrets.token_urlsafe(32)
+            lead.token_verifica = token
+            lead.token_scadenza = datetime.now(timezone.utc) + timedelta(days=7)
+            existing = set(lead.tags or [])
+            lead.tags = list(existing | set(tags_selezionati))
+            db.session.commit()
+            verifica_url = f"{app_url}/conferma-iscrizione?token={token}"
             try:
                 invia_email_verifica_lead(lead, verifica_url)
             except Exception as exc:
                 logger.error("Errore email verifica lead: %s", exc)
         else:
-            # Update tags for existing lead
+            # Lead già verificato: aggiorna solo i tag
             existing = set(lead.tags or [])
             lead.tags = list(existing | set(tags_selezionati))
             db.session.commit()
