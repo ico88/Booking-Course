@@ -71,6 +71,7 @@ class Utente(UserMixin, db.Model):
     scadenza_token = db.Column(db.DateTime(timezone=True))
     consenso_privacy = db.Column(db.Boolean, default=False)
     consenso_marketing = db.Column(db.Boolean, default=False)
+    tags_marketing = db.Column(db.JSON, default=list)
     data_consenso = db.Column(db.DateTime(timezone=True))
     created_at = db.Column(db.DateTime(timezone=True), default=now_utc)
     updated_at = db.Column(db.DateTime(timezone=True), default=now_utc, onupdate=now_utc)

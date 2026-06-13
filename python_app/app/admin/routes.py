@@ -748,17 +748,20 @@ def marketing_notifica():
         except Exception:
             pass
 
-    # 2. Utenti registrati con consenso_marketing
+    # 2. Utenti registrati con consenso_marketing, filtrati per tag
     utenti_mkt = Utente.query.filter_by(consenso_marketing=True).all()
     for u in utenti_mkt:
         if u.email in emailed:
             continue
-        # Crea un oggetto duck-typed compatibile con invia_email_marketing
+        # Stessa logica tag dei lead: nessun tag = riceve tutto, altrimenti intersezione
+        u_tags = set(u.tags_marketing or [])
+        if corso_tags and u_tags and not (u_tags & corso_tags):
+            continue
         class _FakeLead:
             def __init__(self, utente):
                 self.email = utente.email
                 self.nome = utente.nome
-                self.tags = []
+                self.tags = utente.tags_marketing or []
         try:
             token = generate_unsubscribe_token(u.email, secret)
             invia_email_marketing(_FakeLead(u), corso, token)

@@ -141,10 +141,20 @@ def dati_personali():
             current_user.consenso_marketing = consenso_marketing
             if consenso_marketing:
                 current_user.data_consenso = datetime.now(timezone.utc)
+        # Salva preferenze tag marketing
+        selected_tags = request.form.getlist("tags_marketing")
+        current_user.tags_marketing = selected_tags
         db.session.commit()
         flash("Dati aggiornati con successo.", "success")
         return redirect(url_for("dashboard.dati_personali"))
-    return render_template("dashboard/dati_personali.html")
+    from ..models import Impostazione
+    import json as _json
+    try:
+        raw = Impostazione.get("newsletter_tags") or "[]"
+        newsletter_tags = _json.loads(raw)
+    except Exception:
+        newsletter_tags = []
+    return render_template("dashboard/dati_personali.html", newsletter_tags=newsletter_tags)
 
 
 @dashboard_bp.route("/cancella-account", methods=["POST"])
