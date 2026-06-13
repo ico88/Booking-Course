@@ -56,7 +56,14 @@
         <td class="px-5 py-3">
           <div class="flex items-center justify-end gap-2">
             <!-- Modifica dati -->
-            <button onclick="openEditModal('{{ u.id }}','{{ u.nome|e }}','{{ u.cognome|e }}','{{ u.email|e }}','{{ u.telefono or '' }}','{{ u.codice_fiscale or '' }}','{{ u.ruolo.value }}')"
+            <button onclick="openEditModal(this)"
+                    data-id="{{ u.id }}"
+                    data-nome="{{ u.nome|e }}"
+                    data-cognome="{{ u.cognome|e }}"
+                    data-email="{{ u.email|e }}"
+                    data-telefono="{{ u.telefono or '' }}"
+                    data-cf="{{ u.codice_fiscale or '' }}"
+                    data-ruolo="{{ u.ruolo.value }}"
                     class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5m-1.414-9.414a2 2 0 1 1 2.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
               Modifica
@@ -234,14 +241,15 @@ document.querySelectorAll('[id^="modal-"]').forEach(m => {
 });
 
 // ── Modal modifica ────────────────────────────────────────────────────────────
-function openEditModal(id, nome, cognome, email, telefono, cf, ruolo) {
-  document.getElementById('form-modifica-utente').action = '/admin/utenti/' + id + '/modifica';
-  document.getElementById('edit-nome').value = nome;
-  document.getElementById('edit-cognome').value = cognome;
-  document.getElementById('edit-email').value = email;
-  document.getElementById('edit-telefono').value = telefono;
-  document.getElementById('edit-cf').value = cf;
-  document.getElementById('edit-ruolo').value = ruolo;
+function openEditModal(btn) {
+  const d = btn.dataset;
+  document.getElementById('form-modifica-utente').action = '/admin/utenti/' + d.id + '/modifica';
+  document.getElementById('edit-nome').value = d.nome;
+  document.getElementById('edit-cognome').value = d.cognome;
+  document.getElementById('edit-email').value = d.email;
+  document.getElementById('edit-telefono').value = d.telefono;
+  document.getElementById('edit-cf').value = d.cf;
+  document.getElementById('edit-ruolo').value = d.ruolo;
   openModal('modal-modifica-utente');
 }
 
