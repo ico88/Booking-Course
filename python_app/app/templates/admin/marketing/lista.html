@@ -139,37 +139,77 @@
 
 <!-- Pannello utenti con consenso marketing -->
 <div id="panel-utenti" class="hidden">
+  <div class="bg-white border border-gray-200 rounded-xl p-4 mb-4 flex flex-wrap gap-3 items-end">
+    <div class="flex-1 min-w-48">
+      <label class="block text-xs font-medium text-gray-500 mb-1">Cerca</label>
+      <input type="search" id="u-filter-search" placeholder="Email o nome..."
+             oninput="applyUFilters()"
+             class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+    </div>
+    <div class="min-w-36">
+      <label class="block text-xs font-medium text-gray-500 mb-1">Tag</label>
+      <select id="u-filter-tag" onchange="applyUFilters()"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+        <option value="">Tutti i tag</option>
+        {% for tag in newsletter_tags %}
+        <option value="{{ tag.slug }}">{{ tag.label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="text-xs text-gray-400 self-center ml-auto" id="u-filter-count"></div>
+  </div>
+
   <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
     {% if utenti_marketing %}
     <table class="w-full text-sm">
       <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
         <tr>
-          <th class="px-5 py-3 text-left">Nome</th>
+          <th class="px-5 py-3 text-left">Utente</th>
           <th class="px-5 py-3 text-left">Email</th>
-          <th class="px-5 py-3 text-left">Telefono</th>
+          <th class="px-5 py-3 text-left">Tag interessi</th>
           <th class="px-5 py-3 text-left">Consenso dal</th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-gray-100">
+      <tbody class="divide-y divide-gray-100" id="utenti-tbody">
         {% for u in utenti_marketing %}
-        <tr class="hover:bg-gray-50">
-          <td class="px-5 py-3 font-medium">{{ u.nome_completo }}</td>
+        {% set parts = u.nome_completo.split() %}
+        {% set initials = (parts[0][0] ~ parts[-1][0])|upper if parts|length > 1 else u.nome[:2]|upper %}
+        {% set u_tags = u.tags_marketing or [] %}
+        <tr class="hover:bg-gray-50 utente-mkt-row"
+            data-email="{{ u.email|lower }}"
+            data-nome="{{ u.nome_completo|lower }}"
+            data-tags="{{ u_tags|join(',') }}">
+          <td class="px-5 py-3">
+            <div class="flex items-center gap-3">
+              <div class="w-7 h-7 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-xs font-bold flex-shrink-0">{{ initials }}</div>
+              <span class="font-medium">{{ u.nome_completo }}</span>
+            </div>
+          </td>
           <td class="px-5 py-3 font-mono text-xs text-gray-600">{{ u.email }}</td>
-          <td class="px-5 py-3 text-gray-500">{{ u.telefono or '—' }}</td>
+          <td class="px-5 py-3">
+            {% if u_tags %}
+              {% for slug in u_tags %}
+                {% set tag_label = namespace(v=slug) %}
+                {% for nt in newsletter_tags %}{% if nt.slug == slug %}{% set tag_label.v = nt.label %}{% endif %}{% endfor %}
+                <span class="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded mr-1 mb-1">{{ tag_label.v }}</span>
+              {% endfor %}
+            {% else %}
+              <span class="text-xs text-gray-400">Tutti</span>
+            {% endif %}
+          </td>
           <td class="px-5 py-3 text-gray-400 text-xs">{{ format_date(u.data_consenso) if u.data_consenso else '—' }}</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
+    <div id="u-no-results" class="hidden px-5 py-8 text-center text-gray-400 text-sm">Nessun utente trovato.</div>
     {% else %}
     <div class="px-5 py-12 text-center text-gray-400 text-sm">
       Nessun utente registrato ha ancora dato il consenso al marketing.
     </div>
     {% endif %}
   </div>
-  <p class="text-xs text-gray-400 mt-2">
-    Gli utenti in questa lista hanno spuntato "Acconsento a ricevere comunicazioni di marketing" nel loro profilo.
-  </p>
+  <p class="text-xs text-gray-400 mt-2">Gli utenti senza tag ricevono tutte le notifiche.</p>
 </div>
 
 <!-- Pannello gestione tag newsletter -->
@@ -303,6 +343,24 @@ function resetFilters() {
   document.getElementById('filter-tag').value = '';
   document.getElementById('filter-stato').value = '';
   applyFilters();
+}
+
+function applyUFilters() {
+  const search = (document.getElementById('u-filter-search').value || '').toLowerCase();
+  const tag = (document.getElementById('u-filter-tag').value || '').toLowerCase();
+  const rows = document.querySelectorAll('.utente-mkt-row');
+  let visible = 0;
+  rows.forEach(row => {
+    let show = true;
+    if (search && !row.dataset.email.includes(search) && !row.dataset.nome.includes(search)) show = false;
+    if (tag && !row.dataset.tags.split(',').includes(tag)) show = false;
+    row.classList.toggle('hidden', !show);
+    if (show) visible++;
+  });
+  const noRes = document.getElementById('u-no-results');
+  if (noRes) noRes.classList.toggle('hidden', visible > 0);
+  const cnt = document.getElementById('u-filter-count');
+  if (cnt) cnt.textContent = visible + ' / ' + rows.length;
 }
 </script>
 {% endblock %}
