@@ -119,9 +119,9 @@ def create_app(config_name=None):
             color_scheme = "blu"
             navbar_hide_name = False
             corsi_pubblicati = []
-        turnstile_site_key = (
-            Impostazione.get("turnstile_site_key") or app.config.get("TURNSTILE_SITE_KEY", "")
-        ) if app_name else app.config.get("TURNSTILE_SITE_KEY", "")
+        _ts_key = Impostazione.get("turnstile_site_key") or app.config.get("TURNSTILE_SITE_KEY", "")
+        _ts_enabled = Impostazione.get("turnstile_enabled") == "1"
+        turnstile_site_key = _ts_key if (_ts_key and _ts_enabled) else ""
         return {
             "app_name": app_name,
             "logo_url": logo_url,
