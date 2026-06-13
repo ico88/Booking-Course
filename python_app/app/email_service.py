@@ -249,7 +249,10 @@ def invia_email_conferma_prenotazione(prenotazione):
         if not dt.tzinfo:
             from datetime import timezone
             dt = dt.replace(tzinfo=timezone.utc)
-        return dt.strftime("%A %d %B %Y, ore %H:%M").capitalize()
+        _giorni = ["Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato","Domenica"]
+        _mesi = ["gennaio","febbraio","marzo","aprile","maggio","giugno",
+                 "luglio","agosto","settembre","ottobre","novembre","dicembre"]
+        return f"{_giorni[dt.weekday()]} {dt.day} {_mesi[dt.month-1]} {dt.year}, ore {dt.strftime('%H:%M')}"
 
     data_inizio_str = _fmt(c.data_inizio)
     data_fine_str = _fmt(c.data_fine) if c.data_fine else None
