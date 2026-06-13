@@ -177,6 +177,60 @@ def cancella_account():
     return redirect(url_for("public.index"))
 
 
+@dashboard_bp.route("/prenotazioni/<string:prenotazione_id>/ics")
+@login_required
+def scarica_ics(prenotazione_id):
+    p = _get_prenotazione_or_403(prenotazione_id)
+    c = p.corso
+    from datetime import timezone as _tz
+
+    def _ics_dt(dt):
+        if not dt:
+            return None
+        if not dt.tzinfo:
+            dt = dt.replace(tzinfo=_tz.utc)
+        return dt.strftime("%Y%m%dT%H%M%SZ")
+
+    di = _ics_dt(c.data_inizio) if c.data_inizio else None
+    df = _ics_dt(c.data_fine) if c.data_fine else di
+
+    if not di:
+        flash("Questo corso non ha una data definita.", "info")
+        return redirect(url_for("dashboard.prenotazione_dettaglio", prenotazione_id=p.id))
+
+    uid = f"{p.id}@booking-corsi"
+    now_str = datetime.now(_tz.utc).strftime("%Y%m%dT%H%M%SZ")
+    luogo = (c.luogo or "").replace("\n", " ")
+    descrizione = f"Prenotazione confermata — {p.numero_posti} posto/i"
+    if c.durata:
+        descrizione += f" — Durata: {c.durata}"
+
+    ics = (
+        "BEGIN:VCALENDAR\r\n"
+        "VERSION:2.0\r\n"
+        "PRODID:-//Booking Corsi//IT\r\n"
+        "CALSCALE:GREGORIAN\r\n"
+        "METHOD:PUBLISH\r\n"
+        "BEGIN:VEVENT\r\n"
+        f"UID:{uid}\r\n"
+        f"DTSTAMP:{now_str}\r\n"
+        f"DTSTART:{di}\r\n"
+        f"DTEND:{df}\r\n"
+        f"SUMMARY:{c.titolo}\r\n"
+        f"LOCATION:{luogo}\r\n"
+        f"DESCRIPTION:{descrizione}\r\n"
+        "STATUS:CONFIRMED\r\n"
+        "END:VEVENT\r\n"
+        "END:VCALENDAR\r\n"
+    )
+    filename = f"corso-{p.id[:8]}.ics"
+    return Response(
+        ics,
+        mimetype="text/calendar",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
 @dashboard_bp.route("/esporta-dati")
 @login_required
 def esporta_dati():

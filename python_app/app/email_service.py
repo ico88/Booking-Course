@@ -241,13 +241,79 @@ def invia_email_conferma_prenotazione(prenotazione):
     app_name, app_url, logo_url, legal, color_scheme = _ctx()
     u = prenotazione.utente
     c = prenotazione.corso
+
+    # Formato date/orari
+    def _fmt(dt):
+        if not dt:
+            return "Da definire"
+        if not dt.tzinfo:
+            from datetime import timezone
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.strftime("%A %d %B %Y, ore %H:%M").capitalize()
+
+    data_inizio_str = _fmt(c.data_inizio)
+    data_fine_str = _fmt(c.data_fine) if c.data_fine else None
+
+    # Riepilogo corso
+    righe = [f"<strong style='color:#111827;font-size:16px'>{c.titolo}</strong>"]
+    righe.append(f"📅 <strong>Data:</strong> {data_inizio_str}")
+    if data_fine_str:
+        righe.append(f"🏁 <strong>Fine:</strong> {data_fine_str}")
+    if c.durata:
+        righe.append(f"⏱ <strong>Durata:</strong> {c.durata}")
+    if c.luogo:
+        righe.append(f"📍 <strong>Luogo:</strong> {c.luogo}")
+    righe.append(f"👥 <strong>Posti prenotati:</strong> {prenotazione.numero_posti}")
+
+    riepilogo_html = "<br>".join(righe)
+
+    # Link Google Calendar
+    gcal_link = ""
+    if c.data_inizio:
+        from datetime import timezone as _tz
+        _di = c.data_inizio if c.data_inizio.tzinfo else c.data_inizio.replace(tzinfo=_tz.utc)
+        _df = (c.data_fine if c.data_fine else c.data_inizio)
+        _df = _df if _df.tzinfo else _df.replace(tzinfo=_tz.utc)
+        _start = _di.strftime("%Y%m%dT%H%M%SZ")
+        _end   = _df.strftime("%Y%m%dT%H%M%SZ")
+        _location = c.luogo or ""
+        _details = f"Prenotazione confermata su {app_name}"
+        import urllib.parse
+        gcal_params = urllib.parse.urlencode({
+            "action": "TEMPLATE",
+            "text": c.titolo,
+            "dates": f"{_start}/{_end}",
+            "details": _details,
+            "location": _location,
+        })
+        gcal_link = f"https://calendar.google.com/calendar/render?{gcal_params}"
+
+    # Link .ics
+    ics_link = f"{app_url}/dashboard/prenotazioni/{prenotazione.id}/ics"
+
+    calendario_html = ""
+    if gcal_link:
+        calendario_html = (
+            f'<div style="margin:20px 0;padding:16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px">'
+            f'<p style="margin:0 0 10px 0;font-size:14px;font-weight:600;color:#15803d">📆 Aggiungi al calendario</p>'
+            f'<a href="{gcal_link}" target="_blank" style="display:inline-block;margin-right:10px;margin-bottom:6px;'
+            f'background:#ffffff;border:1px solid #d1d5db;color:#374151;padding:8px 14px;border-radius:6px;'
+            f'text-decoration:none;font-size:13px;font-weight:500">🗓 Google Calendar</a>'
+            f'<a href="{ics_link}" style="display:inline-block;margin-bottom:6px;'
+            f'background:#ffffff;border:1px solid #d1d5db;color:#374151;padding:8px 14px;border-radius:6px;'
+            f'text-decoration:none;font-size:13px;font-weight:500">📥 Scarica .ics (Apple / Outlook)</a>'
+            f'</div>'
+        )
+
     body = (
-        _h2("Iscrizione confermata!")
-        + _p(f"Ciao <strong style='color:#111827'>{u.nome}</strong>, la tua iscrizione al corso <strong style='color:#111827'>{c.titolo}</strong> è stata <strong style='color:#16a34a'>confermata</strong>.")
-        + _p("Ti aspettiamo!")
-        + _btn(f"{app_url}/dashboard/prenotazioni/{prenotazione.id}", "Dettagli iscrizione")
+        _h2("🎉 Iscrizione confermata!")
+        + _p(f"Ciao <strong style='color:#111827'>{u.nome}</strong>, la tua iscrizione è stata <strong style='color:#16a34a'>confermata</strong>. Ti aspettiamo!")
+        + _info_box(riepilogo_html)
+        + calendario_html
+        + _btn(f"{app_url}/dashboard/prenotazioni/{prenotazione.id}", "Visualizza la mia prenotazione")
+        + _small("Conserva questa email come conferma della tua iscrizione.")
     )
-    send_email(u.email, f"Iscrizione confermata - {c.titolo}", _html_wrapper(body, app_name, app_url, logo_url, legal, color_scheme))
+    send_email(u.email, f"✅ Iscrizione confermata - {c.titolo}", _html_wrapper(body, app_name, app_url, logo_url, legal, color_scheme))
 
 
 def invia_email_attestato(prenotazione):
