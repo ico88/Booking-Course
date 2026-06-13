@@ -26,14 +26,24 @@
       <div class="flex flex-wrap gap-2">
         {% for tag in tag_disponibili %}
         <label class="flex items-center gap-1.5 cursor-pointer bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-blue-50 hover:border-blue-300 text-sm">
-          <input type="checkbox" name="tags" value="{{ tag }}" class="accent-blue-600">
-          {{ tag }}
+          <input type="checkbox" name="tags" value="{{ tag.slug }}" class="accent-blue-600">
+          {{ tag.label }}
         </label>
         {% endfor %}
       </div>
       <p class="text-xs text-gray-400 mt-1">Riceverai notifiche solo per le aree selezionate (o tutte se non selezioni nulla).</p>
     </div>
     {% endif %}
+    <div>
+      <label class="flex items-start gap-3 cursor-pointer">
+        <input type="checkbox" name="consenso_marketing" required class="mt-0.5 accent-blue-600">
+        <span class="text-sm text-gray-600">
+          Acconsento al trattamento dei miei dati personali per ricevere comunicazioni sui corsi disponibili, in conformità con la
+          <a href="{{ url_for('public.privacy_policy') }}" target="_blank" class="text-blue-600 hover:underline">Privacy Policy</a>.
+          Puoi revocare il consenso in qualsiasi momento.
+        </span>
+      </label>
+    </div>
     <button type="submit" class="w-full bg-blue-700 text-white py-2.5 rounded-lg font-medium hover:bg-blue-800">Iscrivimi</button>
   </form>
 </div>
