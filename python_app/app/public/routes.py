@@ -51,9 +51,17 @@ def corso_dettaglio(corso_id):
     is_completo = bool(corso.posti_totali and corso.posti_disponibili <= 0)
     posti_liberi = corso.posti_disponibili if corso.posti_totali else None
     perc = int(min(100, round((corso.posti_occupati or 0) / corso.posti_totali * 100))) if corso.posti_totali else 0
+    prenotazione_esistente = None
+    if current_user.is_authenticated:
+        prenotazione_esistente = Prenotazione.query.filter(
+            Prenotazione.utente_id == current_user.id,
+            Prenotazione.corso_id == corso_id,
+            Prenotazione.stato.notin_([StatoPrenotazione.ANNULLATA, StatoPrenotazione.SCADUTA]),
+        ).first()
     return render_template("public/corso_dettaglio.html", corso=corso,
                            is_passato=is_passato, is_completo=is_completo,
-                           posti_liberi=posti_liberi, perc_occupazione=perc)
+                           posti_liberi=posti_liberi, perc_occupazione=perc,
+                           prenotazione_esistente=prenotazione_esistente)
 
 
 @public_bp.route("/corsi/<string:corso_id>/prenota", methods=["GET", "POST"])

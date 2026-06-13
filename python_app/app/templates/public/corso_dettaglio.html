@@ -169,6 +169,26 @@
           <div class="w-full text-center bg-gray-100 text-gray-500 px-6 py-3 rounded-xl font-semibold">Corso terminato</div>
         {% elif is_completo %}
           <div class="w-full text-center bg-gray-100 text-gray-500 px-6 py-3 rounded-xl font-semibold">Posti esauriti</div>
+        {% elif prenotazione_esistente %}
+          {# Utente già iscritto #}
+          {% set _stato_color = {'CONFERMATA': 'green', 'IN_ATTESA_PAGAMENTO': 'yellow', 'PAGAMENTO_CARICATO': 'blue'} %}
+          {% set _sc = _stato_color.get(prenotazione_esistente.stato.value, 'gray') %}
+          <div class="rounded-xl border border-{{ _sc }}-200 bg-{{ _sc }}-50 p-4 mb-3">
+            <p class="text-sm font-semibold text-{{ _sc }}-800 mb-0.5">
+              {% if prenotazione_esistente.stato.value == 'CONFERMATA' %}✅ Sei già iscritto a questo corso
+              {% elif prenotazione_esistente.stato.value == 'PAGAMENTO_CARICATO' %}🔄 Hai già caricato il pagamento
+              {% else %}⏳ Hai già una prenotazione in attesa{% endif %}
+            </p>
+            <p class="text-xs text-{{ _sc }}-700">{{ prenotazione_esistente.numero_posti }} posto/i prenotato/i</p>
+          </div>
+          <a href="{{ url_for('dashboard.prenotazione_dettaglio', prenotazione_id=prenotazione_esistente.id) }}"
+             class="block w-full text-center bg-white border border-gray-300 text-gray-700 px-6 py-2.5 rounded-xl font-medium hover:bg-gray-50 transition-colors mb-2 text-sm">
+            Vedi la mia prenotazione
+          </a>
+          <a href="{{ url_for('public.prenota', corso_id=corso.id) }}"
+             class="block w-full text-center bg-blue-700 text-white px-6 py-2.5 rounded-xl font-medium hover:bg-blue-800 transition-colors text-sm">
+            + Aggiungi altri partecipanti
+          </a>
         {% elif current_user.is_authenticated %}
           <a href="{{ url_for('public.prenota', corso_id=corso.id) }}"
              class="block w-full text-center bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-800 transition-colors">
