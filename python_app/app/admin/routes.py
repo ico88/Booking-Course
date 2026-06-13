@@ -634,10 +634,15 @@ def utente_elimina(utente_id):
         flash("Non puoi eliminare te stesso.", "error")
         return redirect(url_for("admin.utenti"))
     u = Utente.query.get_or_404(utente_id)
-    logger.info("Admin %s: utente eliminato %s", current_user.email, u.email)
-    db.session.delete(u)
-    db.session.commit()
-    flash("Utente eliminato.", "success")
+    try:
+        logger.info("Admin %s: utente eliminato %s", current_user.email, u.email)
+        db.session.delete(u)
+        db.session.commit()
+        flash("Utente eliminato.", "success")
+    except Exception as exc:
+        db.session.rollback()
+        logger.error("Errore eliminazione utente %s: %s", utente_id, exc)
+        flash(f"Impossibile eliminare l'utente: {exc}", "error")
     return redirect(url_for("admin.utenti"))
 
 
