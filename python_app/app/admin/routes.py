@@ -109,7 +109,7 @@ def corso_nuovo():
         logger.info("Admin %s: corso creato %s", current_user.email, corso.id)
         flash("Corso creato.", "success")
         return redirect(url_for("admin.corso_modifica", corso_id=corso.id))
-    return render_template("admin/corsi/form.html", corso=None)
+    return render_template("admin/corsi/form.html", corso=None, newsletter_tags=_get_newsletter_tags())
 
 
 @admin_bp.route("/corsi/<string:corso_id>", methods=["GET", "POST"])
@@ -129,7 +129,7 @@ def corso_modifica(corso_id):
         logger.info("Admin %s: corso aggiornato %s", current_user.email, corso.id)
         flash("Corso aggiornato.", "success")
         return redirect(url_for("admin.corso_modifica", corso_id=corso.id))
-    return render_template("admin/corsi/form.html", corso=corso)
+    return render_template("admin/corsi/form.html", corso=corso, newsletter_tags=_get_newsletter_tags())
 
 
 def _corso_da_form(corso: Corso) -> Corso:
@@ -154,8 +154,7 @@ def _corso_da_form(corso: Corso) -> Corso:
     corso.pubblicato = request.form.get("pubblicato") == "on"
     corso.attestato_abilitato = request.form.get("attestato_abilitato") == "on"
     corso.attestato_html_template = request.form.get("attestato_html_template", "").strip() or None
-    tags_raw = request.form.get("tags", "")[:500]
-    corso.tags = [t.strip()[:50] for t in tags_raw.split(",") if t.strip()][:20]
+    corso.tags = request.form.getlist("tags")[:20]
 
     for field, fmt in [("data_inizio", "%Y-%m-%dT%H:%M"), ("data_fine", "%Y-%m-%dT%H:%M")]:
         val = request.form.get(field, "")
