@@ -153,7 +153,18 @@ def prenota(corso_id):
         flash("Prenotazione effettuata con successo!", "success")
         return redirect(url_for("dashboard.pagamento", prenotazione_id=prenotazione.id))
 
-    return render_template("public/prenota.html", corso=corso)
+    prenotazione_esistente = Prenotazione.query.filter(
+        Prenotazione.utente_id == current_user.id,
+        Prenotazione.corso_id == corso_id,
+        Prenotazione.stato.notin_([StatoPrenotazione.ANNULLATA, StatoPrenotazione.SCADUTA]),
+    ).first()
+    if prenotazione_esistente:
+        flash(
+            f"Hai già una prenotazione attiva per questo corso ({prenotazione_esistente.stato_label}). "
+            f"Puoi aggiungere altri partecipanti qui sotto oppure gestire la tua prenotazione esistente.",
+            "info",
+        )
+    return render_template("public/prenota.html", corso=corso, prenotazione_esistente=prenotazione_esistente)
 
 
 @public_bp.route("/notifiche-corsi", methods=["GET", "POST"])
