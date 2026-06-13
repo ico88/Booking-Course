@@ -2,20 +2,245 @@
 {% block title %}Partecipanti — {{ corso.titolo }}{% endblock %}
 
 {% block admin_content %}
-<div class="mb-4"><a href="{{ url_for('admin.corso_modifica', corso_id=corso.id) }}" class="text-sm text-blue-600 hover:underline">← {{ corso.titolo }}</a></div>
-<h1 class="text-2xl font-bold mb-6">Partecipanti</h1>
-
-{% for p in prenotazioni %}
-  {% for part in p.partecipanti %}
-  <div class="bg-white border border-gray-200 rounded-lg px-5 py-3 mb-2 flex items-center justify-between text-sm">
-    <span class="font-medium">{{ part.nome }} {{ part.cognome }}</span>
-    <span class="text-gray-500">{{ part.email or '' }}</span>
-    <span class="text-gray-400">{{ p.utente.nome_completo }}</span>
-    <a href="{{ url_for('admin.prenotazione_dettaglio', prenotazione_id=p.id) }}" class="text-blue-600 hover:underline">Prenotazione</a>
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <a href="{{ url_for('admin.corsi') }}" class="text-sm text-gray-400 hover:text-blue-600 inline-flex items-center gap-1 mb-1">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      Corsi
+    </a>
+    <h1 class="text-2xl font-bold">Partecipanti</h1>
+    <p class="text-sm text-gray-500 mt-0.5">{{ corso.titolo }}</p>
   </div>
-  {% endfor %}
-{% endfor %}
-{% if not prenotazioni %}
-<p class="text-gray-500">Nessun partecipante confermato.</p>
+  <button onclick="document.getElementById('modal-aggiungi').classList.remove('hidden')"
+          class="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+    Aggiungi partecipante
+  </button>
+</div>
+
+<!-- Statistiche -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+  <div class="bg-white border border-gray-200 rounded-xl px-5 py-4">
+    <p class="text-xs text-gray-500 uppercase tracking-wide">Totale partecipanti</p>
+    <p class="text-2xl font-bold text-gray-900 mt-1">{{ n_partecipanti }}</p>
+  </div>
+  <div class="bg-white border border-gray-200 rounded-xl px-5 py-4">
+    <p class="text-xs text-gray-500 uppercase tracking-wide">Prenotazioni</p>
+    <p class="text-2xl font-bold text-gray-900 mt-1">{{ prenotazioni|length }}</p>
+  </div>
+  <div class="bg-white border border-gray-200 rounded-xl px-5 py-4">
+    <p class="text-xs text-gray-500 uppercase tracking-wide">Posti disponibili</p>
+    <p class="text-2xl font-bold mt-1 {{ 'text-red-600' if corso.posti_disponibili == 0 else 'text-green-600' }}">{{ corso.posti_disponibili }}</p>
+  </div>
+  <div class="bg-white border border-gray-200 rounded-xl px-5 py-4">
+    <p class="text-xs text-gray-500 uppercase tracking-wide">Capienza</p>
+    <p class="text-2xl font-bold text-gray-900 mt-1">{{ corso.posti_totali or '∞' }}</p>
+  </div>
+</div>
+
+<!-- Lista partecipanti -->
+{% if prenotazioni %}
+<div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+      <tr>
+        <th class="px-5 py-3 text-left">Partecipante</th>
+        <th class="px-5 py-3 text-left">Email</th>
+        <th class="px-5 py-3 text-left">Prenotato da</th>
+        <th class="px-5 py-3 text-left">Stato</th>
+        <th class="px-5 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {% for p in prenotazioni %}
+        {% for part in p.partecipanti %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-5 py-3 font-medium">{{ part.nome }} {{ part.cognome }}</td>
+          <td class="px-5 py-3 text-gray-500">{{ part.email or '—' }}</td>
+          <td class="px-5 py-3 text-gray-500">{{ p.utente.nome_completo }}</td>
+          <td class="px-5 py-3">
+            <span class="px-2 py-0.5 rounded-full text-xs font-medium
+              {% if p.stato.value == 'CONFERMATA' %}bg-green-100 text-green-700
+              {% elif p.stato.value == 'PAGAMENTO_CARICATO' %}bg-blue-100 text-blue-700
+              {% else %}bg-gray-100 text-gray-500{% endif %}">
+              {{ p.stato_label }}
+            </span>
+          </td>
+          <td class="px-5 py-3 text-right">
+            <a href="{{ url_for('admin.prenotazione_dettaglio', prenotazione_id=p.id) }}"
+               class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-md bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z"/></svg>
+              Prenotazione
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="bg-white border border-gray-200 rounded-xl px-8 py-12 text-center">
+  <svg class="w-10 h-10 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-1a4 4 0 0 0-4-4h-1M9 20H4v-1a4 4 0 0 1 4-4h1m4-4a4 4 0 1 0-4-4 4 4 0 0 0 4 4z"/></svg>
+  <p class="text-gray-400 text-sm">Nessun partecipante confermato.</p>
+  <button onclick="document.getElementById('modal-aggiungi').classList.remove('hidden')"
+          class="mt-4 text-sm text-blue-600 hover:underline">Aggiungi il primo partecipante</button>
+</div>
 {% endif %}
+
+<!-- ============================================================
+     MODAL: Aggiungi partecipante
+     ============================================================ -->
+<div id="modal-aggiungi" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <h2 class="text-base font-semibold">Aggiungi partecipante</h2>
+      <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex border-b border-gray-100">
+      <button id="tab-cerca" onclick="switchTab('cerca')"
+              class="flex-1 py-3 text-sm font-medium text-blue-700 border-b-2 border-blue-700">
+        Cerca utente esistente
+      </button>
+      <button id="tab-nuovo" onclick="switchTab('nuovo')"
+              class="flex-1 py-3 text-sm font-medium text-gray-500 hover:text-gray-700 border-b-2 border-transparent">
+        Nuovo utente
+      </button>
+    </div>
+
+    <!-- TAB: Cerca utente -->
+    <div id="panel-cerca" class="px-6 py-5">
+      <p class="text-sm text-gray-500 mb-3">Cerca tra gli utenti registrati e aggiungili al corso.</p>
+      <div class="relative mb-3">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 0 5 11a6 6 0 0 0 12 0z"/></svg>
+        <input id="input-cerca" type="text" placeholder="Nome, cognome o email…"
+               class="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+               oninput="cercaUtenti(this.value)">
+      </div>
+      <div id="risultati-cerca" class="divide-y divide-gray-100 border border-gray-100 rounded-lg max-h-52 overflow-y-auto hidden"></div>
+      <p id="nessun-risultato" class="hidden text-sm text-gray-400 text-center py-4">Nessun utente trovato.</p>
+
+      <form id="form-aggiungi-esistente" method="post"
+            action="{{ url_for('admin.corso_aggiungi_partecipante', corso_id=corso.id) }}"
+            class="hidden mt-4 border border-blue-100 rounded-xl bg-blue-50 p-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="tipo" value="esistente">
+        <input type="hidden" name="utente_id" id="utente_id_sel">
+        <div id="utente-selezionato" class="flex items-center gap-3 mb-3">
+          <div class="w-8 h-8 rounded-full bg-blue-700 text-white flex items-center justify-center text-xs font-bold" id="utente-initials"></div>
+          <div>
+            <p class="text-sm font-medium" id="utente-nome"></p>
+            <p class="text-xs text-gray-500" id="utente-email-label"></p>
+          </div>
+        </div>
+        <button type="submit" class="w-full py-2 bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors">
+          Aggiungi al corso
+        </button>
+      </form>
+    </div>
+
+    <!-- TAB: Nuovo utente -->
+    <div id="panel-nuovo" class="hidden px-6 py-5">
+      <p class="text-sm text-gray-500 mb-4">Crea un nuovo account e aggiungilo direttamente al corso.</p>
+      <form method="post" action="{{ url_for('admin.corso_aggiungi_partecipante', corso_id=corso.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="tipo" value="nuovo">
+        <div class="grid grid-cols-2 gap-3 mb-3">
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Nome *</label>
+            <input type="text" name="nome" required class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Cognome *</label>
+            <input type="text" name="cognome" required class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="block text-xs font-medium text-gray-600 mb-1">Email *</label>
+          <input type="email" name="email" required class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div class="mb-4">
+          <label class="block text-xs font-medium text-gray-600 mb-1">Telefono</label>
+          <input type="text" name="telefono" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <button type="submit" class="w-full py-2 bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors">
+          Crea e aggiungi al corso
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function closeModal() {
+  document.getElementById('modal-aggiungi').classList.add('hidden');
+  document.getElementById('input-cerca').value = '';
+  document.getElementById('risultati-cerca').classList.add('hidden');
+  document.getElementById('form-aggiungi-esistente').classList.add('hidden');
+  document.getElementById('nessun-risultato').classList.add('hidden');
+}
+
+function switchTab(tab) {
+  const tabs = ['cerca', 'nuovo'];
+  tabs.forEach(t => {
+    document.getElementById('tab-' + t).className =
+      t === tab
+        ? 'flex-1 py-3 text-sm font-medium text-blue-700 border-b-2 border-blue-700'
+        : 'flex-1 py-3 text-sm font-medium text-gray-500 hover:text-gray-700 border-b-2 border-transparent';
+    document.getElementById('panel-' + t).classList.toggle('hidden', t !== tab);
+  });
+}
+
+let _timer = null;
+function cercaUtenti(q) {
+  clearTimeout(_timer);
+  if (q.trim().length < 2) {
+    document.getElementById('risultati-cerca').classList.add('hidden');
+    document.getElementById('nessun-risultato').classList.add('hidden');
+    document.getElementById('form-aggiungi-esistente').classList.add('hidden');
+    return;
+  }
+  _timer = setTimeout(() => {
+    fetch('/admin/utenti/cerca?q=' + encodeURIComponent(q))
+      .then(r => r.json())
+      .then(data => {
+        const box = document.getElementById('risultati-cerca');
+        const no = document.getElementById('nessun-risultato');
+        if (!data.length) { box.classList.add('hidden'); no.classList.remove('hidden'); return; }
+        no.classList.add('hidden');
+        box.innerHTML = data.map(u => `
+          <div class="flex items-center gap-3 px-3 py-2.5 hover:bg-blue-50 cursor-pointer"
+               onclick="selezionaUtente('${u.id}','${u.nome_completo.replace(/'/g,"\\'")}','${u.email}')">
+            <div class="w-7 h-7 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center text-xs font-bold flex-shrink-0">${u.iniziali}</div>
+            <div>
+              <p class="text-sm font-medium">${u.nome_completo}</p>
+              <p class="text-xs text-gray-400">${u.email}</p>
+            </div>
+          </div>`).join('');
+        box.classList.remove('hidden');
+      });
+  }, 300);
+}
+
+function selezionaUtente(id, nome, email) {
+  document.getElementById('utente_id_sel').value = id;
+  document.getElementById('utente-nome').textContent = nome;
+  document.getElementById('utente-email-label').textContent = email;
+  const parts = nome.split(' ');
+  document.getElementById('utente-initials').textContent =
+    parts.length > 1 ? parts[0][0] + parts[parts.length-1][0] : nome.slice(0,2).toUpperCase();
+  document.getElementById('risultati-cerca').classList.add('hidden');
+  document.getElementById('nessun-risultato').classList.add('hidden');
+  document.getElementById('form-aggiungi-esistente').classList.remove('hidden');
+}
+
+// Chiudi modal cliccando fuori
+document.getElementById('modal-aggiungi').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+</script>
 {% endblock %}

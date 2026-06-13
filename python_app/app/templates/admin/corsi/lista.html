@@ -4,11 +4,23 @@
 {% block admin_content %}
 <div class="flex items-center justify-between mb-6">
   <h1 class="text-2xl font-bold">Corsi</h1>
-  <a href="{{ url_for('admin.corso_nuovo') }}" class="bg-blue-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-800">+ Nuovo corso</a>
+  <a href="{{ url_for('admin.corso_nuovo') }}" class="bg-blue-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-800 inline-flex items-center gap-1.5">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+    Nuovo corso
+  </a>
+</div>
+
+<!-- Ricerca -->
+<div class="mb-4">
+  <div class="relative max-w-sm">
+    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 0 5 11a6 6 0 0 0 12 0z"/></svg>
+    <input id="search-corsi" type="text" placeholder="Cerca per titolo, luogo…"
+           class="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+  </div>
 </div>
 
 <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
-  <table class="w-full text-sm">
+  <table class="w-full text-sm" id="table-corsi">
     <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
       <tr>
         <th class="px-5 py-3 text-left">Titolo</th>
@@ -16,30 +28,58 @@
         <th class="px-5 py-3 text-left">Posti</th>
         <th class="px-5 py-3 text-left">Costo</th>
         <th class="px-5 py-3 text-left">Stato</th>
-        <th class="px-5 py-3"></th>
+        <th class="px-5 py-3 text-right">Azioni</th>
       </tr>
     </thead>
     <tbody class="divide-y divide-gray-100">
       {% for corso in corsi %}
-      <tr class="hover:bg-gray-50">
+      <tr class="hover:bg-gray-50 corso-row" data-search="{{ corso.titolo|lower }} {{ (corso.luogo or '')|lower }}">
         <td class="px-5 py-3 font-medium">{{ corso.titolo }}</td>
         <td class="px-5 py-3 text-gray-500">{{ format_date(corso.data_inizio) or '—' }}</td>
         <td class="px-5 py-3">{{ corso.posti_disponibili }}/{{ corso.posti_totali or '∞' }}</td>
         <td class="px-5 py-3">{{ corso.costo_formattato }}</td>
         <td class="px-5 py-3">
           {% if corso.pubblicato %}
-            <span class="px-2 py-0.5 rounded text-xs bg-green-100 text-green-700">Pubblicato</span>
+            <span class="px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 font-medium">Pubblicato</span>
           {% else %}
-            <span class="px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-600">Bozza</span>
+            <span class="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-500 font-medium">Bozza</span>
           {% endif %}
         </td>
-        <td class="px-5 py-3 flex gap-2">
-          <a href="{{ url_for('admin.corso_modifica', corso_id=corso.id) }}" class="text-blue-600 hover:underline">Modifica</a>
-          <a href="{{ url_for('admin.corso_partecipanti', corso_id=corso.id) }}" class="text-gray-500 hover:underline">Partecipanti</a>
+        <td class="px-5 py-3">
+          <div class="flex items-center justify-end gap-2">
+            <!-- Partecipanti -->
+            <a href="{{ url_for('admin.corso_partecipanti', corso_id=corso.id) }}"
+               title="Partecipanti"
+               class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-md bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-1a4 4 0 0 0-4-4h-1M9 20H4v-1a4 4 0 0 1 4-4h1m4-4a4 4 0 1 0-4-4 4 4 0 0 0 4 4z"/></svg>
+              Partecipanti
+            </a>
+            <!-- Modifica -->
+            <a href="{{ url_for('admin.corso_modifica', corso_id=corso.id) }}"
+               title="Modifica"
+               class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5m-1.414-9.414a2 2 0 1 1 2.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+              Modifica
+            </a>
+          </div>
         </td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
+  <p id="no-results" class="hidden text-center text-gray-400 text-sm py-8">Nessun corso trovato.</p>
 </div>
+
+<script>
+document.getElementById('search-corsi').addEventListener('input', function() {
+  const q = this.value.toLowerCase().trim();
+  let visible = 0;
+  document.querySelectorAll('.corso-row').forEach(row => {
+    const match = !q || row.dataset.search.includes(q);
+    row.classList.toggle('hidden', !match);
+    if (match) visible++;
+  });
+  document.getElementById('no-results').classList.toggle('hidden', visible > 0);
+});
+</script>
 {% endblock %}

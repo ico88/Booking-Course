@@ -226,7 +226,107 @@ def corso_partecipanti(corso_id):
     prenotazioni = corso.prenotazioni.filter(
         Prenotazione.stato.in_([StatoPrenotazione.CONFERMATA, StatoPrenotazione.PAGAMENTO_CARICATO])
     ).all()
-    return render_template("admin/corsi/partecipanti.html", corso=corso, prenotazioni=prenotazioni)
+    n_partecipanti = sum(len(p.partecipanti) for p in prenotazioni)
+    return render_template("admin/corsi/partecipanti.html", corso=corso,
+                           prenotazioni=prenotazioni, n_partecipanti=n_partecipanti)
+
+
+@admin_bp.route("/corsi/<string:corso_id>/partecipanti/aggiungi", methods=["POST"])
+@admin_required
+def corso_aggiungi_partecipante(corso_id):
+    from ..utils import validate_email_address
+    corso = Corso.query.get_or_404(corso_id)
+    tipo = request.form.get("tipo", "esistente")
+
+    if tipo == "esistente":
+        utente_id = request.form.get("utente_id", "").strip()
+        utente = Utente.query.get(utente_id)
+        if not utente:
+            flash("Utente non trovato.", "error")
+            return redirect(url_for("admin.corso_partecipanti", corso_id=corso_id))
+    else:
+        nome = (request.form.get("nome") or "").strip()[:100]
+        cognome = (request.form.get("cognome") or "").strip()[:100]
+        raw_email = (request.form.get("email") or "").strip()
+        telefono = (request.form.get("telefono") or "").strip()[:30]
+        email = validate_email_address(raw_email)
+        if not nome or not cognome or not email:
+            flash("Nome, cognome ed email sono obbligatori.", "error")
+            return redirect(url_for("admin.corso_partecipanti", corso_id=corso_id))
+        utente = Utente.query.filter_by(email=email).first()
+        if not utente:
+            import secrets as _sec
+            utente = Utente(
+                nome=nome, cognome=cognome, email=email,
+                telefono=telefono or None,
+                ruolo="UTENTE",
+                consenso_privacy=True,
+                data_consenso=datetime.now(timezone.utc),
+            )
+            utente.set_password(_sec.token_urlsafe(16))
+            db.session.add(utente)
+            db.session.flush()
+            logger.info("Admin %s: nuovo utente creato manualmente %s", current_user.email, email)
+
+    # Cerca prenotazione esistente per questo utente+corso
+    pren = Prenotazione.query.filter_by(utente_id=utente.id, corso_id=corso.id).first()
+    if not pren:
+        pren = Prenotazione(
+            utente_id=utente.id,
+            corso_id=corso.id,
+            numero_posti=1,
+            stato=StatoPrenotazione.CONFERMATA,
+            metodo_pagamento=MetodoPagamento.BONIFICO,
+            note_segreteria="Aggiunta manuale da admin",
+        )
+        db.session.add(pren)
+        db.session.flush()
+
+    # Aggiunge partecipante se non già presente
+    esistente = any(
+        p.nome == utente.nome and p.cognome == utente.cognome
+        for p in pren.partecipanti
+    )
+    if not esistente:
+        part = Partecipante(
+            prenotazione_id=pren.id,
+            nome=utente.nome,
+            cognome=utente.cognome,
+            email=utente.email,
+            telefono=utente.telefono,
+            codice_fiscale=utente.codice_fiscale,
+        )
+        db.session.add(part)
+
+    pren.stato = StatoPrenotazione.CONFERMATA
+    db.session.commit()
+    logger.info("Admin %s: aggiunto partecipante %s al corso %s", current_user.email, utente.email, corso_id)
+    flash(f"{utente.nome_completo} aggiunto al corso.", "success")
+    return redirect(url_for("admin.corso_partecipanti", corso_id=corso_id))
+
+
+@admin_bp.route("/utenti/cerca")
+@admin_required
+def utenti_cerca():
+    from flask import jsonify
+    q = (request.args.get("q") or "").strip()
+    if len(q) < 2:
+        return jsonify([])
+    like = f"%{q}%"
+    utenti = Utente.query.filter(
+        db.or_(
+            Utente.email.ilike(like),
+            Utente.nome.ilike(like),
+            Utente.cognome.ilike(like),
+            func.concat(Utente.nome, ' ', Utente.cognome).ilike(like),
+        )
+    ).order_by(Utente.cognome).limit(20).all()
+    result = []
+    for u in utenti:
+        parts = u.nome_completo.split()
+        iniziali = (parts[0][0] + parts[-1][0]).upper() if len(parts) > 1 else u.nome[:2].upper()
+        result.append({"id": u.id, "nome_completo": u.nome_completo, "email": u.email, "iniziali": iniziali})
+    return jsonify(result)
 
 
 # ===========================================================================
