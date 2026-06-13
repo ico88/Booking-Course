@@ -725,30 +725,49 @@ def lead_elimina(lead_id):
 @admin_bp.route("/marketing/notifica", methods=["POST"])
 @admin_required
 def marketing_notifica():
+    from ..utils import generate_unsubscribe_token
     corso_id = request.form.get("corso_id")
     corso = Corso.query.get_or_404(corso_id)
-    all_leads = LeadMarketing.query.filter_by(attivo=True, verificato=True).all()
-
-    # Tag filtering: if corso has tags, send only to leads with at least one matching
-    # tag or to leads with no tags set (they receive everything)
+    secret = current_app.config.get("SECRET_KEY", "")
     corso_tags = set(corso.tags or [])
+    sent = 0
+    emailed = set()  # evita duplicati se utente è anche lead
+
+    # 1. Lead newsletter (attivi e verificati)
+    all_leads = LeadMarketing.query.filter_by(attivo=True, verificato=True).all()
     if corso_tags:
         leads = [l for l in all_leads if not l.tags or set(l.tags) & corso_tags]
     else:
         leads = all_leads
-
-    sent = 0
-    secret = current_app.config.get("SECRET_KEY", "")
-    from ..utils import generate_unsubscribe_token
     for lead in leads:
         try:
             token = generate_unsubscribe_token(lead.email, secret)
             invia_email_marketing(lead, corso, token)
+            emailed.add(lead.email)
             sent += 1
         except Exception:
             pass
-    logger.info("Admin %s: notifica marketing per corso %s a %d lead (tag filter: %s)", current_user.email, corso.id, sent, bool(corso_tags))
-    flash(f"Notifica inviata a {sent} lead.", "success")
+
+    # 2. Utenti registrati con consenso_marketing
+    utenti_mkt = Utente.query.filter_by(consenso_marketing=True).all()
+    for u in utenti_mkt:
+        if u.email in emailed:
+            continue
+        # Crea un oggetto duck-typed compatibile con invia_email_marketing
+        class _FakeLead:
+            def __init__(self, utente):
+                self.email = utente.email
+                self.nome = utente.nome
+                self.tags = []
+        try:
+            token = generate_unsubscribe_token(u.email, secret)
+            invia_email_marketing(_FakeLead(u), corso, token)
+            sent += 1
+        except Exception:
+            pass
+
+    logger.info("Admin %s: notifica marketing corso %s a %d destinatari", current_user.email, corso.id, sent)
+    flash(f"Notifica inviata a {sent} destinatari.", "success")
     return redirect(url_for("admin.marketing"))
 
 
