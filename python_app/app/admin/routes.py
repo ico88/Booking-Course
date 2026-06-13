@@ -993,6 +993,10 @@ def backup():
                     os.remove(fp)
                     logger.info("Admin %s: backup eliminato %s", current_user.email, filename)
                     flash("Backup eliminato.", "success")
+        elif action == "cron":
+            _salva_cron(backup_dir)
+        elif action == "cron_disabilita":
+            _rimuovi_cron(backup_dir)
         return redirect(url_for("admin.backup"))
 
     backups = []
@@ -1006,7 +1010,100 @@ def backup():
                 "data": datetime.fromtimestamp(stat.st_mtime),
             })
     app_url = Impostazione.get("app_url") or current_app.config.get("APP_URL", "")
-    return render_template("admin/backup.html", backups=backups, backup_dir=backup_dir, app_url=app_url)
+    cron_schedule = _leggi_cron_schedule(backup_dir)
+    return render_template("admin/backup.html", backups=backups, backup_dir=backup_dir,
+                           app_url=app_url, cron_schedule=cron_schedule)
+
+
+def _backup_script_path(backup_dir: str) -> str:
+    return os.path.join(backup_dir, "_backup.sh")
+
+
+def _cron_marker(backup_dir: str) -> str:
+    return f"# booking-corsi-backup:{backup_dir}"
+
+
+def _leggi_cron_schedule(backup_dir: str) -> str:
+    """Legge la pianificazione cron corrente per questo backup, se presente."""
+    try:
+        import subprocess
+        result = subprocess.run(["crontab", "-l"], capture_output=True, text=True)
+        marker = _cron_marker(backup_dir)
+        for line in result.stdout.splitlines():
+            if marker in line:
+                # Estrai i 5 campi cron
+                parts = line.split()
+                if len(parts) >= 5:
+                    return " ".join(parts[:5])
+    except Exception:
+        pass
+    return ""
+
+
+def _salva_cron(backup_dir: str):
+    """Installa o aggiorna il job cron per il backup automatico."""
+    import subprocess
+    orario = request.form.get("cron_orario", "giornaliero")
+    ora = request.form.get("cron_ora", "2")
+    try:
+        ora = max(0, min(23, int(ora)))
+    except ValueError:
+        ora = 2
+
+    schedules = {
+        "giornaliero": f"0 {ora} * * *",
+        "settimanale": f"0 {ora} * * 0",
+        "mensile": f"0 {ora} 1 * *",
+    }
+    cron_expr = schedules.get(orario, f"0 {ora} * * *")
+
+    # Genera script di backup
+    db_path = _sqlite_db_path()
+    script = _backup_script_path(backup_dir)
+    script_content = f"""#!/bin/bash
+mkdir -p "{backup_dir}"
+cp "{db_path}" "{backup_dir}/backup_$(date +%Y%m%d_%H%M%S).db"
+# Mantieni solo gli ultimi 30 backup
+ls -t "{backup_dir}"/backup_*.db 2>/dev/null | tail -n +31 | xargs rm -f
+"""
+    with open(script, "w") as f:
+        f.write(script_content)
+    os.chmod(script, 0o755)
+
+    marker = _cron_marker(backup_dir)
+    new_line = f"{cron_expr} {script} >> {backup_dir}/backup.log 2>&1  {marker}"
+
+    # Leggi crontab attuale, rimuovi vecchia riga, aggiungi nuova
+    try:
+        existing = subprocess.run(["crontab", "-l"], capture_output=True, text=True).stdout
+    except Exception:
+        existing = ""
+
+    lines = [l for l in existing.splitlines() if marker not in l]
+    lines.append(new_line)
+    new_crontab = "\n".join(lines) + "\n"
+
+    proc = subprocess.run(["crontab", "-"], input=new_crontab, text=True, capture_output=True)
+    if proc.returncode == 0:
+        logger.info("Admin %s: cron backup impostato: %s", current_user.email, cron_expr)
+        flash(f"Backup automatico pianificato ({orario}, ore {ora}:00).", "success")
+    else:
+        logger.error("Errore crontab: %s", proc.stderr)
+        flash("Errore durante la configurazione del cron. Controlla i permessi del server.", "error")
+
+
+def _rimuovi_cron(backup_dir: str):
+    """Rimuove il job cron per il backup automatico."""
+    import subprocess
+    marker = _cron_marker(backup_dir)
+    try:
+        existing = subprocess.run(["crontab", "-l"], capture_output=True, text=True).stdout
+        lines = [l for l in existing.splitlines() if marker not in l]
+        subprocess.run(["crontab", "-"], input="\n".join(lines) + "\n", text=True)
+        flash("Backup automatico disabilitato.", "success")
+        logger.info("Admin %s: cron backup rimosso", current_user.email)
+    except Exception as exc:
+        flash(f"Errore rimozione cron: {exc}", "error")
 
 
 @admin_bp.route("/backup/scarica/<filename>")

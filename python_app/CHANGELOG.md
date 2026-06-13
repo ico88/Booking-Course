@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.2.0] — 2026-06-13
+
+### Nuove funzionalità
+
+- **Navbar con avatar**: sostituito il nome utente testuale con un cerchio iniziali (es. "FD") con dropdown contenente prenotazioni, dati personali, pannello admin e logout.
+- **Home pubblica riprogettata**: hero section con gradiente e colori del tema, statistiche (corsi attivi, partecipanti), carousel corsi e footer multi-colonna scuro con dati aziendali.
+- **Hero personalizzabile**: sottotitolo e testo dei due pulsanti principali editabili dal pannello admin (Aspetto → Hero).
+- **Footer con dati aziendali**: il footer pubblico mostra ragione sociale e link al sito prelevandoli dalle impostazioni.
+- **Impostazioni admin con sidebar**: pagina impostazioni completamente ridisegnata con navigazione verticale a tab (Generale, Azienda, Aspetto, Email, Pagamenti, Notifiche, Sicurezza).
+- **Tab Azienda**: nuovo tab dedicato a ragione sociale, P.IVA e indirizzo sede (usati nel footer email e nel footer pubblico).
+- **Tab Aspetto**: raggruppa logo, schema colori e editor hero in un unico posto.
+- **Cloudflare Turnstile CAPTCHA**: toggle abilitazione/disabilitazione nel tab Sicurezza, attivabile solo se le chiavi sono presenti; il widget scompare dal form di registrazione quando disabilitato.
+- **Lista corsi admin**: campo ricerca live per titolo/luogo; azioni "Modifica" e "Partecipanti" diventati pulsanti con icone.
+- **Aggiunta manuale partecipanti**: dalla pagina partecipanti di un corso è possibile aggiungere un utente cercandolo tra quelli registrati o creandone uno nuovo direttamente.
+- **Lista utenti admin**: campo ricerca live; pulsanti Modifica (con modal) ed Elimina (con conferma); avatar con iniziali colorato per ruolo.
+- **Modifica dati utente**: modal admin per modificare nome, cognome, email, telefono, CF, ruolo e password (opzionale) di qualsiasi utente.
+- **Backup con cron integrato**: è possibile configurare la pianificazione dei backup automatici direttamente dal pannello admin senza toccare il server.
+- **Email con color scheme**: l'header e i bottoni delle email seguono il tema colori impostato (blu/rosso/verde).
+- **Logo nelle email**: il logo viene incluso nelle email come URL assoluto (richiede URL App compilato nelle impostazioni).
+
+### Fix
+
+- **Test email**: la route `/impostazioni/test-email` crashava con Internal Server Error perché `_ctx()` restituiva 4 valori ma ne venivano spacchettati solo 2.
+- **Cloudflare Turnstile visibile anche se disabilitato**: il widget compariva in fase di registrazione indipendentemente dal flag di abilitazione.
+- **Salvataggio hero non funzionante**: i campi hero erano nel form del tab Aspetto ma `_TAB_KEYS` li cercava nel tab Generale.
+- **Salvataggio dati azienda**: i campi ragione_sociale, P.IVA, indirizzo non avevano un tab dedicato in `_TAB_KEYS`.
+- **Email colore fisso**: header e bottoni usavano sempre blu `#1d4ed8` ignorando il color scheme impostato.
+
+---
+
 ## [1.1.0] — 2026-06-11
 
 ### Nuove funzionalità
