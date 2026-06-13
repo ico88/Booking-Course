@@ -147,7 +147,8 @@ def registrazione():
         try:
             invia_email_benvenuto(utente)
         except Exception as exc:
-            logger.error("Errore email benvenuto: %s", exc)
+            logger.error("Errore email benvenuto per %s: %s", email, exc, exc_info=True)
+            flash(f"Account creato, ma l'email di benvenuto non è stata inviata: {exc}", "warning")
 
         login_user(utente, remember=True)
         flash("Registrazione completata! Benvenuto.", "success")
