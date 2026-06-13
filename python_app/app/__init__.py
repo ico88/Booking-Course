@@ -139,4 +139,11 @@ def create_app(config_name=None):
             "hero_btn_secondary": Impostazione.get("hero_btn_secondary") or "Scopri i corsi",
         }
 
+    from flask_wtf.csrf import CSRFError
+    @app.errorhandler(CSRFError)
+    def handle_csrf_error(e):
+        from flask import flash, redirect, request as _req
+        flash("La sessione è scaduta. Riprova.", "warning")
+        return redirect(_req.referrer or "/"), 302
+
     return app
