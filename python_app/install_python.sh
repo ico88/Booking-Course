@@ -101,9 +101,15 @@ fi
 if [[ -n "$DOMAIN" ]]; then
   info "Dominio: $DOMAIN"
   USE_SSL=true
+  if [[ -z "${SSL_EMAIL:-}" ]]; then
+    read -rp "[INPUT] Email per Let's Encrypt (notifiche scadenza certificato): " SSL_EMAIL
+    [[ -n "$SSL_EMAIL" ]] || SSL_EMAIL="admin@${DOMAIN}"
+  fi
+  info "Email SSL: $SSL_EMAIL"
 else
   warn "Nessun dominio specificato. SSL non verrà configurato (solo HTTP su porta 80)."
   USE_SSL=false
+  SSL_EMAIL=""
 fi
 
 # ── Dipendenze sistema ──────────────────────────────────────
@@ -289,7 +295,7 @@ ok "Nginx configurato (HTTP)"
 if [[ "$USE_SSL" == "true" ]]; then
   info "Richiesta certificato Let's Encrypt per $DOMAIN..."
   if certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos \
-      --email "admin@${DOMAIN}" --redirect 2>/dev/null; then
+      --email "$SSL_EMAIL" --redirect 2>/dev/null; then
     ok "Certificato SSL installato per $DOMAIN"
     nginx -t && systemctl reload nginx
     ok "Nginx ricaricato con SSL"
