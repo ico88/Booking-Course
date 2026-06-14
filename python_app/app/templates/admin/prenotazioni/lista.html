@@ -2,9 +2,9 @@
 {% block title %}Prenotazioni{% endblock %}
 
 {% block admin_content %}
-<div class="flex items-center justify-between mb-6">
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
   <h1 class="text-2xl font-bold">Prenotazioni</h1>
-  <div class="flex gap-2 text-sm">
+  <div class="flex flex-wrap gap-2 text-sm">
     {% for val, label in [('', 'Tutte'), ('IN_ATTESA_PAGAMENTO', 'In attesa'), ('PAGAMENTO_CARICATO', 'Da verificare'), ('CONFERMATA', 'Confermate'), ('ANNULLATA', 'Annullate')] %}
     <a href="{{ url_for('admin.prenotazioni') }}{% if val %}?stato={{ val }}{% endif %}"
        class="px-3 py-1.5 rounded-lg {{ 'bg-blue-700 text-white' if stato_filtro == val else 'bg-white border border-gray-200 hover:bg-gray-50' }}">
@@ -14,7 +14,8 @@
   </div>
 </div>
 
-<div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+{# ── Vista tabella (md+) ── #}
+<div class="hidden md:block bg-white border border-gray-200 rounded-xl overflow-hidden">
   <table class="w-full text-sm">
     <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
       <tr>
@@ -38,10 +39,38 @@
         <td class="px-5 py-3"><span class="px-2 py-0.5 rounded text-xs bg-{{ color }}-100 text-{{ color }}-700">{{ p.stato_label }}</span></td>
         <td class="px-5 py-3 font-medium">{{ format_currency(p.importo_totale) }}</td>
         <td class="px-5 py-3 text-gray-400">{{ format_date(p.created_at) }}</td>
-        <td class="px-5 py-3"><a href="{{ url_for('admin.prenotazione_dettaglio', prenotazione_id=p.id) }}" class="text-blue-600 hover:underline">Dettagli →</a></td>
+        <td class="px-5 py-3"><a href="{{ url_for('admin.prenotazione_dettaglio', prenotazione_id=p.id) }}" class="text-blue-600 hover:underline text-xs">Dettagli →</a></td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
+
+{# ── Vista card (mobile) ── #}
+<div class="md:hidden space-y-3">
+  {% for p in prenotazioni %}
+  {% set color_map = {'CONFERMATA': 'green', 'IN_ATTESA_PAGAMENTO': 'yellow', 'PAGAMENTO_CARICATO': 'blue', 'ANNULLATA': 'red', 'SCADUTA': 'gray'} %}
+  {% set color = color_map.get(p.stato.value, 'gray') %}
+  <a href="{{ url_for('admin.prenotazione_dettaglio', prenotazione_id=p.id) }}"
+     class="block bg-white border border-gray-200 rounded-xl p-4 hover:shadow-sm transition-shadow">
+    <div class="flex items-start justify-between gap-2 mb-2">
+      <div>
+        <p class="font-semibold text-gray-900 text-sm">{{ p.utente.nome_completo }}</p>
+        <p class="text-xs text-gray-500 mt-0.5">{{ p.corso.titolo }}</p>
+      </div>
+      <span class="shrink-0 px-2 py-0.5 rounded text-xs font-medium bg-{{ color }}-100 text-{{ color }}-700">{{ p.stato_label }}</span>
+    </div>
+    <div class="flex items-center justify-between text-xs text-gray-500 mt-3 pt-3 border-t border-gray-100">
+      <span>{{ p.numero_posti }} posto/i · {{ format_currency(p.importo_totale) }}</span>
+      <span>{{ format_date(p.created_at) }}</span>
+    </div>
+  </a>
+  {% else %}
+  <p class="text-center text-gray-400 text-sm py-8">Nessuna prenotazione.</p>
+  {% endfor %}
+</div>
+
+{% if not prenotazioni %}
+<p class="hidden md:block text-center text-gray-400 text-sm py-8">Nessuna prenotazione.</p>
+{% endif %}
 {% endblock %}
