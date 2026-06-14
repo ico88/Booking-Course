@@ -12,7 +12,8 @@
   </h2>
 
   {% if da_emettere %}
-  <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+  {# Tabella desktop #}
+  <div class="hidden md:block bg-white border border-gray-200 rounded-xl overflow-hidden">
     <table class="w-full text-sm">
       <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
         <tr>
@@ -34,9 +35,7 @@
           <td class="px-5 py-3 text-right">
             <form method="POST" action="{{ url_for('admin.emetti_attestato', prenotazione_id=p.id) }}" class="inline">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <button class="bg-purple-600 text-white px-3 py-1.5 rounded-lg text-xs hover:bg-purple-700">
-                Emetti attestato
-              </button>
+              <button class="bg-purple-600 text-white px-3 py-1.5 rounded-lg text-xs hover:bg-purple-700">Emetti attestato</button>
             </form>
             <a href="{{ url_for('admin.prenotazione_dettaglio', prenotazione_id=p.id) }}"
                class="ml-2 text-blue-600 hover:underline text-xs">Dettaglio</a>
@@ -45,6 +44,29 @@
         {% endfor %}
       </tbody>
     </table>
+  </div>
+  {# Card mobile #}
+  <div class="md:hidden space-y-3">
+    {% for p in da_emettere %}
+    <div class="bg-white border border-gray-200 rounded-xl p-4">
+      <div class="mb-2">
+        <p class="font-semibold text-gray-900 text-sm">{{ p.utente.nome_completo }}</p>
+        <p class="text-xs text-gray-500">{{ p.utente.email }}</p>
+        <p class="text-xs text-gray-500 mt-1">{{ p.corso.titolo }}</p>
+      </div>
+      <div class="flex items-center justify-between pt-3 border-t border-gray-100 gap-2">
+        <span class="text-xs text-gray-400">{{ format_date(p.created_at) }}</span>
+        <div class="flex gap-2">
+          <form method="POST" action="{{ url_for('admin.emetti_attestato', prenotazione_id=p.id) }}" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="bg-purple-600 text-white px-3 py-1.5 rounded-lg text-xs hover:bg-purple-700">Emetti</button>
+          </form>
+          <a href="{{ url_for('admin.prenotazione_dettaglio', prenotazione_id=p.id) }}"
+             class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs hover:bg-blue-100">Dettaglio</a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
   </div>
   {% else %}
   <div class="bg-white border border-gray-200 rounded-xl p-6 text-sm text-gray-500">
@@ -61,7 +83,8 @@
   </h2>
 
   {% if emessi %}
-  <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+  {# Tabella desktop #}
+  <div class="hidden md:block bg-white border border-gray-200 rounded-xl overflow-hidden">
     <table class="w-full text-sm">
       <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
         <tr>
@@ -82,8 +105,7 @@
           <td class="px-5 py-3 text-gray-400">{{ format_date(p.attestato_emesso_at) }}</td>
           <td class="px-5 py-3 text-right flex items-center justify-end gap-3">
             {% if p.attestato_url %}
-            <a href="{{ p.attestato_url }}" target="_blank"
-               class="text-blue-600 hover:underline text-xs">Scarica</a>
+            <a href="{{ p.attestato_url }}" target="_blank" class="text-blue-600 hover:underline text-xs">Scarica</a>
             {% endif %}
             <a href="{{ url_for('admin.prenotazione_dettaglio', prenotazione_id=p.id) }}"
                class="text-gray-500 hover:underline text-xs">Dettaglio</a>
@@ -92,6 +114,29 @@
         {% endfor %}
       </tbody>
     </table>
+  </div>
+  {# Card mobile #}
+  <div class="md:hidden space-y-3">
+    {% for p in emessi %}
+    <div class="bg-white border border-gray-200 rounded-xl p-4">
+      <div class="mb-2">
+        <p class="font-semibold text-gray-900 text-sm">{{ p.utente.nome_completo }}</p>
+        <p class="text-xs text-gray-500">{{ p.utente.email }}</p>
+        <p class="text-xs text-gray-500 mt-1">{{ p.corso.titolo }}</p>
+      </div>
+      <div class="flex items-center justify-between pt-3 border-t border-gray-100 gap-2">
+        <span class="text-xs text-gray-400">{{ format_date(p.attestato_emesso_at) }}</span>
+        <div class="flex gap-2">
+          {% if p.attestato_url %}
+          <a href="{{ p.attestato_url }}" target="_blank"
+             class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs hover:bg-blue-100">Scarica</a>
+          {% endif %}
+          <a href="{{ url_for('admin.prenotazione_dettaglio', prenotazione_id=p.id) }}"
+             class="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs hover:bg-gray-200">Dettaglio</a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
   </div>
   {% else %}
   <div class="bg-white border border-gray-200 rounded-xl p-6 text-sm text-gray-500">
