@@ -195,7 +195,10 @@ chmod 750 "$APP_DIR"
 chmod 600 "$APP_DIR/.env"
 mkdir -p "$APP_DIR/app/static/uploads"
 chown -R "$APP_USER:$APP_USER" "$APP_DIR/app/static/uploads"
-# uploads deve essere leggibile da nginx
+# nginx deve poter attraversare il path fino a static/uploads
+chmod o+x "$APP_DIR"
+chmod o+x "$APP_DIR/app"
+chmod o+x "$APP_DIR/app/static"
 chmod 755 "$APP_DIR/app/static/uploads"
 
 # ── Migrazione DB ────────────────────────────────────────────
