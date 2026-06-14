@@ -142,14 +142,18 @@
 {% block content %}
 
 {# ═══════════════════════════════════════ HERO ═══════════════════════════════════════ #}
-<section class="hero-section">
-  <div class="max-w-3xl mx-auto px-6 py-14 text-center">
+<section class="hero-section relative overflow-hidden"
+  {% if hero_image_url %}
+  style="background-image:url('{{ url_for('static', filename=hero_image_url) }}');background-size:cover;background-position:center;"
+  {% endif %}>
+  {% if hero_image_url %}<div class="absolute inset-0 bg-black/50"></div>{% endif %}
+  <div class="relative max-w-3xl mx-auto px-6 py-14 text-center">
 
-<h1 class="hero-title text-4xl md:text-5xl font-extrabold tracking-tight mb-5 leading-tight">
+<h1 class="{{ 'text-white' if hero_image_url else 'hero-title' }} text-4xl md:text-5xl font-extrabold tracking-tight mb-5 leading-tight">
       {{ app_name }}
     </h1>
 
-    <p class="text-lg text-gray-500 mb-10 max-w-xl mx-auto leading-relaxed">
+    <p class="text-lg mb-10 max-w-xl mx-auto leading-relaxed {{ 'text-white/90' if hero_image_url else 'text-gray-500' }}">
       {{ hero_subtitle }}
     </p>
 

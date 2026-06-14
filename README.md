@@ -26,6 +26,7 @@ Dimentica fogli Excel, email disperse e bonifici da tracciare manualmente. Con B
 - **Attestati digitali** — genera e invia automaticamente gli attestati di partecipazione personalizzati
 - **Newsletter e marketing** — comunica con i tuoi iscritti tramite campagne email segmentate per interessi
 - **Backup automatico** — il database viene salvato automaticamente, con possibilità di ripristino
+- **Gestione utenti GDPR-compliant** — disattivazione account, anonimizzazione dati personali (Art. 17), eliminazione sicura solo senza dati correlati
 
 ---
 

@@ -1094,6 +1094,44 @@ def upload_logo():
     return redirect(url_for("admin.impostazioni"))
 
 
+@admin_bp.route("/impostazioni/hero-image", methods=["POST"])
+@admin_required
+def upload_hero_image():
+    file = request.files.get("hero_image")
+    if not file or not allowed_file(file.filename, {"jpg", "jpeg", "png", "webp"}):
+        flash("Formato non valido. Usa JPG, PNG o WebP.", "error")
+        return redirect(url_for("admin.impostazioni", tab="aspetto"))
+    file.seek(0, 2)
+    if file.tell() > 5 * 1024 * 1024:
+        flash("File troppo grande (max 5 MB).", "error")
+        return redirect(url_for("admin.impostazioni", tab="aspetto"))
+    file.seek(0)
+    ext = file.filename.rsplit(".", 1)[1].lower()
+    filename = f"hero_bg.{ext}"
+    upload_dir = current_app.config["UPLOAD_FOLDER"]
+    dest_path = os.path.join(upload_dir, filename)
+    file.save(dest_path)
+    os.chmod(dest_path, 0o644)
+    Impostazione.set("hero_image_url", f"uploads/{filename}")
+    db.session.commit()
+    flash("Immagine hero aggiornata.", "success")
+    return redirect(url_for("admin.impostazioni", tab="aspetto"))
+
+
+@admin_bp.route("/impostazioni/hero-image/elimina", methods=["POST"])
+@admin_required
+def hero_image_elimina():
+    rel = Impostazione.get("hero_image_url", "")
+    if rel:
+        path = os.path.join(current_app.root_path, "static", rel.lstrip("/").removeprefix("static/"))
+        if os.path.exists(path):
+            os.remove(path)
+        Impostazione.set("hero_image_url", "")
+        db.session.commit()
+    flash("Immagine hero rimossa.", "success")
+    return redirect(url_for("admin.impostazioni", tab="aspetto"))
+
+
 @admin_bp.route("/impostazioni/logo/elimina", methods=["POST"])
 @admin_required
 def logo_elimina():

@@ -137,6 +137,7 @@ def create_app(config_name=None):
             "hero_subtitle": Impostazione.get("hero_subtitle") or "Benvenuto nel portale di formazione professionale. Accedi per gestire le tue iscrizioni, consultare il calendario e scaricare gli attestati.",
             "hero_btn_primary": Impostazione.get("hero_btn_primary") or "Accedi al portale",
             "hero_btn_secondary": Impostazione.get("hero_btn_secondary") or "Scopri i corsi",
+            "hero_image_url": Impostazione.get("hero_image_url") or "",
         }
 
     from flask_wtf.csrf import CSRFError

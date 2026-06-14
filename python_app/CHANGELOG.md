@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.3.0] — 2026-06-14
+
+### Nuove funzionalità
+
+- **Gestione utenti GDPR-compliant**: l'eliminazione totale è ora bloccata per utenti con prenotazioni associate. Introdotte tre azioni distinte:
+  - **Disattiva / Riattiva** — l'utente non può accedere ma i dati restano intatti (soft delete)
+  - **Anonimizza (Art. 17 GDPR)** — cancella tutti i dati personali mantenendo lo storico prenotazioni anonimizzato
+  - **Elimina** — disponibile solo per utenti senza nessuna prenotazione
+- **Badge "Disattivato"** visibile in lista utenti; righe disattivate appaiono in semitrasparenza
+- **Login bloccato per utenti disattivati** con messaggio esplicativo
+- **SSL / HTTPS su corsi.cricatania.it** — configurazione Let's Encrypt tramite certbot
+- **Fix permessi nginx**: le directory nel path verso `static/uploads` sono ora attraversabili da nginx (`o+x`) — risolto errore 403 sul logo e sugli upload
+
+### Fix
+
+- **Eliminazione utente con prenotazioni**: il tentativo di eliminare un utente con prenotazioni associate ora mostra un messaggio chiaro invece di fallire silenziosamente con errore di integrità referenziale
+- **Permessi static/uploads**: installazione fresca generava 403 su logo e file caricati perché `APP_DIR` aveva permessi `750`
+
+---
+
 ## [1.2.0] — 2026-06-13
 
 ### Nuove funzionalità
