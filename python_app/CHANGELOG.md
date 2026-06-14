@@ -10,6 +10,8 @@
   - **Elimina** — disponibile solo per utenti senza nessuna prenotazione
 - **Badge "Disattivato"** visibile in lista utenti; righe disattivate appaiono in semitrasparenza
 - **Login bloccato per utenti disattivati** con messaggio esplicativo
+- **Favicon personalizzabile** — upload da Admin → Impostazioni → Aspetto (ICO, PNG, SVG, WebP)
+- **Immagine di sfondo hero** — upload immagine personalizzata per la homepage; sovrappone overlay scuro con testo bianco
 - **SSL / HTTPS su corsi.cricatania.it** — configurazione Let's Encrypt tramite certbot
 - **Fix permessi nginx**: le directory nel path verso `static/uploads` sono ora attraversabili da nginx (`o+x`) — risolto errore 403 sul logo e sugli upload
 

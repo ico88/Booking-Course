@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>{% block title %}{% endblock %} — {{ app_name }}</title>
+  {% if favicon_url %}
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename=favicon_url) }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename=favicon_url) }}">
+  {% endif %}
   <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
   {% set _scheme = color_scheme or 'blu' %}
   {% set _palettes = {

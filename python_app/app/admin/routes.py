@@ -1094,6 +1094,44 @@ def upload_logo():
     return redirect(url_for("admin.impostazioni"))
 
 
+@admin_bp.route("/impostazioni/favicon", methods=["POST"])
+@admin_required
+def upload_favicon():
+    file = request.files.get("favicon")
+    if not file or not allowed_file(file.filename, {"ico", "png", "svg", "jpg", "jpeg", "webp"}):
+        flash("Formato non valido. Usa ICO, PNG, SVG o WebP.", "error")
+        return redirect(url_for("admin.impostazioni", tab="aspetto"))
+    file.seek(0, 2)
+    if file.tell() > 2 * 1024 * 1024:
+        flash("File troppo grande (max 2 MB).", "error")
+        return redirect(url_for("admin.impostazioni", tab="aspetto"))
+    file.seek(0)
+    ext = file.filename.rsplit(".", 1)[1].lower()
+    filename = f"favicon.{ext}"
+    upload_dir = current_app.config["UPLOAD_FOLDER"]
+    dest_path = os.path.join(upload_dir, filename)
+    file.save(dest_path)
+    os.chmod(dest_path, 0o644)
+    Impostazione.set("favicon_url", f"uploads/{filename}")
+    db.session.commit()
+    flash("Favicon aggiornata.", "success")
+    return redirect(url_for("admin.impostazioni", tab="aspetto"))
+
+
+@admin_bp.route("/impostazioni/favicon/elimina", methods=["POST"])
+@admin_required
+def favicon_elimina():
+    rel = Impostazione.get("favicon_url", "")
+    if rel:
+        path = os.path.join(current_app.root_path, "static", rel.lstrip("/").removeprefix("static/"))
+        if os.path.exists(path):
+            os.remove(path)
+        Impostazione.set("favicon_url", "")
+        db.session.commit()
+    flash("Favicon rimossa.", "success")
+    return redirect(url_for("admin.impostazioni", tab="aspetto"))
+
+
 @admin_bp.route("/impostazioni/hero-image", methods=["POST"])
 @admin_required
 def upload_hero_image():

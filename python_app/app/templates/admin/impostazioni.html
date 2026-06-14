@@ -154,6 +154,33 @@
         </form>
       </div>
 
+      <!-- Favicon -->
+      <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+        <div class="flex items-center gap-2 mb-1">
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"/></svg>
+          <h2 class="font-semibold text-gray-800">Favicon</h2>
+          <span class="text-xs text-gray-400 font-normal">— icona nella scheda del browser</span>
+        </div>
+        {% set _favicon = settings.get('favicon_url', '') %}
+        {% if _favicon %}
+        <div class="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+          <img src="{{ url_for('static', filename=_favicon) }}" alt="Favicon" class="w-8 h-8 object-contain">
+          <form method="POST" action="{{ url_for('admin.favicon_elimina') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="text-sm text-red-600 hover:text-red-800">Rimuovi</button>
+          </form>
+        </div>
+        {% endif %}
+        <form method="POST" action="{{ url_for('admin.upload_favicon') }}" enctype="multipart/form-data" class="flex gap-3 items-end">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="flex-1">
+            <label class="block text-sm font-medium mb-1">Carica favicon <span class="font-normal text-gray-400">(ICO, PNG, SVG, WebP — max 2 MB, consigliato 32×32 o 64×64)</span></label>
+            <input type="file" name="favicon" accept=".ico,.png,.svg,.webp,image/x-icon,image/png,image/svg+xml,image/webp" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+          </div>
+          <button type="submit" class="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-900 whitespace-nowrap">Carica</button>
+        </form>
+      </div>
+
       <!-- Immagine hero -->
       <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
         <div class="flex items-center gap-2 mb-1">
