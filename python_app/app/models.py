@@ -73,7 +73,7 @@ class Utente(UserMixin, db.Model):
     consenso_marketing = db.Column(db.Boolean, default=False)
     tags_marketing = db.Column(db.JSON, default=list)
     data_consenso = db.Column(db.DateTime(timezone=True))
-    attivo = db.Column(db.Boolean, default=True, nullable=False)
+    attivo = db.Column(db.Boolean, default=True, server_default="1", nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), default=now_utc)
     updated_at = db.Column(db.DateTime(timezone=True), default=now_utc, onupdate=now_utc)
 
