@@ -35,14 +35,19 @@
       {% for u in utenti %}
       {% set parts = u.nome_completo.split() %}
       {% set initials = (parts[0][0] ~ parts[-1][0])|upper if parts|length > 1 else u.nome[:2]|upper %}
-      <tr class="hover:bg-gray-50 utente-row" data-search="{{ u.nome_completo|lower }} {{ u.email|lower }}">
+      <tr class="hover:bg-gray-50 utente-row {% if not u.attivo %}opacity-50{% endif %}" data-search="{{ u.nome_completo|lower }} {{ u.email|lower }}">
         <td class="px-5 py-3">
           <div class="flex items-center gap-3">
             <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold
               {{ 'bg-red-100 text-red-700' if u.ruolo.value == 'ADMIN' else 'bg-blue-100 text-blue-700' if u.ruolo.value == 'SEGRETERIA' else 'bg-gray-100 text-gray-600' }}">
               {{ initials }}
             </div>
-            <span class="font-medium">{{ u.nome_completo }}</span>
+            <div>
+              <span class="font-medium">{{ u.nome_completo }}</span>
+              {% if not u.attivo %}
+              <span class="ml-2 px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-600">Disattivato</span>
+              {% endif %}
+            </div>
           </div>
         </td>
         <td class="px-5 py-3 text-gray-500">{{ u.email }}</td>
@@ -69,12 +74,35 @@
               Modifica
             </button>
             {% if u.id != current_user.id %}
-            <!-- Elimina -->
+            <!-- Disattiva / Riattiva -->
+            <form method="POST" action="{{ url_for('admin.utente_disattiva', utente_id=u.id) }}" class="inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit"
+                      class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors
+                        {{ 'bg-green-50 text-green-700 hover:bg-green-100' if not u.attivo else 'bg-amber-50 text-amber-700 hover:bg-amber-100' }}">
+                {% if u.attivo %}
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                Disattiva
+                {% else %}
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Riattiva
+                {% endif %}
+              </button>
+            </form>
+            <!-- Anonimizza (GDPR) -->
+            <button onclick="openAnonimizzaModal('{{ u.id }}','{{ u.nome_completo|e }}')"
+                    class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-md bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+              Anonimizza
+            </button>
+            <!-- Elimina (solo se nessuna prenotazione) -->
+            {% if u.prenotazioni.count() == 0 %}
             <button onclick="openDeleteModal('{{ u.id }}','{{ u.nome_completo|e }}')"
                     class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-md bg-red-50 text-red-600 hover:bg-red-100 transition-colors">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m2 0H7m2 0V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
               Elimina
             </button>
+            {% endif %}
             {% endif %}
           </div>
         </td>
@@ -172,6 +200,27 @@
 </div>
 
 <!-- ============================================================
+     MODAL: Conferma anonimizzazione
+     ============================================================ -->
+<div id="modal-anonimizza-utente" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+    <div class="px-6 py-5 text-center">
+      <div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mx-auto mb-3">
+        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+      </div>
+      <h2 class="text-base font-semibold mb-1">Anonimizza utente (GDPR)</h2>
+      <p class="text-sm text-gray-500 mb-5">I dati personali di <strong id="anonimizza-nome-label"></strong> verranno cancellati irreversibilmente. Le prenotazioni storiche restano anonimizzate.</p>
+      <form id="form-anonimizza-utente" method="POST" action="" class="flex gap-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="flex-1 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors">Anonimizza</button>
+        <button type="button" onclick="closeModal('modal-anonimizza-utente')"
+                class="flex-1 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">Annulla</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
      MODAL: Nuovo utente
      ============================================================ -->
 <div id="modal-nuovo-utente" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
@@ -258,6 +307,13 @@ function openDeleteModal(id, nome) {
   document.getElementById('form-elimina-utente').action = '/admin/utenti/' + id + '/elimina';
   document.getElementById('delete-nome-label').textContent = nome;
   openModal('modal-elimina-utente');
+}
+
+// ── Modal anonimizza ──────────────────────────────────────────────────────────
+function openAnonimizzaModal(id, nome) {
+  document.getElementById('form-anonimizza-utente').action = '/admin/utenti/' + id + '/anonimizza';
+  document.getElementById('anonimizza-nome-label').textContent = nome;
+  openModal('modal-anonimizza-utente');
 }
 </script>
 {% endblock %}

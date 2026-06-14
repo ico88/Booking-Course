@@ -633,6 +633,9 @@ def utente_elimina(utente_id):
         flash("Non puoi eliminare te stesso.", "error")
         return redirect(url_for("admin.utenti"))
     u = Utente.query.get_or_404(utente_id)
+    if u.prenotazioni.count() > 0:
+        flash("Impossibile eliminare: l'utente ha prenotazioni associate. Usa Disattiva o Anonimizza.", "error")
+        return redirect(url_for("admin.utenti"))
     try:
         logger.info("Admin %s: utente eliminato %s", current_user.email, u.email)
         db.session.delete(u)
@@ -642,6 +645,45 @@ def utente_elimina(utente_id):
         db.session.rollback()
         logger.error("Errore eliminazione utente %s: %s", utente_id, exc)
         flash(f"Impossibile eliminare l'utente: {exc}", "error")
+    return redirect(url_for("admin.utenti"))
+
+
+@admin_bp.route("/utenti/<string:utente_id>/disattiva", methods=["POST"])
+@admin_required
+def utente_disattiva(utente_id):
+    if utente_id == current_user.id:
+        flash("Non puoi disattivare te stesso.", "error")
+        return redirect(url_for("admin.utenti"))
+    u = Utente.query.get_or_404(utente_id)
+    u.attivo = not u.attivo
+    db.session.commit()
+    stato = "riattivato" if u.attivo else "disattivato"
+    logger.info("Admin %s: utente %s %s", current_user.email, u.email, stato)
+    flash(f"Utente {u.nome_completo} {stato}.", "success")
+    return redirect(url_for("admin.utenti"))
+
+
+@admin_bp.route("/utenti/<string:utente_id>/anonimizza", methods=["POST"])
+@admin_required
+def utente_anonimizza(utente_id):
+    if utente_id == current_user.id:
+        flash("Non puoi anonimizzare te stesso.", "error")
+        return redirect(url_for("admin.utenti"))
+    u = Utente.query.get_or_404(utente_id)
+    anon_id = utente_id[:8]
+    u.nome = "Utente"
+    u.cognome = f"Anonimo-{anon_id}"
+    u.email = f"anonimo-{anon_id}@eliminato.invalid"
+    u.telefono = None
+    u.codice_fiscale = None
+    u.password_hash = None
+    u.token_reset = None
+    u.consenso_privacy = False
+    u.consenso_marketing = False
+    u.attivo = False
+    db.session.commit()
+    logger.info("Admin %s: utente anonimizzato %s", current_user.email, utente_id)
+    flash("Dati personali anonimizzati. Le prenotazioni storiche sono conservate.", "success")
     return redirect(url_for("admin.utenti"))
 
 

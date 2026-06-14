@@ -68,6 +68,9 @@ def login():
 
         utente = Utente.query.filter_by(email=email).first()
         if utente and utente.check_password(password):
+            if not utente.attivo:
+                flash("Account disattivato. Contatta l'amministratore.", "error")
+                return render_template("auth/login.html")
             login_user(utente, remember=True)
             logger.info("Login riuscito: %s da %s", email, ip)
             next_url = request.args.get("next") or request.form.get("next")
