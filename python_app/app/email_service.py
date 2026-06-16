@@ -102,6 +102,57 @@ def send_email(to: str, subject: str, html_body: str):
         raise
 
 
+def send_email_bulk(messages: list):
+    """Invia una lista di (to, subject, html_body) su una singola connessione SMTP.
+    Riconnette automaticamente se la connessione cade."""
+    cfg = _get_smtp_config()
+    if not cfg["host"] or not cfg["user"]:
+        current_app.logger.warning("SMTP non configurato, invio bulk annullato.")
+        return 0
+
+    sent = 0
+    server = None
+
+    def _connect():
+        s = smtplib.SMTP(cfg["host"], cfg["port"], timeout=30)
+        s.ehlo()
+        s.starttls()
+        s.login(cfg["user"], cfg["password"])
+        return s
+
+    try:
+        server = _connect()
+        for to, subject, html_body in messages:
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = subject
+            msg["From"] = f"{cfg['from_name']} <{cfg['from_addr']}>"
+            msg["To"] = to
+            msg.attach(MIMEText(html_body, "html", "utf-8"))
+            try:
+                server.sendmail(cfg["from_addr"], [to], msg.as_string())
+                sent += 1
+            except smtplib.SMTPServerDisconnected:
+                # Riconnette e riprova una volta
+                try:
+                    server = _connect()
+                    server.sendmail(cfg["from_addr"], [to], msg.as_string())
+                    sent += 1
+                except Exception as e:
+                    current_app.logger.warning("Errore invio bulk a %s: %s", to, e)
+            except Exception as e:
+                current_app.logger.warning("Errore invio bulk a %s: %s", to, e)
+    except Exception as e:
+        current_app.logger.error("Errore connessione SMTP bulk: %s", e)
+    finally:
+        if server:
+            try:
+                server.quit()
+            except Exception:
+                pass
+
+    return sent
+
+
 # ---------------------------------------------------------------------------
 # Template helpers
 # ---------------------------------------------------------------------------
@@ -357,7 +408,8 @@ def invia_email_notifica_segreteria(soggetto: str, messaggio: str):
         pass
 
 
-def invia_email_marketing(lead, corso, unsub_token: str):
+def _build_marketing_html(lead, corso, unsub_token: str) -> tuple:
+    """Restituisce (to, subject, html_body) senza inviare."""
     app_name, app_url, logo_url, legal, color_scheme = _ctx()
     unsub_url = f"{app_url}/disiscrivi?email={lead.email}&token={unsub_token}"
     data_str = corso.data_inizio.strftime("%d/%m/%Y") if corso.data_inizio else "Da definire"
@@ -380,7 +432,12 @@ def invia_email_marketing(lead, corso, unsub_token: str):
         f'Ricevi queste email perché sei iscritto alle notifiche di {app_name}.<br>'
         f'<a href="{unsub_url}" style="color:#7c3aed">Annulla iscrizione</a></p>'
     )
-    send_email(lead.email, f"Nuovo corso: {corso.titolo}", _html_wrapper(body, app_name, app_url, logo_url, legal, color_scheme))
+    return (lead.email, f"Nuovo corso: {corso.titolo}", _html_wrapper(body, app_name, app_url, logo_url, legal, color_scheme))
+
+
+def invia_email_marketing(lead, corso, unsub_token: str):
+    to, subject, html = _build_marketing_html(lead, corso, unsub_token)
+    send_email(to, subject, html)
 
 
 def invia_email_verifica_lead(lead, verifica_url: str):

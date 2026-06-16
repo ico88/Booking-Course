@@ -22,7 +22,8 @@ from ..models import (
 )
 from ..email_service import (
     invia_email_conferma_prenotazione, invia_email_attestato,
-    invia_email_marketing, invia_email_benvenuto,
+    invia_email_marketing, invia_email_benvenuto, send_email_bulk,
+    _build_marketing_html,
 )
 from ..utils import allowed_file, safe_filename, sanitize_html, validate_email_address
 
@@ -842,15 +843,15 @@ def marketing_notifica():
             c = Corso.query.get(corso_id_str)
             if not c:
                 return
-            sent = 0
+            messages = []
             for dest in destinatari:
                 try:
                     token = generate_unsubscribe_token(dest.email, secret)
-                    invia_email_marketing(dest, c, token)
-                    sent += 1
+                    messages.append(_build_marketing_html(dest, c, token))
                 except Exception as e:
-                    logger.warning("Errore invio marketing a %s: %s", dest.email, e)
-            logger.info("Marketing corso %s: inviate %d/%d email", corso_id_str, sent, len(destinatari))
+                    logger.warning("Errore build marketing per %s: %s", dest.email, e)
+            sent = send_email_bulk(messages)
+            logger.info("Marketing corso %s: inviate %d/%d email", corso_id_str, sent, len(messages))
 
     t = threading.Thread(target=_send_all, daemon=True)
     t.start()
