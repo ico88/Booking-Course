@@ -47,24 +47,7 @@
         </div>
         <div>
           <label class="block text-sm font-medium mb-1">Descrizione</label>
-          <div class="border border-gray-300 rounded-lg overflow-hidden">
-            <div class="bg-gray-50 border-b border-gray-300 px-2 py-1 flex flex-wrap items-center gap-0.5">
-              <button type="button" onmousedown="event.preventDefault();eCmd('ed-desc','bold')" class="e-btn font-bold" title="Grassetto">B</button>
-              <button type="button" onmousedown="event.preventDefault();eCmd('ed-desc','italic')" class="e-btn italic" title="Corsivo">I</button>
-              <button type="button" onmousedown="event.preventDefault();eCmd('ed-desc','underline')" class="e-btn underline" title="Sottolineato">U</button>
-              <span class="w-px h-5 bg-gray-200 mx-0.5"></span>
-              <button type="button" onmousedown="event.preventDefault();eBlock('ed-desc','h2')" class="e-btn font-bold text-xs" title="Titolo H2">H2</button>
-              <button type="button" onmousedown="event.preventDefault();eBlock('ed-desc','h3')" class="e-btn font-semibold text-xs" title="Titolo H3">H3</button>
-              <button type="button" onmousedown="event.preventDefault();eBlock('ed-desc','p')" class="e-btn text-gray-400 text-xs" title="Paragrafo">¶</button>
-              <span class="w-px h-5 bg-gray-200 mx-0.5"></span>
-              <button type="button" onmousedown="event.preventDefault();eCmd('ed-desc','insertUnorderedList')" class="e-btn" title="Elenco puntato">•≡</button>
-              <button type="button" onmousedown="event.preventDefault();eCmd('ed-desc','insertOrderedList')" class="e-btn text-xs" title="Elenco numerato">1.</button>
-              <span class="w-px h-5 bg-gray-200 mx-0.5"></span>
-              <button type="button" onmousedown="event.preventDefault();eLink('ed-desc')" class="e-btn text-xs px-1.5" style="width:auto" title="Link">Link</button>
-              <button type="button" onmousedown="event.preventDefault();eCmd('ed-desc','removeFormat')" class="e-btn text-gray-400 text-xs" title="Rimuovi formattazione">✕</button>
-            </div>
-            <div id="ed-desc" contenteditable="true" class="p-3 bg-white text-sm leading-relaxed" style="min-height:160px"></div>
-          </div>
+          <div id="quill-desc" style="min-height:160px"></div>
           <textarea name="descrizione" id="textarea-descrizione" class="hidden"></textarea>
         </div>
         <div class="grid grid-cols-2 gap-4">
@@ -216,19 +199,24 @@
   {% endif %}
 </div>
 
+<link href="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.js"></script>
 <script>
-function eCmd(id, cmd) { document.getElementById(id).focus(); document.execCommand(cmd, false, null); }
-function eBlock(id, tag) { document.getElementById(id).focus(); document.execCommand('formatBlock', false, tag); }
-function eLink(id) {
-  document.getElementById(id).focus();
-  const url = prompt('URL del link (es. https://...)');
-  if (url) document.execCommand('createLink', false, url);
-}
-
-const edDesc = document.getElementById('ed-desc');
-edDesc.innerHTML = {{ (corso.descrizione if corso else '') | tojson }};
+const quill = new Quill('#quill-desc', {
+  theme: 'snow',
+  modules: {
+    toolbar: [
+      [{ header: [2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      ['link'],
+      ['clean'],
+    ]
+  }
+});
+quill.clipboard.dangerouslyPasteHTML({{ (corso.descrizione if corso else '') | tojson }});
 document.getElementById('corso-form').addEventListener('submit', function() {
-  document.getElementById('textarea-descrizione').value = edDesc.innerHTML;
+  document.getElementById('textarea-descrizione').value = quill.getSemanticHTML();
 });
 
 // Show/hide attestato template box
