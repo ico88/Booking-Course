@@ -52,7 +52,7 @@
         <h1 class="text-3xl font-bold text-gray-900 mb-4">{{ corso.titolo }}</h1>
 
         {% if corso.descrizione %}
-        <div class="prose prose-gray max-w-none text-gray-700 leading-relaxed">
+        <div class="prose prose-gray max-w-none text-gray-700 leading-relaxed overflow-hidden [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mb-1 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:mt-4 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:mt-3 [&_strong]:font-semibold [&_a]:text-blue-600 [&_a]:underline">
           {{ corso.descrizione | safe }}
         </div>
         {% endif %}
