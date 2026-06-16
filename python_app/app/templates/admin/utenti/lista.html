@@ -61,6 +61,7 @@
         <td class="px-5 py-3 text-gray-400">{{ format_date(u.created_at) }}</td>
         <td class="px-5 py-3">
           <div class="flex items-center justify-end gap-2">
+            {% if current_user.ruolo.value == 'ADMIN' or u.ruolo.value != 'ADMIN' %}
             <button onclick="openEditModal(this)"
                     data-id="{{ u.id }}" data-nome="{{ u.nome|e }}" data-cognome="{{ u.cognome|e }}"
                     data-email="{{ u.email|e }}" data-telefono="{{ u.telefono or '' }}"
@@ -69,7 +70,9 @@
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5m-1.414-9.414a2 2 0 1 1 2.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
               Modifica
             </button>
+            {% endif %}
             {% if u.id != current_user.id %}
+            {% if current_user.ruolo.value == 'ADMIN' %}
             <form method="POST" action="{{ url_for('admin.utente_disattiva', utente_id=u.id) }}" class="inline">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <button type="submit" class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors
@@ -94,6 +97,7 @@
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m2 0H7m2 0V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
               Elimina
             </button>
+            {% endif %}
             {% endif %}
             {% endif %}
           </div>
@@ -133,6 +137,7 @@
       </div>
     </div>
     <div class="flex flex-wrap gap-2 pt-3 border-t border-gray-100">
+      {% if current_user.ruolo.value == 'ADMIN' or u.ruolo.value != 'ADMIN' %}
       <button onclick="openEditModal(this)"
               data-id="{{ u.id }}" data-nome="{{ u.nome|e }}" data-cognome="{{ u.cognome|e }}"
               data-email="{{ u.email|e }}" data-telefono="{{ u.telefono or '' }}"
@@ -141,7 +146,9 @@
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5m-1.414-9.414a2 2 0 1 1 2.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
         Modifica
       </button>
+      {% endif %}
       {% if u.id != current_user.id %}
+      {% if current_user.ruolo.value == 'ADMIN' %}
       <form method="POST" action="{{ url_for('admin.utente_disattiva', utente_id=u.id) }}" class="inline">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md transition-colors
@@ -158,6 +165,7 @@
               class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md bg-red-50 text-red-600 hover:bg-red-100 transition-colors">
         Elimina
       </button>
+      {% endif %}
       {% endif %}
       {% endif %}
     </div>

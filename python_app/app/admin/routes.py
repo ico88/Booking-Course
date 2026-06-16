@@ -577,6 +577,9 @@ def utente_nuovo():
 @admin_required
 def utente_modifica(utente_id):
     u = Utente.query.get_or_404(utente_id)
+    if current_user.ruolo == Ruolo.SEGRETERIA and u.ruolo == Ruolo.ADMIN:
+        flash("Non puoi modificare un amministratore.", "error")
+        return redirect(url_for("admin.utenti"))
     raw_email = (request.form.get("email") or "").strip()
     email = validate_email_address(raw_email)
     if not email:
@@ -643,6 +646,9 @@ def utente_modifica_ruolo(utente_id):
 @admin_bp.route("/utenti/<string:utente_id>/elimina", methods=["POST"])
 @admin_required
 def utente_elimina(utente_id):
+    if current_user.ruolo == Ruolo.SEGRETERIA:
+        flash("Non hai i permessi per eliminare utenti.", "error")
+        return redirect(url_for("admin.utenti"))
     if utente_id == current_user.id:
         flash("Non puoi eliminare te stesso.", "error")
         return redirect(url_for("admin.utenti"))
@@ -665,6 +671,9 @@ def utente_elimina(utente_id):
 @admin_bp.route("/utenti/<string:utente_id>/disattiva", methods=["POST"])
 @admin_required
 def utente_disattiva(utente_id):
+    if current_user.ruolo == Ruolo.SEGRETERIA:
+        flash("Non hai i permessi per disattivare utenti.", "error")
+        return redirect(url_for("admin.utenti"))
     if utente_id == current_user.id:
         flash("Non puoi disattivare te stesso.", "error")
         return redirect(url_for("admin.utenti"))
@@ -680,6 +689,9 @@ def utente_disattiva(utente_id):
 @admin_bp.route("/utenti/<string:utente_id>/anonimizza", methods=["POST"])
 @admin_required
 def utente_anonimizza(utente_id):
+    if current_user.ruolo == Ruolo.SEGRETERIA:
+        flash("Non hai i permessi per anonimizzare utenti.", "error")
+        return redirect(url_for("admin.utenti"))
     if utente_id == current_user.id:
         flash("Non puoi anonimizzare te stesso.", "error")
         return redirect(url_for("admin.utenti"))
