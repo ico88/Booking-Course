@@ -124,15 +124,15 @@
 
     <!-- Brand -->
     <div class="lg:col-span-1">
-      <div class="flex items-center gap-2 mb-3">
+      <div class="mb-3">
         {% if logo_url %}
-        <img src="{{ logo_url }}" alt="" class="h-8 max-w-[120px] flex-shrink-0 object-contain">
+        <img src="{{ logo_url }}" alt="" class="h-8 w-auto object-contain mb-2">
         {% endif %}
-        <span class="font-bold text-white text-lg">{{ app_name }}</span>
+        <div class="font-bold text-white text-lg">{{ app_name }}</div>
+        <p class="text-sm leading-relaxed text-gray-500 mt-1">
+          Gestione formazione semplice e potente per organizzazioni moderne.
+        </p>
       </div>
-      <p class="text-sm leading-relaxed text-gray-500">
-        Gestione formazione semplice e potente per organizzazioni moderne.
-      </p>
     </div>
 
     <!-- Accesso Rapido -->
