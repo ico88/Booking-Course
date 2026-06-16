@@ -553,6 +553,8 @@ def utente_nuovo():
         ruolo = Ruolo(ruolo_str)
     except ValueError:
         ruolo = Ruolo.UTENTE
+    if current_user.ruolo == Ruolo.SEGRETERIA:
+        ruolo = Ruolo.UTENTE
 
     if Utente.query.filter_by(email=email).first():
         flash("Email già registrata.", "error")
@@ -607,7 +609,10 @@ def utente_modifica(utente_id):
     if utente_id != current_user.id:
         ruolo_str = request.form.get("ruolo", "UTENTE")
         try:
-            u.ruolo = Ruolo(ruolo_str)
+            nuovo_ruolo = Ruolo(ruolo_str)
+            if current_user.ruolo == Ruolo.SEGRETERIA and nuovo_ruolo != Ruolo.UTENTE:
+                nuovo_ruolo = Ruolo.UTENTE
+            u.ruolo = nuovo_ruolo
         except ValueError:
             pass
 

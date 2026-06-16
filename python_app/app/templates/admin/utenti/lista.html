@@ -221,8 +221,10 @@
         <select name="ruolo" id="edit-ruolo"
                 class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
           <option value="UTENTE">Utente</option>
+          {% if current_user.ruolo.value == 'ADMIN' %}
           <option value="SEGRETERIA">Segreteria</option>
           <option value="ADMIN">Admin</option>
+          {% endif %}
         </select>
       </div>
       <div>
@@ -317,8 +319,10 @@
         <label class="block text-xs font-medium text-gray-600 mb-1">Ruolo</label>
         <select name="ruolo" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
           <option value="UTENTE">Utente</option>
+          {% if current_user.ruolo.value == 'ADMIN' %}
           <option value="SEGRETERIA">Segreteria</option>
           <option value="ADMIN">Admin</option>
+          {% endif %}
         </select>
       </div>
       <div class="flex gap-2 pt-1">
