@@ -249,3 +249,12 @@ class InvioMarketing(db.Model):
     corso_id = db.Column(db.String, db.ForeignKey("corsi.id", ondelete="CASCADE"), nullable=False, index=True)
     email = db.Column(db.String(255), nullable=False, index=True)
     inviato_at = db.Column(db.DateTime(timezone=True), default=now_utc)
+
+
+class VisitaCorso(db.Model):
+    __tablename__ = "visite_corso"
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    corso_id = db.Column(db.String, db.ForeignKey("corsi.id", ondelete="CASCADE"), nullable=False, index=True)
+    visitato_at = db.Column(db.DateTime(timezone=True), default=now_utc, index=True)
+    ip_hash = db.Column(db.String(64))  # SHA256 of IP, anonymized
+    utente_id = db.Column(db.String, db.ForeignKey("utenti.id", ondelete="SET NULL"), nullable=True)

@@ -185,6 +185,33 @@
         <a href="{{ url_for('public.corso_dettaglio', corso_id=corso.id) }}" target="_blank" class="block w-full text-center bg-gray-100 hover:bg-gray-200 py-2 rounded-lg text-sm">Vedi pagina pubblica</a>
       </div>
     </div>
+    {% if visite_totali is defined %}
+    <div class="bg-white border border-gray-200 rounded-xl p-5">
+      <h3 class="font-semibold mb-3">Statistiche visite</h3>
+      <div class="grid grid-cols-3 gap-2 mb-4">
+        <div class="bg-blue-50 rounded-lg p-3 text-center">
+          <div class="text-2xl font-bold text-blue-700">{{ visite_totali }}</div>
+          <div class="text-xs text-gray-500 mt-0.5">Totali</div>
+        </div>
+        <div class="bg-green-50 rounded-lg p-3 text-center">
+          <div class="text-2xl font-bold text-green-700">{{ visite_7gg }}</div>
+          <div class="text-xs text-gray-500 mt-0.5">Ultimi 7 gg</div>
+        </div>
+        <div class="bg-purple-50 rounded-lg p-3 text-center">
+          <div class="text-2xl font-bold text-purple-700">{{ visite_30gg }}</div>
+          <div class="text-xs text-gray-500 mt-0.5">Ultimi 30 gg</div>
+        </div>
+      </div>
+      {% if visite_per_giorno %}
+      <div>
+        <p class="text-xs text-gray-500 mb-2">Visite giornaliere (ultimi 30 giorni)</p>
+        <canvas id="visite-chart" height="120"></canvas>
+      </div>
+      {% else %}
+      <p class="text-xs text-gray-400 text-center py-2">Nessuna visita negli ultimi 30 giorni.</p>
+      {% endif %}
+    </div>
+    {% endif %}
   </div>
   {% endif %}
 </div>
@@ -212,5 +239,50 @@ if (attestatoCheck && templateBox) {
     templateBox.classList.toggle('hidden', !attestatoCheck.checked);
   });
 }
+
+// Visit chart
+{% if corso and visite_per_giorno is defined and visite_per_giorno %}
+function _renderVisiteChart() {
+  var labels = {{ visite_per_giorno | map(attribute='giorno') | list | tojson }};
+  var data = {{ visite_per_giorno | map(attribute='cnt') | list | tojson }};
+  var canvas = document.getElementById('visite-chart');
+  if (!canvas) return;
+  if (typeof Chart !== 'undefined') {
+    new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Visite',
+          data: data,
+          backgroundColor: 'rgba(59,130,246,0.5)',
+          borderColor: 'rgba(59,130,246,1)',
+          borderWidth: 1,
+          borderRadius: 3,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { font: { size: 9 }, maxRotation: 45 } },
+          y: { beginAtZero: true, ticks: { precision: 0 } }
+        }
+      }
+    });
+  } else {
+    // Fallback: simple CSS bars
+    var max = Math.max.apply(null, data) || 1;
+    var html = '<div style="display:flex;align-items:flex-end;gap:2px;height:80px;">';
+    for (var i = 0; i < data.length; i++) {
+      var h = Math.round((data[i] / max) * 76);
+      html += '<div title="' + labels[i] + ': ' + data[i] + '" style="flex:1;background:#3b82f6;height:' + h + 'px;border-radius:2px 2px 0 0;min-height:2px;"></div>';
+    }
+    html += '</div>';
+    canvas.outerHTML = html;
+  }
+}
+{% endif %}
 </script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js" onload="{% if corso and visite_per_giorno is defined and visite_per_giorno %}_renderVisiteChart(){% endif %}"></script>
 {% endblock %}

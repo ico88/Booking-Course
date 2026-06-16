@@ -1,9 +1,10 @@
 import secrets
+import hashlib
 import logging
 from datetime import datetime, timezone, timedelta
 from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app, abort
 from flask_login import current_user, login_required
-from ..models import db, Corso, Prenotazione, Partecipante, Utente, LeadMarketing, Impostazione, StatoPrenotazione, MetodoPagamento
+from ..models import db, Corso, Prenotazione, Partecipante, Utente, LeadMarketing, Impostazione, StatoPrenotazione, MetodoPagamento, VisitaCorso
 from ..email_service import (
     invia_email_prenotazione, invia_email_conferma_prenotazione,
     invia_email_notifica_segreteria, invia_email_verifica_lead,
@@ -58,6 +59,11 @@ def corso_dettaglio(corso_id):
             Prenotazione.corso_id == corso_id,
             Prenotazione.stato.notin_([StatoPrenotazione.ANNULLATA, StatoPrenotazione.SCADUTA]),
         ).first()
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr or "").split(",")[0].strip()
+    ip_hash = hashlib.sha256(ip.encode()).hexdigest() if ip else None
+    utente_id = current_user.id if current_user.is_authenticated else None
+    db.session.add(VisitaCorso(corso_id=corso.id, ip_hash=ip_hash, utente_id=utente_id))
+    db.session.commit()
     return render_template("public/corso_dettaglio.html", corso=corso,
                            is_passato=is_passato, is_completo=is_completo,
                            posti_liberi=posti_liberi, perc_occupazione=perc,

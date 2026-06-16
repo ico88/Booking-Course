@@ -18,7 +18,7 @@ from sqlalchemy import func
 
 from ..models import (
     db, Utente, Corso, Prenotazione, Partecipante, LeadMarketing,
-    Impostazione, StatoPrenotazione, MetodoPagamento, Ruolo, InvioMarketing,
+    Impostazione, StatoPrenotazione, MetodoPagamento, Ruolo, InvioMarketing, VisitaCorso,
 )
 from ..email_service import (
     invia_email_conferma_prenotazione, invia_email_attestato,
@@ -144,7 +144,18 @@ def corso_modifica(corso_id):
         logger.info("Admin %s: corso aggiornato %s", current_user.email, corso.id)
         flash("Corso aggiornato.", "success")
         return redirect(url_for("admin.corso_modifica", corso_id=corso.id))
-    return render_template("admin/corsi/form.html", corso=corso, newsletter_tags=_get_newsletter_tags())
+    ora = datetime.now(timezone.utc)
+    visite_totali = VisitaCorso.query.filter_by(corso_id=corso.id).count()
+    visite_7gg = VisitaCorso.query.filter(VisitaCorso.corso_id == corso.id, VisitaCorso.visitato_at >= ora - timedelta(days=7)).count()
+    visite_30gg = VisitaCorso.query.filter(VisitaCorso.corso_id == corso.id, VisitaCorso.visitato_at >= ora - timedelta(days=30)).count()
+    visite_per_giorno = db.session.query(
+        func.date(VisitaCorso.visitato_at).label('giorno'),
+        func.count().label('cnt')
+    ).filter(VisitaCorso.corso_id == corso.id, VisitaCorso.visitato_at >= ora - timedelta(days=30)
+    ).group_by(func.date(VisitaCorso.visitato_at)).order_by('giorno').all()
+    return render_template("admin/corsi/form.html", corso=corso, newsletter_tags=_get_newsletter_tags(),
+                           visite_totali=visite_totali, visite_7gg=visite_7gg, visite_30gg=visite_30gg,
+                           visite_per_giorno=visite_per_giorno)
 
 
 def _corso_da_form(corso: Corso) -> Corso:
