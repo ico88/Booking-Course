@@ -132,6 +132,8 @@ def create_app(config_name=None):
             "turnstile_site_key": turnstile_site_key,
             "app_version": app.config.get("APP_VERSION", "—"),
             "impostazione_ragione_sociale": Impostazione.get("ragione_sociale") or "",
+            "impostazione_partita_iva": Impostazione.get("partita_iva") or "",
+            "impostazione_indirizzo_sede": Impostazione.get("indirizzo_sede") or "",
             "impostazione_app_url": (Impostazione.get("app_url") or "").rstrip("/"),
             "hero_badge": Impostazione.get("hero_badge") or "Portale Formazione",
             "hero_subtitle": Impostazione.get("hero_subtitle") or "Benvenuto nel portale di formazione professionale. Accedi per gestire le tue iscrizioni, consultare il calendario e scaricare gli attestati.",

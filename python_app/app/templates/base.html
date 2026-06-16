@@ -124,15 +124,26 @@
 
     <!-- Brand -->
     <div class="lg:col-span-1">
-      <div class="mb-3">
-        {% if logo_url %}
-        <img src="{{ logo_url }}" alt="" class="h-8 w-auto object-contain mb-2">
+      {% if logo_url %}
+      <img src="{{ logo_url }}" alt="" class="h-8 w-auto object-contain mb-2">
+      {% endif %}
+      <div class="font-bold text-white text-lg">{{ app_name }}</div>
+      <p class="text-sm leading-relaxed text-gray-500 mt-1">
+        Gestione formazione semplice e potente per organizzazioni moderne.
+      </p>
+      {% if impostazione_ragione_sociale or impostazione_indirizzo_sede or impostazione_partita_iva %}
+      <div class="mt-4 space-y-1 text-xs text-gray-500">
+        {% if impostazione_ragione_sociale %}
+        <div>{{ impostazione_ragione_sociale }}</div>
         {% endif %}
-        <div class="font-bold text-white text-lg">{{ app_name }}</div>
-        <p class="text-sm leading-relaxed text-gray-500 mt-1">
-          Gestione formazione semplice e potente per organizzazioni moderne.
-        </p>
+        {% if impostazione_indirizzo_sede %}
+        <div>{{ impostazione_indirizzo_sede }}</div>
+        {% endif %}
+        {% if impostazione_partita_iva %}
+        <div>P.IVA {{ impostazione_partita_iva }}</div>
+        {% endif %}
       </div>
+      {% endif %}
     </div>
 
     <!-- Accesso Rapido -->
