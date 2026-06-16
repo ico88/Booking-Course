@@ -798,51 +798,64 @@ def lead_elimina(lead_id):
 @admin_required
 def marketing_notifica():
     from ..utils import generate_unsubscribe_token
+    import threading
     corso_id = request.form.get("corso_id")
     corso = Corso.query.get_or_404(corso_id)
     secret = current_app.config.get("SECRET_KEY", "")
     corso_tags = set(corso.tags or [])
-    sent = 0
-    emailed = set()  # evita duplicati se utente è anche lead
 
-    # 1. Lead newsletter (attivi e verificati)
+    # Raccoglie destinatari prima di entrare nel thread
     all_leads = LeadMarketing.query.filter_by(attivo=True, verificato=True).all()
     if corso_tags:
         leads = [l for l in all_leads if not l.tags or set(l.tags) & corso_tags]
     else:
         leads = all_leads
-    for lead in leads:
-        try:
-            token = generate_unsubscribe_token(lead.email, secret)
-            invia_email_marketing(lead, corso, token)
-            emailed.add(lead.email)
-            sent += 1
-        except Exception:
-            pass
 
-    # 2. Utenti registrati con consenso_marketing, filtrati per tag
     utenti_mkt = Utente.query.filter_by(consenso_marketing=True).all()
+
+    class _FakeLead:
+        def __init__(self, utente):
+            self.email = utente.email
+            self.nome = utente.nome
+            self.tags = utente.tags_marketing or []
+
+    # Costruisce lista unica di destinatari
+    destinatari = []
+    emailed = set()
+    for lead in leads:
+        destinatari.append(lead)
+        emailed.add(lead.email)
     for u in utenti_mkt:
         if u.email in emailed:
             continue
-        # Stessa logica tag dei lead: nessun tag = riceve tutto, altrimenti intersezione
         u_tags = set(u.tags_marketing or [])
         if corso_tags and u_tags and not (u_tags & corso_tags):
             continue
-        class _FakeLead:
-            def __init__(self, utente):
-                self.email = utente.email
-                self.nome = utente.nome
-                self.tags = utente.tags_marketing or []
-        try:
-            token = generate_unsubscribe_token(u.email, secret)
-            invia_email_marketing(_FakeLead(u), corso, token)
-            sent += 1
-        except Exception:
-            pass
+        destinatari.append(_FakeLead(u))
+        emailed.add(u.email)
 
-    logger.info("Admin %s: notifica marketing corso %s a %d destinatari", current_user.email, corso.id, sent)
-    flash(f"Notifica inviata a {sent} destinatari.", "success")
+    app = current_app._get_current_object()
+    corso_id_str = corso.id
+
+    def _send_all():
+        with app.app_context():
+            c = Corso.query.get(corso_id_str)
+            if not c:
+                return
+            sent = 0
+            for dest in destinatari:
+                try:
+                    token = generate_unsubscribe_token(dest.email, secret)
+                    invia_email_marketing(dest, c, token)
+                    sent += 1
+                except Exception as e:
+                    logger.warning("Errore invio marketing a %s: %s", dest.email, e)
+            logger.info("Marketing corso %s: inviate %d/%d email", corso_id_str, sent, len(destinatari))
+
+    t = threading.Thread(target=_send_all, daemon=True)
+    t.start()
+
+    flash(f"Invio avviato a {len(destinatari)} destinatari. Le email verranno consegnate nei prossimi minuti.", "success")
     return redirect(url_for("admin.marketing"))
 
 
