@@ -179,7 +179,23 @@ fi
 # ── Migrazione DB ────────────────────────────────────────────
 info "Migrazione database..."
 cd "$APP_DIR"
-# Flask loads .env via python-dotenv in config.py — no need to export here
+
+# Rimuovi migrazioni auto-generate che non fanno parte del repo (causano "multiple heads").
+# Le migrazioni valide sono quelle presenti nel git index; quelle extra vanno eliminate.
+VERSIONS_DIR="$APP_DIR/migrations/versions"
+if [[ -d "$VERSIONS_DIR" ]]; then
+  # Ottieni la lista di file tracciati da git
+  TRACKED_FILES="$(git -C "$APP_DIR" ls-files migrations/versions/ 2>/dev/null | xargs -I{} basename {} 2>/dev/null || true)"
+  for f in "$VERSIONS_DIR"/*.py; do
+    [[ -f "$f" ]] || continue
+    fname="$(basename "$f")"
+    if [[ -n "$TRACKED_FILES" ]] && ! echo "$TRACKED_FILES" | grep -qxF "$fname"; then
+      warn "Rimozione migrazione non tracciata da git (auto-generata): $fname"
+      rm -f "$f"
+    fi
+  done
+fi
+
 sudo -u "$APP_USER" "$VENV_DIR/bin/python" -m flask --app wsgi:app db upgrade
 ok "Database aggiornato"
 
