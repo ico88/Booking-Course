@@ -2,16 +2,12 @@
 {% block title %}{{ 'Modifica' if corso else 'Nuovo' }} corso{% endblock %}
 
 {% block head %}
+<link href="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.snow.css" rel="stylesheet">
 <style>
-  [contenteditable]:focus{outline:none;box-shadow:0 0 0 2px #3b82f6}
-  [contenteditable] ul{list-style:disc;padding-left:1.5em}
-  [contenteditable] ol{list-style:decimal;padding-left:1.5em}
-  [contenteditable] h2{font-size:1.25em;font-weight:600;margin:.75em 0 .25em}
-  [contenteditable] h3{font-size:1.05em;font-weight:600;margin:.6em 0 .2em}
-  [contenteditable] p{margin:.25em 0}
-  [contenteditable] a{color:#2563eb;text-decoration:underline}
-  .e-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:5px;font-size:.8rem;cursor:pointer;color:#374151}
-  .e-btn:hover{background:#e5e7eb}
+  #quill-desc { border: 1px solid #d1d5db; border-radius: 0.5rem; overflow: hidden; }
+  #quill-desc .ql-toolbar { border: none; border-bottom: 1px solid #d1d5db; background: #f9fafb; }
+  #quill-desc .ql-container { border: none; font-size: 0.875rem; }
+  #quill-desc .ql-editor { min-height: 160px; }
 </style>
 {% endblock %}
 
@@ -199,26 +195,7 @@
   {% endif %}
 </div>
 
-<link href="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.snow.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.js"></script>
 <script>
-const quill = new Quill('#quill-desc', {
-  theme: 'snow',
-  modules: {
-    toolbar: [
-      [{ header: [2, 3, false] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ list: 'ordered' }, { list: 'bullet' }],
-      ['link'],
-      ['clean'],
-    ]
-  }
-});
-quill.clipboard.dangerouslyPasteHTML({{ (corso.descrizione if corso else '') | tojson }});
-document.getElementById('corso-form').addEventListener('submit', function() {
-  document.getElementById('textarea-descrizione').value = quill.getSemanticHTML();
-});
-
 // Show/hide attestato template box
 const attestatoCheck = document.querySelector('input[name="attestato_abilitato"]');
 const templateBox = document.getElementById('attestato-template-box');
@@ -273,4 +250,28 @@ function _renderVisiteChart() {
 {% endif %}
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js" onload="{% if corso and visite_per_giorno is defined and visite_per_giorno %}_renderVisiteChart(){% endif %}"></script>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.js" onload="initQuill()"></script>
+<script>
+function initQuill() {
+  const quill = new Quill('#quill-desc', {
+    theme: 'snow',
+    modules: {
+      toolbar: [
+        [{ header: [2, 3, false] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ list: 'ordered' }, { list: 'bullet' }],
+        ['link'],
+        ['clean'],
+      ]
+    }
+  });
+  quill.clipboard.dangerouslyPasteHTML({{ (corso.descrizione if corso else '') | tojson }});
+  document.getElementById('corso-form').addEventListener('submit', function() {
+    document.getElementById('textarea-descrizione').value = quill.getSemanticHTML();
+  });
+}
+</script>
 {% endblock %}
