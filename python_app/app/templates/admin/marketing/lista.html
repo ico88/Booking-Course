@@ -47,10 +47,12 @@
     Utenti con consenso marketing
     {% if utenti_marketing %}<span class="ml-1 bg-purple-100 text-purple-700 text-xs px-1.5 py-0.5 rounded-full">{{ utenti_marketing|length }}</span>{% endif %}
   </button>
+  {% if current_user.ruolo.value == 'ADMIN' %}
   <button id="tab-tags" onclick="switchTab('tags')"
           class="px-4 py-2 rounded-lg text-sm font-medium transition-colors text-gray-600 hover:text-gray-900">
     Gestione Tag
   </button>
+  {% endif %}
 </div>
 
 <!-- Pannello lead esterni -->

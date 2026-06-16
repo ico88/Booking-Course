@@ -847,7 +847,7 @@ def marketing_notifica():
 
 
 @admin_bp.route("/marketing/tags", methods=["POST"])
-@admin_required
+@superadmin_required
 def marketing_tags():
     import json
     raw_tags = request.form.get("newsletter_tags", "")
