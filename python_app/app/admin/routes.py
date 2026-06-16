@@ -864,10 +864,13 @@ def marketing_importa():
         if not email:
             continue
         if not LeadMarketing.query.filter_by(email=email).first():
+            raw_tags = (row.get("tags") or row.get("Tags") or "").strip()
+            tags = [t.strip() for t in raw_tags.split("|") if t.strip()] if raw_tags else []
             lead = LeadMarketing(
                 email=email,
                 nome=(row.get("nome") or row.get("Nome") or "").strip()[:100],
                 cognome=(row.get("cognome") or row.get("Cognome") or "").strip()[:100],
+                tags=tags,
                 verificato=True,
                 attivo=True,
             )
