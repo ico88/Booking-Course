@@ -3,11 +3,13 @@
 
 {% block head %}
 <link href="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.js"></script>
 <style>
-  #quill-desc { border: 1px solid #d1d5db; border-radius: 0.5rem; overflow: hidden; }
-  #quill-desc .ql-toolbar { border: none; border-bottom: 1px solid #d1d5db; background: #f9fafb; }
-  #quill-desc .ql-container { border: none; font-size: 0.875rem; }
-  #quill-desc .ql-editor { min-height: 160px; }
+  .ql-toolbar.ql-snow { border: 1px solid #d1d5db !important; border-radius: 0.5rem 0.5rem 0 0 !important; background: #f9fafb; }
+  .ql-container.ql-snow { border: 1px solid #d1d5db !important; border-top: none !important; border-radius: 0 0 0.5rem 0.5rem !important; font-size: 0.875rem; }
+  .ql-editor { min-height: 160px; }
+  .ql-toolbar button { width: auto !important; height: auto !important; padding: 3px 5px !important; }
+  .ql-toolbar .ql-formats { display: inline-flex !important; align-items: center; }
 </style>
 {% endblock %}
 
@@ -254,7 +256,7 @@ function _renderVisiteChart() {
 
 {% block scripts %}
 <script>
-function initQuill() {
+document.addEventListener('DOMContentLoaded', function() {
   const quill = new Quill('#quill-desc', {
     theme: 'snow',
     modules: {
@@ -271,7 +273,6 @@ function initQuill() {
   document.getElementById('corso-form').addEventListener('submit', function() {
     document.getElementById('textarea-descrizione').value = quill.getSemanticHTML();
   });
-}
+});
 </script>
-<script src="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.js" onload="initQuill()"></script>
 {% endblock %}
