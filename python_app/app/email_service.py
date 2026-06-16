@@ -440,6 +440,87 @@ def invia_email_marketing(lead, corso, unsub_token: str):
     send_email(to, subject, html)
 
 
+def _build_marketing_html_bcc(corso) -> str:
+    """Build marketing HTML for BCC mode (generic unsubscribe link, no personalized token)."""
+    app_name, app_url, logo_url, legal, color_scheme = _ctx()
+    unsub_url = f"{app_url}/disiscrivi"
+    data_str = corso.data_inizio.strftime("%d/%m/%Y") if corso.data_inizio else "Da definire"
+    img_html = ""
+    if corso.immagine_url:
+        full_img = corso.immagine_url if corso.immagine_url.startswith("http") else f"{app_url}{corso.immagine_url}"
+        img_html = f'<img src="{full_img}" style="max-width:100%;border-radius:10px;margin:0 0 20px 0;display:block" alt="">'
+    riepilogo = (
+        f"Data: <strong style='color:#111827'>{data_str}</strong><br>"
+        f"Luogo: {corso.luogo or 'Da definire'}<br>"
+        f"Costo: {corso.costo_formattato}"
+    )
+    body = (
+        _h2("Nuovo corso disponibile")
+        + img_html
+        + f'<h3 style="color:#111827;font-size:18px;margin:0 0 12px 0">{corso.titolo}</h3>'
+        + _info_box(riepilogo)
+        + _btn(f"{app_url}/corsi/{corso.id}", "Scopri il corso")
+        + f'<p style="color:#52525b;font-size:11px;margin-top:32px;line-height:1.6">'
+        f'Ricevi queste email perché sei iscritto alle notifiche di {app_name}.<br>'
+        f'<a href="{unsub_url}" style="color:#7c3aed">Annulla iscrizione</a></p>'
+    )
+    return _html_wrapper(body, app_name, app_url, logo_url, legal, color_scheme)
+
+
+def send_email_bcc(bcc_list: list, subject: str, html_body: str) -> int:
+    """Send one email with all recipients in BCC (batches of 99 to respect limits)."""
+    if not bcc_list:
+        return 0
+    cfg = _get_smtp_config()
+    if not cfg["host"] or not cfg["user"]:
+        current_app.logger.warning("SMTP non configurato, invio BCC annullato.")
+        return 0
+
+    BATCH_SIZE = 99
+    sent_total = 0
+
+    def _connect():
+        s = smtplib.SMTP(cfg["host"], cfg["port"], timeout=30)
+        s.ehlo()
+        s.starttls()
+        s.login(cfg["user"], cfg["password"])
+        return s
+
+    server = None
+    try:
+        server = _connect()
+        for i in range(0, len(bcc_list), BATCH_SIZE):
+            batch = bcc_list[i:i + BATCH_SIZE]
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = subject
+            msg["From"] = f"{cfg['from_name']} <{cfg['from_addr']}>"
+            msg["To"] = cfg["from_addr"]
+            msg["Bcc"] = ", ".join(batch)
+            msg.attach(MIMEText(html_body, "html", "utf-8"))
+            try:
+                server.sendmail(cfg["from_addr"], batch, msg.as_string())
+                sent_total += len(batch)
+            except smtplib.SMTPServerDisconnected:
+                try:
+                    server = _connect()
+                    server.sendmail(cfg["from_addr"], batch, msg.as_string())
+                    sent_total += len(batch)
+                except Exception as e:
+                    current_app.logger.warning("Errore invio BCC batch %d: %s", i, e)
+            except Exception as e:
+                current_app.logger.warning("Errore invio BCC batch %d: %s", i, e)
+    except Exception as e:
+        current_app.logger.error("Errore connessione SMTP BCC: %s", e)
+    finally:
+        if server:
+            try:
+                server.quit()
+            except Exception:
+                pass
+
+    return sent_total
+
+
 def invia_email_verifica_lead(lead, verifica_url: str):
     app_name, app_url, logo_url, legal, color_scheme = _ctx()
     body = (

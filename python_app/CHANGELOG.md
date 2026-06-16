@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.4.0] — 2026-06-16
+
+### Nuove funzionalità
+
+- **Deduplicazione email marketing**: il sistema tiene traccia delle email già inviate per ogni corso (tabella `invii_marketing`). Reinviando una notifica, i destinatari già contattati vengono saltati automaticamente con indicazione del conteggio.
+- **Modalità CCN (BCC)**: nel modale di invio notifica è ora possibile scegliere tra invio individuale (con token disiscrizione personalizzato) e invio in CCN (un'unica email con tutti i destinatari nascosti in copia, più veloce per grandi liste).
+- **Contatore "già notificati"**: nel modale di invio, al cambio del corso selezionato appare il numero di destinatari già contattati in precedenza per quel corso.
+- **Invio email in background**: le email marketing vengono inviate in un thread separato per evitare timeout HTTP su liste grandi.
+- **Connessione SMTP condivisa**: l'invio bulk riusa la stessa connessione SMTP per tutti i messaggi (con riconnessione automatica in caso di disconnessione).
+
+### Fix
+
+- **Errore battitura** "10 postoi disponibili" → "10 posti disponibili" nella card corso in homepage.
+
+---
+
 ## [1.3.0] — 2026-06-14
 
 ### Nuove funzionalità

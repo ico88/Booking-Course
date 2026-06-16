@@ -259,20 +259,45 @@
 
 {# Modal invio notifica #}
 <div id="modal-notifica" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-  <div class="bg-white rounded-xl p-6 w-full max-w-sm shadow-xl">
+  <div class="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
     <h2 class="font-bold text-lg mb-4">Invia notifica corso</h2>
-    <form method="POST" action="{{ url_for('admin.marketing_notifica') }}" class="space-y-3">
+    <form method="POST" action="{{ url_for('admin.marketing_notifica') }}" class="space-y-4">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div>
         <label class="block text-xs font-medium mb-1">Corso</label>
-        <select name="corso_id" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+        <select name="corso_id" id="modal-corso-select" required onchange="updateNotificati(this.value)"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
           {% for corso in corsi_pubblicati %}
-          <option value="{{ corso.id }}">{{ corso.titolo }}{% if corso.tags %} [{{ corso.tags|join(', ') }}]{% endif %}</option>
+          <option value="{{ corso.id }}" data-notificati="{{ notificati_per_corso.get(corso.id, 0) }}">
+            {{ corso.titolo }}{% if corso.tags %} [{{ corso.tags|join(', ') }}]{% endif %}
+          </option>
           {% endfor %}
         </select>
         <p class="text-xs text-gray-400 mt-1">L'email verrà inviata solo ai lead con tag corrispondenti (o a tutti se il corso non ha tag)</p>
+        <div id="notificati-info" class="mt-1 text-xs text-amber-600 font-medium hidden">
+          ⚠ <span id="notificati-count">0</span> destinatari già notificati verranno saltati automaticamente.
+        </div>
       </div>
-      <div class="flex gap-2 pt-2">
+      <div>
+        <label class="block text-xs font-medium mb-2">Modalità di invio</label>
+        <div class="space-y-2">
+          <label class="flex items-start gap-2 cursor-pointer">
+            <input type="radio" name="modalita" value="individuale" checked class="mt-0.5 accent-blue-700">
+            <div>
+              <span class="text-sm font-medium">Individuale</span>
+              <p class="text-xs text-gray-400">Un'email per destinatario con link di disiscrizione personalizzato.</p>
+            </div>
+          </label>
+          <label class="flex items-start gap-2 cursor-pointer">
+            <input type="radio" name="modalita" value="bcc" class="mt-0.5 accent-blue-700">
+            <div>
+              <span class="text-sm font-medium">CCN (un'unica email)</span>
+              <p class="text-xs text-gray-400">Tutti in CCN, più veloce. Il link di disiscrizione non sarà personalizzato.</p>
+            </div>
+          </label>
+        </div>
+      </div>
+      <div class="flex gap-2 pt-1">
         <button type="submit" class="flex-1 bg-blue-700 text-white py-2 rounded-lg text-sm hover:bg-blue-800">Invia</button>
         <button type="button" onclick="document.getElementById('modal-notifica').classList.add('hidden')" class="flex-1 bg-gray-100 py-2 rounded-lg text-sm">Annulla</button>
       </div>
@@ -281,6 +306,21 @@
 </div>
 
 <script>
+function updateNotificati(corsoId) {
+  const sel = document.getElementById('modal-corso-select');
+  const opt = sel.querySelector('option[value="' + corsoId + '"]');
+  const cnt = opt ? parseInt(opt.dataset.notificati || '0') : 0;
+  const info = document.getElementById('notificati-info');
+  document.getElementById('notificati-count').textContent = cnt;
+  info.classList.toggle('hidden', cnt === 0);
+}
+
+// Init on page load
+document.addEventListener('DOMContentLoaded', function() {
+  const sel = document.getElementById('modal-corso-select');
+  if (sel) updateNotificati(sel.value);
+});
+
 function switchTab(tab) {
   const panels = ['lead', 'utenti', 'tags'];
   const active = 'bg-white text-gray-900 shadow-sm';

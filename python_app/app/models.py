@@ -238,3 +238,14 @@ class LeadMarketing(db.Model):
     created_at = db.Column(db.DateTime(timezone=True), default=now_utc)
     updated_at = db.Column(db.DateTime(timezone=True), default=now_utc, onupdate=now_utc)
     ultimo_contatto = db.Column(db.DateTime(timezone=True))
+
+
+class InvioMarketing(db.Model):
+    """Traccia le email marketing già inviate per corso, per evitare duplicati."""
+    __tablename__ = "invii_marketing"
+    __table_args__ = (db.UniqueConstraint("corso_id", "email", name="uq_invio_corso_email"),)
+
+    id = db.Column(db.String, primary_key=True, default=gen_id)
+    corso_id = db.Column(db.String, db.ForeignKey("corsi.id", ondelete="CASCADE"), nullable=False, index=True)
+    email = db.Column(db.String(255), nullable=False, index=True)
+    inviato_at = db.Column(db.DateTime(timezone=True), default=now_utc)

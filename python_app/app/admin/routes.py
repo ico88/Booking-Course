@@ -18,7 +18,7 @@ from sqlalchemy import func
 
 from ..models import (
     db, Utente, Corso, Prenotazione, Partecipante, LeadMarketing,
-    Impostazione, StatoPrenotazione, MetodoPagamento, Ruolo,
+    Impostazione, StatoPrenotazione, MetodoPagamento, Ruolo, InvioMarketing,
 )
 from ..email_service import (
     invia_email_conferma_prenotazione, invia_email_attestato,
@@ -780,8 +780,16 @@ def marketing():
     all_tags = sorted({t for lead in leads for t in (lead.tags or [])})
     newsletter_tags = _get_newsletter_tags()
     utenti_marketing = Utente.query.filter_by(consenso_marketing=True).order_by(Utente.data_consenso.desc()).all()
+    # Count already-notified per corso
+    from sqlalchemy import func as sqlfunc
+    notificati_per_corso = {
+        row.corso_id: row.cnt
+        for row in db.session.query(InvioMarketing.corso_id, sqlfunc.count().label("cnt"))
+                              .group_by(InvioMarketing.corso_id).all()
+    }
     return render_template("admin/marketing/lista.html", leads=leads, corsi_pubblicati=corsi_pubblicati,
-                           all_tags=all_tags, newsletter_tags=newsletter_tags, utenti_marketing=utenti_marketing)
+                           all_tags=all_tags, newsletter_tags=newsletter_tags, utenti_marketing=utenti_marketing,
+                           notificati_per_corso=notificati_per_corso)
 
 
 @admin_bp.route("/marketing/leads/<string:lead_id>/elimina", methods=["POST"])
@@ -801,18 +809,13 @@ def marketing_notifica():
     from ..utils import generate_unsubscribe_token
     import threading
     corso_id = request.form.get("corso_id")
+    modalita = request.form.get("modalita", "individuale")  # individuale | bcc
     corso = Corso.query.get_or_404(corso_id)
     secret = current_app.config.get("SECRET_KEY", "")
     corso_tags = set(corso.tags or [])
 
-    # Raccoglie destinatari prima di entrare nel thread
-    all_leads = LeadMarketing.query.filter_by(attivo=True, verificato=True).all()
-    if corso_tags:
-        leads = [l for l in all_leads if not l.tags or set(l.tags) & corso_tags]
-    else:
-        leads = all_leads
-
-    utenti_mkt = Utente.query.filter_by(consenso_marketing=True).all()
+    # Email già notificate per questo corso
+    gia_inviati = {r.email for r in InvioMarketing.query.filter_by(corso_id=corso_id).all()}
 
     class _FakeLead:
         def __init__(self, utente):
@@ -820,14 +823,18 @@ def marketing_notifica():
             self.nome = utente.nome
             self.tags = utente.tags_marketing or []
 
-    # Costruisce lista unica di destinatari
+    # Costruisce lista destinatari (unici, non ancora notificati)
     destinatari = []
     emailed = set()
+    all_leads = LeadMarketing.query.filter_by(attivo=True, verificato=True).all()
+    leads = [l for l in all_leads if not corso_tags or not l.tags or set(l.tags) & corso_tags]
     for lead in leads:
+        if lead.email in gia_inviati:
+            continue
         destinatari.append(lead)
         emailed.add(lead.email)
-    for u in utenti_mkt:
-        if u.email in emailed:
+    for u in Utente.query.filter_by(consenso_marketing=True).all():
+        if u.email in emailed or u.email in gia_inviati:
             continue
         u_tags = set(u.tags_marketing or [])
         if corso_tags and u_tags and not (u_tags & corso_tags):
@@ -835,28 +842,57 @@ def marketing_notifica():
         destinatari.append(_FakeLead(u))
         emailed.add(u.email)
 
+    saltati = len(gia_inviati & (emailed | gia_inviati))
+
+    if not destinatari:
+        flash(f"Nessun nuovo destinatario: tutti ({len(gia_inviati)}) hanno già ricevuto questa notifica.", "warning")
+        return redirect(url_for("admin.marketing"))
+
     app = current_app._get_current_object()
     corso_id_str = corso.id
+    emails_da_registrare = [d.email for d in destinatari]
 
     def _send_all():
         with app.app_context():
             c = Corso.query.get(corso_id_str)
             if not c:
                 return
-            messages = []
-            for dest in destinatari:
+            sent = 0
+            if modalita == "bcc":
+                from ..email_service import send_email_bcc, _build_marketing_html_bcc
+                html = _build_marketing_html_bcc(c)
+                bcc_list = [d.email for d in destinatari]
+                sent = send_email_bcc(bcc_list, f"Nuovo corso: {c.titolo}", html)
+            else:
+                messages = []
+                for dest in destinatari:
+                    try:
+                        token = generate_unsubscribe_token(dest.email, secret)
+                        messages.append(_build_marketing_html(dest, c, token))
+                    except Exception as e:
+                        logger.warning("Errore build marketing per %s: %s", dest.email, e)
+                sent = send_email_bulk(messages)
+
+            # Registra invii riusciti
+            if sent > 0:
+                for email in emails_da_registrare[:sent]:
+                    try:
+                        db.session.add(InvioMarketing(corso_id=corso_id_str, email=email))
+                    except Exception:
+                        pass
                 try:
-                    token = generate_unsubscribe_token(dest.email, secret)
-                    messages.append(_build_marketing_html(dest, c, token))
-                except Exception as e:
-                    logger.warning("Errore build marketing per %s: %s", dest.email, e)
-            sent = send_email_bulk(messages)
-            logger.info("Marketing corso %s: inviate %d/%d email", corso_id_str, sent, len(messages))
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
+
+            logger.info("Marketing corso %s (%s): inviate %d/%d email, %d già notificati",
+                        corso_id_str, modalita, sent, len(destinatari), len(gia_inviati))
 
     t = threading.Thread(target=_send_all, daemon=True)
     t.start()
 
-    flash(f"Invio avviato a {len(destinatari)} destinatari. Le email verranno consegnate nei prossimi minuti.", "success")
+    msg_saltati = f", {len(gia_inviati)} già notificati saltati" if gia_inviati else ""
+    flash(f"Invio avviato a {len(destinatari)} nuovi destinatari{msg_saltati}.", "success")
     return redirect(url_for("admin.marketing"))
 
 
