@@ -253,7 +253,6 @@ function _renderVisiteChart() {
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.js" onload="initQuill()"></script>
 <script>
 function initQuill() {
   const quill = new Quill('#quill-desc', {
@@ -274,4 +273,5 @@ function initQuill() {
   });
 }
 </script>
+<script src="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.js" onload="initQuill()"></script>
 {% endblock %}
