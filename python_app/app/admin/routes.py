@@ -46,8 +46,10 @@ def superadmin_required(f):
     @login_required
     def decorated(*args, **kwargs):
         from app.models import Ruolo
+        from flask import flash, redirect, url_for
         if current_user.ruolo != Ruolo.ADMIN:
-            abort(403)
+            flash("Non hai i permessi per accedere a questa sezione.", "error")
+            return redirect(url_for("admin.index"))
         return f(*args, **kwargs)
     return decorated
 
