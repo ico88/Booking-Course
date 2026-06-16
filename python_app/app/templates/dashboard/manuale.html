@@ -18,7 +18,7 @@
 {% block dashboard_content %}
 <div class="flex items-center justify-between mb-6">
   <h1 class="text-2xl font-bold">Manuale utente</h1>
-  {% if current_user.is_admin() %}
+  {% if current_user.ruolo.value == 'ADMIN' %}
   <a href="{{ url_for('admin.changelog') }}" class="text-sm text-blue-600 hover:underline flex items-center gap-1">
     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
@@ -30,7 +30,9 @@
 
 <div class="max-w-2xl space-y-6">
 
-{# ── SEZIONE COMUNE A TUTTI ─────────────────────────────────────── #}
+{# ══════════════════════════════════════════════════════════════════
+   SEZIONE COMUNE — tutti i ruoli
+   ══════════════════════════════════════════════════════════════════ #}
 <div class="man-section bg-white border border-gray-200 rounded-xl p-6">
   <h2>
     <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
@@ -39,7 +41,7 @@
   <h3>Accesso e uscita</h3>
   <ul>
     <li>Accedi con email e password dalla pagina di login.</li>
-    <li>Per uscire clicca <strong>Esci</strong> in fondo alla barra laterale.</li>
+    <li>Per uscire clicca <strong>Esci</strong> in fondo alla barra laterale o nel menu avatar in alto.</li>
   </ul>
   <h3>Recupero password</h3>
   <ul>
@@ -53,11 +55,14 @@
   </ul>
 </div>
 
-{# ── SEZIONE UTENTE ─────────────────────────────────────────────── #}
+{# ══════════════════════════════════════════════════════════════════
+   SEZIONE UTENTE — tutti i ruoli
+   ══════════════════════════════════════════════════════════════════ #}
 <div class="man-section bg-white border border-gray-200 rounded-xl p-6">
   <h2>
     <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
     Prenotazioni
+    <span class="badge bg-blue-100 text-blue-700">Utente</span>
   </h2>
   <h3>Iscriversi a un corso</h3>
   <ul>
@@ -80,15 +85,36 @@
   <h3>Attestato</h3>
   <ul>
     <li>A completamento del corso la segreteria emette l'attestato.</li>
-    <li>Riceverai un'email; puoi scaricarlo dalla pagina della prenotazione.</li>
+    <li>Riceverai un'email con il link per il download; puoi scaricarlo anche dalla tua area prenotazioni.</li>
   </ul>
   <h3>Annullare una prenotazione</h3>
   <ul>
-    <li>Contatta la segreteria: solo admin e segreteria possono annullare prenotazioni confermate.</li>
+    <li>Contatta la segreteria: solo segreteria e admin possono annullare prenotazioni confermate.</li>
   </ul>
 </div>
 
-{# ── SEZIONE SEGRETERIA + ADMIN ─────────────────────────────────── #}
+<div class="man-section bg-white border border-gray-200 rounded-xl p-6">
+  <h2>
+    <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+    Notifiche corsi
+    <span class="badge bg-blue-100 text-blue-700">Utente</span>
+  </h2>
+  <h3>Iscriversi alle notifiche</h3>
+  <ul>
+    <li>Dalla home pubblica clicca <strong>Ricevi notifiche</strong> e inserisci la tua email.</li>
+    <li>Riceverai un link di conferma: clicca per attivare l'iscrizione.</li>
+    <li>Puoi selezionare le categorie di interesse (es. BLSD, disostruzione).</li>
+  </ul>
+  <h3>Disiscriversi</h3>
+  <ul>
+    <li>Ogni email di notifica contiene un link <em>Disiscriviti</em> in fondo.</li>
+    <li>Puoi anche gestire il consenso marketing dalla sezione Dati personali del tuo profilo.</li>
+  </ul>
+</div>
+
+{# ══════════════════════════════════════════════════════════════════
+   SEZIONE SEGRETERIA — segreteria + admin
+   ══════════════════════════════════════════════════════════════════ #}
 {% if current_user.is_admin() %}
 <div class="man-section bg-white border border-gray-200 rounded-xl p-6">
   <h2>
@@ -98,8 +124,8 @@
   </h2>
   <h3>Lista prenotazioni</h3>
   <ul>
-    <li>Dal pannello admin vai su <strong>Prenotazioni</strong> per vedere tutte le prenotazioni con filtri per stato, corso e utente.</li>
-    <li>Gli stati possibili sono: <em>In attesa di pagamento</em>, <em>Pagamento caricato</em>, <em>Confermata</em>, <em>Annullata</em>, <em>Scaduta</em>.</li>
+    <li>Dal pannello admin vai su <strong>Prenotazioni</strong> per vedere tutte le prenotazioni.</li>
+    <li>Filtra per stato: <em>In attesa di pagamento</em>, <em>Pagamento caricato</em>, <em>Confermata</em>, <em>Annullata</em>, <em>Scaduta</em>.</li>
   </ul>
   <h3>Verificare un pagamento</h3>
   <ul>
@@ -107,14 +133,31 @@
     <li>Apri la prenotazione, scarica la ricevuta e clicca <strong>Conferma prenotazione</strong> per accettare, oppure <strong>Annulla</strong> se non valida.</li>
     <li>L'utente riceve automaticamente un'email di conferma.</li>
   </ul>
-  <h3>Emettere un attestato</h3>
-  <ul>
-    <li>Dalla prenotazione confermata clicca <strong>Emetti attestato</strong>.</li>
-    <li>L'attestato viene generato automaticamente e l'utente riceve una notifica email.</li>
-  </ul>
   <h3>Iscrivere un utente manualmente</h3>
   <ul>
-    <li>Dal dettaglio corso clicca <strong>Aggiungi prenotazione</strong> e seleziona l'utente.</li>
+    <li>Dal dettaglio corso clicca <strong>Aggiungi partecipante</strong> e cerca l'utente per nome o email.</li>
+    <li>Se l'utente non è registrato puoi crearlo direttamente dalla stessa pagina.</li>
+  </ul>
+  <h3>Annullare una prenotazione</h3>
+  <ul>
+    <li>Apri la prenotazione e clicca <strong>Annulla prenotazione</strong>. I posti vengono liberati automaticamente.</li>
+  </ul>
+</div>
+
+<div class="man-section bg-white border border-gray-200 rounded-xl p-6">
+  <h2>
+    <svg class="w-5 h-5 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+    Attestati
+    <span class="badge bg-teal-100 text-teal-700">Segreteria</span>
+  </h2>
+  <h3>Emettere un attestato</h3>
+  <ul>
+    <li>Vai su <strong>Attestati</strong>: la sezione <em>Da emettere</em> mostra le prenotazioni confermate con attestato abilitato.</li>
+    <li>Clicca <strong>Emetti attestato</strong>: viene generato automaticamente e l'utente riceve una notifica email.</li>
+  </ul>
+  <h3>Attestati già emessi</h3>
+  <ul>
+    <li>La sezione <em>Emessi</em> mostra lo storico con data di emissione e link per scaricare nuovamente il file.</li>
   </ul>
 </div>
 
@@ -122,7 +165,7 @@
   <h2>
     <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
     Gestione corsi
-    <span class="badge bg-green-100 text-green-700">Admin</span>
+    <span class="badge bg-green-100 text-green-700">Segreteria</span>
   </h2>
   <h3>Creare un corso</h3>
   <ul>
@@ -131,40 +174,103 @@
     <li>Assegna uno o più <strong>tag</strong> (es. <code>fulld</code>) per collegare il corso alle categorie newsletter.</li>
     <li>Il corso è visibile al pubblico solo dopo aver spuntato <strong>Pubblica</strong>.</li>
   </ul>
-  <h3>Modificare o duplicare un corso</h3>
+  <h3>Modificare un corso</h3>
   <ul>
-    <li>Dal dettaglio corso usa i pulsanti <strong>Modifica</strong> o <strong>Duplica</strong>.</li>
+    <li>Dalla lista corsi clicca <strong>Modifica</strong> per aggiornare i dati.</li>
     <li>La duplicazione copia tutte le impostazioni ma non le prenotazioni.</li>
   </ul>
   <h3>Template attestato</h3>
   <ul>
-    <li>Nella scheda corso puoi caricare un template HTML o PDF per l'attestato.</li>
-    <li>Attiva l'opzione <strong>Attestato abilitato</strong> per permetterne l'emissione.</li>
+    <li>Nella scheda corso puoi inserire un template HTML per l'attestato personalizzato.</li>
+    <li>Attiva l'opzione <strong>Attestato abilitato</strong> per permetterne l'emissione dalla sezione Attestati.</li>
   </ul>
+</div>
+
+<div class="man-section bg-white border border-gray-200 rounded-xl p-6">
+  <h2>
+    <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+    Gestione utenti
+    <span class="badge bg-indigo-100 text-indigo-700">Segreteria</span>
+  </h2>
+  <h3>Lista utenti</h3>
+  <ul>
+    <li>Vai su <strong>Utenti</strong> per vedere tutti gli iscritti. Usa la barra di ricerca per filtrare per nome o email.</li>
+  </ul>
+  <h3>Creare un utente</h3>
+  <ul>
+    <li>Clicca <strong>Nuovo utente</strong>, inserisci nome, cognome, email e password. Il ruolo è sempre <em>Utente</em>.</li>
+  </ul>
+  <h3>Modificare un utente</h3>
+  <ul>
+    <li>Clicca <strong>Modifica</strong> per aggiornare i dati di un utente (non puoi modificare gli amministratori).</li>
+  </ul>
+  <div class="tip">Le operazioni di disattivazione, anonimizzazione ed eliminazione sono riservate agli amministratori.</div>
 </div>
 
 <div class="man-section bg-white border border-gray-200 rounded-xl p-6">
   <h2>
     <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
     Marketing e newsletter
-    <span class="badge bg-orange-100 text-orange-700">Admin</span>
+    <span class="badge bg-orange-100 text-orange-700">Segreteria</span>
   </h2>
-  <h3>Gestione tag</h3>
-  <ul>
-    <li>Vai su <strong>Marketing → Gestione Tag</strong> e inserisci i tag nel formato <code>Nome visualizzato | slug</code> (uno per riga).</li>
-    <li>Il nome è quello che vedono gli iscritti; lo slug deve corrispondere ai tag assegnati ai corsi.</li>
-  </ul>
   <h3>Lead esterni</h3>
   <ul>
     <li>Le persone che si iscrivono dal form pubblico <em>Ricevi notifiche</em> diventano lead.</li>
     <li>Devono verificare la propria email prima di ricevere comunicazioni.</li>
-    <li>Puoi importare lead da file CSV (colonne: <code>email</code>, <code>nome</code>, <code>cognome</code>).</li>
+    <li>Importa lead da CSV con colonne: <code>email</code>, <code>nome</code>, <code>cognome</code>, <code>tags</code> (slug separati da <code>|</code>).</li>
+  </ul>
+  <h3>Utenti con consenso marketing</h3>
+  <ul>
+    <li>Gli utenti registrati che hanno dato il consenso appaiono nel tab <em>Utenti con consenso marketing</em>.</li>
   </ul>
   <h3>Inviare una notifica corso</h3>
   <ul>
     <li>Clicca <strong>Invia notifica</strong>, seleziona il corso e conferma.</li>
     <li>L'email viene inviata solo ai lead con tag corrispondenti (o a tutti se il corso non ha tag).</li>
-    <li>I lead senza tag ricevono sempre tutte le notifiche.</li>
+  </ul>
+</div>
+
+{# ══════════════════════════════════════════════════════════════════
+   SEZIONE ADMIN — solo admin
+   ══════════════════════════════════════════════════════════════════ #}
+{% if current_user.ruolo.value == 'ADMIN' %}
+<div class="man-section bg-white border border-gray-200 rounded-xl p-6">
+  <h2>
+    <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+    Gestione avanzata utenti
+    <span class="badge bg-red-100 text-red-700">Admin</span>
+  </h2>
+  <h3>Disattivare un utente</h3>
+  <ul>
+    <li>Clicca <strong>Disattiva</strong>: l'utente non può più accedere ma tutti i dati restano intatti.</li>
+    <li>Clicca <strong>Riattiva</strong> per ripristinare l'accesso.</li>
+  </ul>
+  <h3>Anonimizzare (GDPR Art. 17)</h3>
+  <ul>
+    <li>Clicca <strong>Anonimizza</strong>: tutti i dati personali vengono cancellati irreversibilmente.</li>
+    <li>Lo storico delle prenotazioni viene conservato in forma anonimizzata.</li>
+  </ul>
+  <h3>Eliminare un utente</h3>
+  <ul>
+    <li>Disponibile solo se l'utente non ha prenotazioni associate.</li>
+    <li>L'eliminazione è definitiva e irreversibile.</li>
+  </ul>
+  <h3>Assegnare ruoli</h3>
+  <ul>
+    <li>Dal modal <strong>Modifica</strong> puoi assegnare i ruoli <em>Utente</em>, <em>Segreteria</em> o <em>Admin</em>.</li>
+  </ul>
+</div>
+
+<div class="man-section bg-white border border-gray-200 rounded-xl p-6">
+  <h2>
+    <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+    Tag newsletter
+    <span class="badge bg-orange-100 text-orange-700">Admin</span>
+  </h2>
+  <ul>
+    <li>Vai su <strong>Marketing → Gestione Tag</strong> e inserisci i tag nel formato <code>Nome visualizzato | slug</code> (uno per riga).</li>
+    <li>Il nome è quello che vedono gli iscritti; lo slug deve corrispondere ai tag assegnati ai corsi.</li>
+    <li>Esempio: <code>Corsi BLSD | fulld</code></li>
   </ul>
 </div>
 
@@ -180,24 +286,20 @@
     <li>Per Gmail usa una <em>App Password</em> (non la password del tuo account Google).</li>
     <li>Clicca <strong>Invia email di test</strong> per verificare la configurazione.</li>
   </ul>
-  <h3>Logo</h3>
+  <h3>Logo e aspetto</h3>
   <ul>
-    <li>Vai su <strong>Impostazioni → Generale</strong> e carica il logo (PNG/JPG/SVG/WebP, max 5 MB).</li>
-    <li>Appare nella barra di navigazione pubblica e nel pannello admin.</li>
+    <li>Vai su <strong>Impostazioni → Aspetto</strong>: carica logo, favicon e immagine hero.</li>
+    <li>Favicon: ICO/PNG/SVG/WebP, max 2 MB, consigliato 32×32 px.</li>
+    <li>Hero: JPG/PNG/WebP, max 5 MB — sostituisce il gradiente della homepage.</li>
   </ul>
-  <h3>Favicon</h3>
+  <h3>Dati aziendali</h3>
   <ul>
-    <li>Vai su <strong>Impostazioni → Aspetto</strong> e carica la favicon (ICO, PNG, SVG, WebP — max 2 MB, consigliato 32×32).</li>
-    <li>Appare nella scheda del browser e nei preferiti.</li>
-  </ul>
-  <h3>Immagine hero</h3>
-  <ul>
-    <li>Vai su <strong>Impostazioni → Aspetto</strong> e carica un'immagine di sfondo per la sezione hero della homepage (JPG/PNG/WebP, max 5 MB).</li>
-    <li>L'immagine sostituisce il gradiente colorato; il testo rimane sovrapposto leggibile.</li>
+    <li>Vai su <strong>Impostazioni → Azienda</strong> per inserire ragione sociale, P.IVA e indirizzo sede.</li>
+    <li>Questi dati appaiono nel footer del sito e nelle email.</li>
   </ul>
   <h3>Pagamenti</h3>
   <ul>
-    <li><strong>Stripe</strong>: inserisci la chiave pubblica (<code>pk_...</code>) e la chiave segreta (<code>sk_...</code>).</li>
+    <li><strong>Stripe</strong>: inserisci chiave pubblica (<code>pk_...</code>) e chiave segreta (<code>sk_...</code>).</li>
     <li><strong>PayPal</strong>: inserisci Client ID e Client Secret; imposta <em>live</em> per la produzione.</li>
   </ul>
   <h3>Backup</h3>
@@ -205,9 +307,30 @@
     <li>Vai su <strong>Backup</strong> per scaricare una copia del database.</li>
     <li>Esegui backup regolari prima di ogni aggiornamento importante.</li>
   </ul>
-  <div class="tip">Per aggiornare il software: sul server esegui <code>sudo git pull && sudo bash update_python.sh</code>.</div>
+  <div class="tip">Per aggiornare il software: sul server esegui <code>sudo git pull &amp;&amp; sudo bash update_python.sh</code>.</div>
 </div>
-{% endif %}
+
+<div class="man-section bg-white border border-gray-200 rounded-xl p-6">
+  <h2>
+    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+    GDPR e privacy
+    <span class="badge bg-green-100 text-green-700">Admin</span>
+  </h2>
+  <h3>Data retention</h3>
+  <ul>
+    <li>Vai su <strong>GDPR</strong> per configurare la policy di conservazione dei dati.</li>
+  </ul>
+  <h3>Data breach</h3>
+  <ul>
+    <li>In caso di violazione dati, usa la sezione GDPR per registrare l'incidente.</li>
+  </ul>
+  <h3>Diritto all'oblio (Art. 17)</h3>
+  <ul>
+    <li>Usa <strong>Anonimizza</strong> nella lista utenti per cancellare i dati personali mantenendo lo storico anonimizzato.</li>
+  </ul>
+</div>
+{% endif %}{# fine admin #}
+{% endif %}{# fine is_admin #}
 
 </div>
 {% endblock %}
