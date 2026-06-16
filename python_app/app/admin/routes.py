@@ -103,6 +103,55 @@ def index():
     return render_template("admin/index.html", stats=stats, ultime_prenotazioni=ultime_prenotazioni)
 
 
+@admin_bp.route("/statistiche")
+@admin_required
+def statistiche():
+    ora = datetime.now(timezone.utc)
+
+    # Visite per corso (totali + ultimi 30gg)
+    visite_per_corso = db.session.query(
+        VisitaCorso.corso_id,
+        func.count().label("totali"),
+        func.sum(func.case((VisitaCorso.visitato_at >= ora - timedelta(days=30), 1), else_=0)).label("ultimi_30gg"),
+        func.sum(func.case((VisitaCorso.visitato_at >= ora - timedelta(days=7), 1), else_=0)).label("ultimi_7gg"),
+        func.max(VisitaCorso.visitato_at).label("ultima_visita"),
+    ).group_by(VisitaCorso.corso_id).all()
+
+    # Associa titolo corso
+    corsi_map = {c.id: c.titolo for c in Corso.query.all()}
+    righe = []
+    for r in visite_per_corso:
+        righe.append({
+            "corso_id": r.corso_id,
+            "titolo": corsi_map.get(r.corso_id, "—"),
+            "totali": r.totali,
+            "ultimi_30gg": r.ultimi_30gg or 0,
+            "ultimi_7gg": r.ultimi_7gg or 0,
+            "ultima_visita": r.ultima_visita,
+        })
+    righe.sort(key=lambda x: x["totali"], reverse=True)
+
+    # Totali globali
+    visite_totali = sum(r["totali"] for r in righe)
+    visite_oggi = VisitaCorso.query.filter(
+        VisitaCorso.visitato_at >= ora.replace(hour=0, minute=0, second=0, microsecond=0)
+    ).count()
+
+    # Trend giornaliero ultimi 30gg (tutti i corsi)
+    trend = db.session.query(
+        func.date(VisitaCorso.visitato_at).label("giorno"),
+        func.count().label("cnt"),
+    ).filter(
+        VisitaCorso.visitato_at >= ora - timedelta(days=30)
+    ).group_by(func.date(VisitaCorso.visitato_at)).order_by("giorno").all()
+
+    return render_template("admin/statistiche.html",
+                           righe=righe,
+                           visite_totali=visite_totali,
+                           visite_oggi=visite_oggi,
+                           trend=trend)
+
+
 # ===========================================================================
 # CORSI
 # ===========================================================================

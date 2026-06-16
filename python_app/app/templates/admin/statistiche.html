@@ -1,0 +1,170 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Statistiche{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block admin_content %}
+<h1 class="text-2xl font-bold mb-6">Statistiche</h1>
+
+<!-- Stat cards -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+  <div class="bg-white border border-gray-200 rounded-xl p-5 text-center">
+    <div class="text-3xl font-bold text-blue-600">{{ visite_totali }}</div>
+    <div class="text-xs text-gray-500 mt-1">Visite totali</div>
+  </div>
+  <div class="bg-white border border-gray-200 rounded-xl p-5 text-center">
+    <div class="text-3xl font-bold text-green-600">{{ visite_oggi }}</div>
+    <div class="text-xs text-gray-500 mt-1">Oggi</div>
+  </div>
+  <div class="bg-white border border-gray-200 rounded-xl p-5 text-center">
+    <div class="text-3xl font-bold text-purple-600">{{ righe | length }}</div>
+    <div class="text-xs text-gray-500 mt-1">Corsi tracciati</div>
+  </div>
+</div>
+
+{% if righe %}
+<!-- Chart -->
+<div class="bg-white border border-gray-200 rounded-xl p-5 mb-8">
+  <div class="font-semibold text-sm mb-4 text-gray-700">Visite giornaliere — ultimi 30 giorni</div>
+  {% if trend %}
+  <div class="relative h-48">
+    <canvas id="trendChart"></canvas>
+  </div>
+  {% else %}
+  <p class="text-sm text-gray-400 text-center py-8">Nessuna visita negli ultimi 30 giorni.</p>
+  {% endif %}
+</div>
+
+<!-- Table -->
+<div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+  <div class="px-5 py-4 border-b border-gray-100 font-semibold text-sm flex items-center justify-between">
+    <span>Visite per corso</span>
+    <span class="text-xs text-gray-400 font-normal">Clicca le intestazioni per ordinare</span>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm" id="statsTable">
+      <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+        <tr>
+          <th class="px-5 py-3 text-left cursor-pointer select-none hover:text-gray-700" onclick="sortTable(0)">Corso <span class="sort-icon">↕</span></th>
+          <th class="px-5 py-3 text-right cursor-pointer select-none hover:text-gray-700" onclick="sortTable(1)">Visite totali <span class="sort-icon">↕</span></th>
+          <th class="px-5 py-3 text-right cursor-pointer select-none hover:text-gray-700" onclick="sortTable(2)">Ultimi 7gg <span class="sort-icon">↕</span></th>
+          <th class="px-5 py-3 text-right cursor-pointer select-none hover:text-gray-700" onclick="sortTable(3)">Ultimi 30gg <span class="sort-icon">↕</span></th>
+          <th class="px-5 py-3 text-left cursor-pointer select-none hover:text-gray-700" onclick="sortTable(4)">Ultima visita <span class="sort-icon">↕</span></th>
+          <th class="px-5 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100" id="statsBody">
+        {% for r in righe %}
+        <tr class="hover:bg-gray-50"
+            data-col0="{{ r.titolo }}"
+            data-col1="{{ r.totali }}"
+            data-col2="{{ r.ultimi_7gg }}"
+            data-col3="{{ r.ultimi_30gg }}"
+            data-col4="{{ r.ultima_visita.isoformat() if r.ultima_visita else '' }}">
+          <td class="px-5 py-3 font-medium text-gray-800">{{ r.titolo }}</td>
+          <td class="px-5 py-3 text-right font-semibold text-blue-600">{{ r.totali }}</td>
+          <td class="px-5 py-3 text-right text-gray-600">{{ r.ultimi_7gg }}</td>
+          <td class="px-5 py-3 text-right text-gray-600">{{ r.ultimi_30gg }}</td>
+          <td class="px-5 py-3 text-gray-400 text-xs">
+            {% if r.ultima_visita %}
+              {{ r.ultima_visita.strftime('%d/%m/%Y %H:%M') }}
+            {% else %}—{% endif %}
+          </td>
+          <td class="px-5 py-3 text-right">
+            <a href="{{ url_for('admin.corso_modifica', corso_id=r.corso_id) }}"
+               class="text-blue-600 hover:underline text-xs whitespace-nowrap">Vedi corso →</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% else %}
+<!-- Empty state -->
+<div class="bg-white border border-gray-200 rounded-xl p-16 text-center">
+  <svg class="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+          d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+  </svg>
+  <div class="text-gray-400 text-sm">Nessuna visita registrata ancora.</div>
+  <div class="text-gray-300 text-xs mt-1">Le statistiche appariranno non appena gli utenti visiteranno i corsi.</div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if trend %}
+<script>
+(function () {
+  const labels = {{ trend | map(attribute='giorno') | map('string') | list | tojson }};
+  const data   = {{ trend | map(attribute='cnt')   | list | tojson }};
+
+  const ctx = document.getElementById('trendChart');
+  if (!ctx) return;
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Visite',
+        data,
+        backgroundColor: 'rgba(59,130,246,0.6)',
+        borderColor: 'rgba(59,130,246,1)',
+        borderWidth: 1,
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+        y: { beginAtZero: true, ticks: { precision: 0, font: { size: 10 } } },
+      }
+    }
+  });
+})();
+</script>
+{% endif %}
+
+<script>
+// Client-side table sort
+let sortCol = 1;
+let sortAsc = false;
+
+function sortTable(col) {
+  if (sortCol === col) {
+    sortAsc = !sortAsc;
+  } else {
+    sortCol = col;
+    sortAsc = col === 0; // text columns default ascending, numeric descending
+  }
+
+  const tbody = document.getElementById('statsBody');
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+
+  rows.sort((a, b) => {
+    const av = a.dataset['col' + col] || '';
+    const bv = b.dataset['col' + col] || '';
+    // numeric cols: 1,2,3
+    if ([1, 2, 3].includes(col)) {
+      return sortAsc ? Number(av) - Number(bv) : Number(bv) - Number(av);
+    }
+    // string / date cols: 0, 4
+    return sortAsc ? av.localeCompare(bv) : bv.localeCompare(av);
+  });
+
+  rows.forEach(r => tbody.appendChild(r));
+
+  // Update sort icons
+  document.querySelectorAll('.sort-icon').forEach((el, i) => {
+    el.textContent = i === col ? (sortAsc ? '↑' : '↓') : '↕';
+  });
+}
+</script>
+{% endblock %}
