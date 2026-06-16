@@ -180,7 +180,6 @@ fi
 info "Migrazione database..."
 cd "$APP_DIR"
 # Flask loads .env via python-dotenv in config.py — no need to export here
-sudo -u "$APP_USER" "$VENV_DIR/bin/python" -m flask --app wsgi:app db migrate -m "auto" 2>/dev/null || true
 sudo -u "$APP_USER" "$VENV_DIR/bin/python" -m flask --app wsgi:app db upgrade
 ok "Database aggiornato"
 
