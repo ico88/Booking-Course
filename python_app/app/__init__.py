@@ -150,4 +150,12 @@ def create_app(config_name=None):
         flash("La sessione è scaduta. Riprova.", "warning")
         return redirect(_req.referrer or "/"), 302
 
+    @app.errorhandler(403)
+    def forbidden(e):
+        return render_template("errors/403.html"), 403
+
+    @app.errorhandler(404)
+    def not_found(e):
+        return render_template("errors/404.html"), 404
+
     return app

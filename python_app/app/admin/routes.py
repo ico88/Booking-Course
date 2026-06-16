@@ -1245,7 +1245,7 @@ def _sqlite_db_path():
 
 
 @admin_bp.route("/backup", methods=["GET", "POST"])
-@admin_required
+@superadmin_required
 def backup():
     backup_dir = os.path.join(current_app.instance_path, "backups")
     os.makedirs(backup_dir, exist_ok=True)
@@ -1385,7 +1385,7 @@ def _rimuovi_cron(backup_dir: str):
 
 
 @admin_bp.route("/backup/scarica/<filename>")
-@admin_required
+@superadmin_required
 def backup_scarica(filename):
     if not re.match(r'^[\w\-\.]+$', filename):
         abort(400)
@@ -1398,7 +1398,7 @@ def backup_scarica(filename):
 # ===========================================================================
 
 @admin_bp.route("/changelog")
-@admin_required
+@superadmin_required
 def changelog():
     import pathlib, mistune, re
     changelog_path = pathlib.Path(current_app.root_path).parent / "CHANGELOG.md"
