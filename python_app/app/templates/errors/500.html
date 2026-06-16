@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Errore del server{% endblock %}
+{% block content %}
+<div class="min-h-[60vh] flex items-center justify-center px-4">
+  <div class="text-center max-w-md">
+    <div class="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-5">
+      <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+      </svg>
+    </div>
+    <h1 class="text-2xl font-bold text-gray-900 mb-2">Qualcosa è andato storto</h1>
+    <p class="text-gray-500 mb-6">Si è verificato un errore imprevisto. Riprova tra qualche istante o contatta l'amministratore se il problema persiste.</p>
+    <div class="flex flex-col sm:flex-row gap-3 justify-center">
+      <a href="{{ url_for('public.index') }}"
+         class="px-5 py-2.5 bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors">
+        Torna alla home
+      </a>
+      <button onclick="history.back()"
+              class="px-5 py-2.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
+        Pagina precedente
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %}
