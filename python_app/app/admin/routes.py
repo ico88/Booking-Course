@@ -40,6 +40,18 @@ def admin_required(f):
     return decorated
 
 
+def superadmin_required(f):
+    """Solo ruolo ADMIN puro — esclude SEGRETERIA."""
+    @wraps(f)
+    @login_required
+    def decorated(*args, **kwargs):
+        from app.models import Ruolo
+        if current_user.ruolo != Ruolo.ADMIN:
+            abort(403)
+        return f(*args, **kwargs)
+    return decorated
+
+
 # ===========================================================================
 # ATTESTATI
 # ===========================================================================
@@ -887,7 +899,7 @@ def marketing_importa():
 # ===========================================================================
 
 @admin_bp.route("/gdpr/retention", methods=["GET", "POST"])
-@admin_required
+@superadmin_required
 def gdpr_retention():
     from ..models import LeadMarketing, Prenotazione, StatoPrenotazione
     from datetime import datetime, timezone, timedelta
@@ -965,7 +977,7 @@ def gdpr_retention():
 # ===========================================================================
 
 @admin_bp.route("/gdpr/breach", methods=["GET", "POST"])
-@admin_required
+@superadmin_required
 def gdpr_breach():
     from ..email_service import invia_email_notifica_segreteria
     if request.method == "POST":
@@ -1022,7 +1034,7 @@ _TAB_KEYS = {
 
 
 @admin_bp.route("/impostazioni", methods=["GET", "POST"])
-@admin_required
+@superadmin_required
 def impostazioni():
     if request.method == "POST":
         saved_tab = request.form.get("_tab", "generale")
@@ -1050,7 +1062,7 @@ def impostazioni():
 
 
 @admin_bp.route("/impostazioni/test-email", methods=["POST"])
-@admin_required
+@superadmin_required
 def test_email():
     from ..email_service import send_email, _html_wrapper, _ctx
     app_name, app_url, logo_url, legal, color_scheme = _ctx()
@@ -1073,7 +1085,7 @@ def test_email():
 
 
 @admin_bp.route("/impostazioni/logo", methods=["POST"])
-@admin_required
+@superadmin_required
 def upload_logo():
     file = request.files.get("logo")
     if not file or not allowed_file(file.filename, {"jpg", "jpeg", "png", "svg", "webp"}):
@@ -1098,7 +1110,7 @@ def upload_logo():
 
 
 @admin_bp.route("/impostazioni/favicon", methods=["POST"])
-@admin_required
+@superadmin_required
 def upload_favicon():
     file = request.files.get("favicon")
     if not file or not allowed_file(file.filename, {"ico", "png", "svg", "jpg", "jpeg", "webp"}):
@@ -1122,7 +1134,7 @@ def upload_favicon():
 
 
 @admin_bp.route("/impostazioni/favicon/elimina", methods=["POST"])
-@admin_required
+@superadmin_required
 def favicon_elimina():
     rel = Impostazione.get("favicon_url", "")
     if rel:
@@ -1136,7 +1148,7 @@ def favicon_elimina():
 
 
 @admin_bp.route("/impostazioni/hero-image", methods=["POST"])
-@admin_required
+@superadmin_required
 def upload_hero_image():
     file = request.files.get("hero_image")
     if not file or not allowed_file(file.filename, {"jpg", "jpeg", "png", "webp"}):
@@ -1160,7 +1172,7 @@ def upload_hero_image():
 
 
 @admin_bp.route("/impostazioni/hero-image/elimina", methods=["POST"])
-@admin_required
+@superadmin_required
 def hero_image_elimina():
     rel = Impostazione.get("hero_image_url", "")
     if rel:
@@ -1174,7 +1186,7 @@ def hero_image_elimina():
 
 
 @admin_bp.route("/impostazioni/logo/elimina", methods=["POST"])
-@admin_required
+@superadmin_required
 def logo_elimina():
     logo_rel = Impostazione.get("logo_url", "")
     if logo_rel:
@@ -1197,7 +1209,7 @@ def logo_elimina():
 # ===========================================================================
 
 @admin_bp.route("/pagine-legali", methods=["GET", "POST"])
-@admin_required
+@superadmin_required
 def pagine_legali():
     from ..pagine_legali_defaults import DEFAULT_PRIVACY_POLICY, DEFAULT_COOKIE_POLICY, DEFAULT_TERMINI
     if request.method == "POST":
