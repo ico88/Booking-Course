@@ -2,8 +2,8 @@
 {% block title %}{{ 'Modifica' if corso else 'Nuovo' }} corso{% endblock %}
 
 {% block head %}
-<link href="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.snow.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.js"></script>
+<link href="{{ url_for('static', filename='vendor/quill/quill.snow.css') }}" rel="stylesheet">
+<script src="{{ url_for('static', filename='vendor/quill/quill.js') }}"></script>
 <style>
   .ql-toolbar.ql-snow { border: 1px solid #d1d5db !important; border-radius: 0.5rem 0.5rem 0 0 !important; background: #f9fafb; }
   .ql-container.ql-snow { border: 1px solid #d1d5db !important; border-top: none !important; border-radius: 0 0 0.5rem 0.5rem !important; font-size: 0.875rem; }

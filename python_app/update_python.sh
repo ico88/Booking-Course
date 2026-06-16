@@ -128,6 +128,18 @@ version_ok "$VENV_DIR/bin/python" || error "Virtualenv con Python non supportato
 "$VENV_DIR/bin/python" -m flask --version >/dev/null
 ok "Dipendenze aggiornate"
 
+# ── Vendor JS/CSS (scaricati se assenti o vuoti) ─────────────
+QUILL_DIR="$APP_DIR/app/static/vendor/quill"
+mkdir -p "$QUILL_DIR"
+if [[ ! -s "$QUILL_DIR/quill.js" ]]; then
+  info "Download Quill.js..."
+  curl -sL "https://cdn.jsdelivr.net/npm/quill@2/dist/quill.js" -o "$QUILL_DIR/quill.js" && ok "quill.js scaricato" || warn "Download quill.js fallito"
+fi
+if [[ ! -s "$QUILL_DIR/quill.snow.css" ]]; then
+  info "Download Quill snow CSS..."
+  curl -sL "https://cdn.jsdelivr.net/npm/quill@2/dist/quill.snow.css" -o "$QUILL_DIR/quill.snow.css" && ok "quill.snow.css scaricato" || warn "Download quill.snow.css fallito"
+fi
+
 # ── Permessi app ─────────────────────────────────────────────
 chown -R "$APP_USER:$APP_USER" "$APP_DIR"
 grant_parent_traversal

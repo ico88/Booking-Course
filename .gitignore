@@ -53,3 +53,6 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+# Vendor files downloaded at deploy time
+python_app/app/static/vendor/quill/quill.js
+python_app/app/static/vendor/quill/quill.snow.css
