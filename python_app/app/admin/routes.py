@@ -107,42 +107,56 @@ def index():
 @admin_required
 def statistiche():
     ora = datetime.now(timezone.utc)
+    t30 = ora - timedelta(days=30)
+    t7 = ora - timedelta(days=7)
+    oggi = ora.replace(hour=0, minute=0, second=0, microsecond=0)
 
-    # Visite per corso (totali + ultimi 30gg)
-    visite_per_corso = db.session.query(
-        VisitaCorso.corso_id,
-        func.count().label("totali"),
-        func.sum(func.case((VisitaCorso.visitato_at >= ora - timedelta(days=30), 1), else_=0)).label("ultimi_30gg"),
-        func.sum(func.case((VisitaCorso.visitato_at >= ora - timedelta(days=7), 1), else_=0)).label("ultimi_7gg"),
-        func.max(VisitaCorso.visitato_at).label("ultima_visita"),
+    corsi_map = {c.id: c.titolo for c in Corso.query.all()}
+
+    # Totali per corso (all-time)
+    totali_rows = db.session.query(
+        VisitaCorso.corso_id, func.count().label("cnt")
     ).group_by(VisitaCorso.corso_id).all()
 
-    # Associa titolo corso
-    corsi_map = {c.id: c.titolo for c in Corso.query.all()}
+    # Ultimi 30gg per corso
+    gg30_rows = db.session.query(
+        VisitaCorso.corso_id, func.count().label("cnt")
+    ).filter(VisitaCorso.visitato_at >= t30).group_by(VisitaCorso.corso_id).all()
+
+    # Ultimi 7gg per corso
+    gg7_rows = db.session.query(
+        VisitaCorso.corso_id, func.count().label("cnt")
+    ).filter(VisitaCorso.visitato_at >= t7).group_by(VisitaCorso.corso_id).all()
+
+    # Ultima visita per corso
+    ultima_rows = db.session.query(
+        VisitaCorso.corso_id, func.max(VisitaCorso.visitato_at).label("ultima")
+    ).group_by(VisitaCorso.corso_id).all()
+
+    totali_map = {r.corso_id: r.cnt for r in totali_rows}
+    gg30_map = {r.corso_id: r.cnt for r in gg30_rows}
+    gg7_map = {r.corso_id: r.cnt for r in gg7_rows}
+    ultima_map = {r.corso_id: r.ultima for r in ultima_rows}
+
     righe = []
-    for r in visite_per_corso:
+    for corso_id in totali_map:
         righe.append({
-            "corso_id": r.corso_id,
-            "titolo": corsi_map.get(r.corso_id, "—"),
-            "totali": r.totali,
-            "ultimi_30gg": r.ultimi_30gg or 0,
-            "ultimi_7gg": r.ultimi_7gg or 0,
-            "ultima_visita": r.ultima_visita,
+            "corso_id": corso_id,
+            "titolo": corsi_map.get(corso_id, "—"),
+            "totali": totali_map[corso_id],
+            "ultimi_30gg": gg30_map.get(corso_id, 0),
+            "ultimi_7gg": gg7_map.get(corso_id, 0),
+            "ultima_visita": ultima_map.get(corso_id),
         })
     righe.sort(key=lambda x: x["totali"], reverse=True)
 
-    # Totali globali
     visite_totali = sum(r["totali"] for r in righe)
-    visite_oggi = VisitaCorso.query.filter(
-        VisitaCorso.visitato_at >= ora.replace(hour=0, minute=0, second=0, microsecond=0)
-    ).count()
+    visite_oggi = VisitaCorso.query.filter(VisitaCorso.visitato_at >= oggi).count()
 
-    # Trend giornaliero ultimi 30gg (tutti i corsi)
     trend = db.session.query(
         func.date(VisitaCorso.visitato_at).label("giorno"),
         func.count().label("cnt"),
-    ).filter(
-        VisitaCorso.visitato_at >= ora - timedelta(days=30)
+    ).filter(VisitaCorso.visitato_at >= t30
     ).group_by(func.date(VisitaCorso.visitato_at)).order_by("giorno").all()
 
     return render_template("admin/statistiche.html",
