@@ -5,11 +5,21 @@
 <link href="{{ url_for('static', filename='vendor/quill/quill.snow.css') }}" rel="stylesheet">
 <script src="{{ url_for('static', filename='vendor/quill/quill.js') }}"></script>
 <style>
-  .ql-toolbar.ql-snow { border: 1px solid #d1d5db !important; border-radius: 0.5rem 0.5rem 0 0 !important; background: #f9fafb; }
+  .ql-toolbar.ql-snow { border: 1px solid #d1d5db !important; border-radius: 0.5rem 0.5rem 0 0 !important; background: #f9fafb; padding: 6px 8px !important; }
   .ql-container.ql-snow { border: 1px solid #d1d5db !important; border-top: none !important; border-radius: 0 0 0.5rem 0.5rem !important; font-size: 0.875rem; }
-  .ql-editor { min-height: 160px; }
-  .ql-toolbar button { width: auto !important; height: auto !important; padding: 3px 5px !important; }
-  .ql-toolbar .ql-formats { display: inline-flex !important; align-items: center; }
+  .ql-editor { min-height: 160px; line-height: 1.6; }
+  .ql-toolbar.ql-snow .ql-formats { display: inline-flex !important; align-items: center; margin-right: 8px !important; }
+  .ql-toolbar.ql-snow button { display: inline-flex !important; align-items: center; justify-content: center; width: 28px !important; height: 28px !important; padding: 3px !important; border-radius: 4px; cursor: pointer; }
+  .ql-toolbar.ql-snow button:hover { background: #e5e7eb !important; }
+  .ql-toolbar.ql-snow button svg { display: block !important; width: 18px !important; height: 18px !important; }
+  .ql-toolbar .ql-stroke { stroke: #374151 !important; fill: none !important; }
+  .ql-toolbar .ql-fill { fill: #374151 !important; stroke: none !important; }
+  .ql-toolbar .ql-picker { color: #374151 !important; }
+  .ql-toolbar .ql-picker-label { display: flex !important; align-items: center; border: 1px solid #d1d5db !important; border-radius: 4px; padding: 2px 6px !important; }
+  .ql-toolbar .ql-picker-label svg { display: inline-block !important; }
+  .ql-snow .ql-picker.ql-header .ql-picker-label::before { content: attr(data-value) !important; }
+  .ql-snow .ql-picker.ql-header .ql-picker-label[data-value=""]::before,
+  .ql-snow .ql-picker.ql-header .ql-picker-label:not([data-value])::before { content: "Normal" !important; }
 </style>
 {% endblock %}
 
