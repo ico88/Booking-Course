@@ -10,11 +10,12 @@ import bleach
 from markupsafe import escape
 
 _ALLOWED_TAGS = [
-    "p", "br", "strong", "em", "u", "s", "ul", "ol", "li",
-    "h1", "h2", "h3", "h4", "blockquote", "a", "img",
+    "p", "br", "strong", "b", "em", "i", "u", "s", "ul", "ol", "li",
+    "h1", "h2", "h3", "h4", "blockquote", "a", "img", "span", "div",
     "table", "thead", "tbody", "tr", "th", "td",
 ]
 _ALLOWED_ATTRS = {
+    "*": ["style", "class"],
     "a": ["href", "title", "target"],
     "img": ["src", "alt", "width", "height"],
     "td": ["colspan", "rowspan"],
