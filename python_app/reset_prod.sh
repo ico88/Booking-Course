@@ -5,7 +5,7 @@
 set -e
 
 APP_DIR="$(cd "$(dirname "$0")" && pwd)"
-VENV="$APP_DIR/venv"
+VENV="$APP_DIR/.venv"
 PYTHON="$VENV/bin/python"
 
 if [ ! -f "$PYTHON" ]; then
