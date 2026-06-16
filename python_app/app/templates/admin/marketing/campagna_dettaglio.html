@@ -1,0 +1,88 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Campagna — {{ corso.titolo }}{% endblock %}
+
+{% block admin_content %}
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <a href="{{ url_for('admin.marketing') }}?tab=campagne"
+       class="text-sm text-gray-500 hover:text-gray-800 flex items-center gap-1 mb-1">
+      ← Torna alle campagne
+    </a>
+    <h1 class="text-2xl font-bold">Campagna: {{ corso.titolo }}</h1>
+  </div>
+  {% if invii %}
+  <form method="POST" action="{{ url_for('admin.campagna_reset', corso_id=corso.id) }}"
+        onsubmit="return confirm('Eliminare tutti i {{ invii|length }} record di invio per questo corso? Il prossimo invio ripartirà da zero.')">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 px-4 py-2 rounded-lg text-sm font-medium">
+      Reset campagna
+    </button>
+  </form>
+  {% endif %}
+</div>
+
+<!-- Stats -->
+<div class="grid grid-cols-3 gap-4 mb-6">
+  <div class="bg-white border border-gray-200 rounded-xl p-4 text-center">
+    <div class="text-2xl font-bold text-blue-600">{{ invii|length }}</div>
+    <div class="text-xs text-gray-500 mt-1">Email inviate totali</div>
+  </div>
+  <div class="bg-white border border-gray-200 rounded-xl p-4 text-center">
+    <div class="text-2xl font-bold">{{ prima_notifica }}</div>
+    <div class="text-xs text-gray-500 mt-1">Prima notifica</div>
+  </div>
+  <div class="bg-white border border-gray-200 rounded-xl p-4 text-center">
+    <div class="text-2xl font-bold">{{ ultima_notifica }}</div>
+    <div class="text-xs text-gray-500 mt-1">Ultima notifica</div>
+  </div>
+</div>
+
+<!-- Lista destinatari -->
+<div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+  {% if invii %}
+  <!-- Filtro rapido -->
+  <div class="px-5 py-3 border-b border-gray-100">
+    <input type="search" id="search-invii" placeholder="Cerca email..."
+           oninput="filterInvii(this.value)"
+           class="w-full max-w-xs border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500">
+    <span class="ml-3 text-xs text-gray-400" id="invii-count">{{ invii|length }} destinatari</span>
+  </div>
+  <table class="w-full text-sm" id="invii-table">
+    <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+      <tr>
+        <th class="px-5 py-3 text-left">Email</th>
+        <th class="px-5 py-3 text-left">Data invio</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100" id="invii-tbody">
+      {% for inv in invii %}
+      <tr class="hover:bg-gray-50 inv-row" data-email="{{ inv.email|lower }}">
+        <td class="px-5 py-3 font-mono text-xs">{{ inv.email }}</td>
+        <td class="px-5 py-3 text-gray-500 text-xs">{{ format_date(inv.inviato_at) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div id="invii-noresults" class="hidden px-5 py-8 text-center text-gray-400 text-sm">Nessun risultato.</div>
+  {% else %}
+  <div class="px-5 py-12 text-center text-gray-400 text-sm">
+    Nessuna email ancora inviata per questo corso.
+  </div>
+  {% endif %}
+</div>
+
+<script>
+function filterInvii(q) {
+  q = q.toLowerCase();
+  const rows = document.querySelectorAll('.inv-row');
+  let visible = 0;
+  rows.forEach(r => {
+    const show = !q || r.dataset.email.includes(q);
+    r.classList.toggle('hidden', !show);
+    if (show) visible++;
+  });
+  document.getElementById('invii-count').textContent = visible + ' destinatari';
+  document.getElementById('invii-noresults').classList.toggle('hidden', visible > 0);
+}
+</script>
+{% endblock %}

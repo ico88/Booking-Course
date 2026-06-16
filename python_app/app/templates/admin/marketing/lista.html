@@ -47,6 +47,10 @@
     Utenti con consenso marketing
     {% if utenti_marketing %}<span class="ml-1 bg-purple-100 text-purple-700 text-xs px-1.5 py-0.5 rounded-full">{{ utenti_marketing|length }}</span>{% endif %}
   </button>
+  <button id="tab-campagne" onclick="switchTab('campagne')"
+          class="px-4 py-2 rounded-lg text-sm font-medium transition-colors text-gray-600 hover:text-gray-900">
+    Campagne
+  </button>
   {% if current_user.ruolo.value == 'ADMIN' %}
   <button id="tab-tags" onclick="switchTab('tags')"
           class="px-4 py-2 rounded-lg text-sm font-medium transition-colors text-gray-600 hover:text-gray-900">
@@ -214,6 +218,43 @@
   <p class="text-xs text-gray-400 mt-2">Gli utenti senza tag ricevono tutte le notifiche.</p>
 </div>
 
+<!-- Pannello campagne -->
+<div id="panel-campagne" class="hidden">
+  <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+    {% if campagne %}
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+        <tr>
+          <th class="px-5 py-3 text-left">Corso</th>
+          <th class="px-5 py-3 text-left">Ultima notifica</th>
+          <th class="px-5 py-3 text-center">Email inviate</th>
+          <th class="px-5 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        {% for c in campagne %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-5 py-3 font-medium">{{ c.titolo }}</td>
+          <td class="px-5 py-3 text-gray-500 text-xs">{{ format_date(c.ultima_notifica) if c.ultima_notifica else '—' }}</td>
+          <td class="px-5 py-3 text-center">
+            <span class="inline-block bg-blue-50 text-blue-700 text-xs font-semibold px-2 py-0.5 rounded-full">{{ c.n_inviati }}</span>
+          </td>
+          <td class="px-5 py-3 text-right">
+            <a href="{{ url_for('admin.campagna_dettaglio', corso_id=c.id) }}"
+               class="text-blue-600 hover:text-blue-800 text-xs font-medium mr-3">Dettaglio</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="px-5 py-12 text-center text-gray-400 text-sm">
+      Nessuna campagna inviata ancora. Usa il pulsante "Invia notifica" per avviare la prima.
+    </div>
+    {% endif %}
+  </div>
+</div>
+
 <!-- Pannello gestione tag newsletter -->
 <div id="panel-tags" class="hidden">
   <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
@@ -315,14 +356,16 @@ function updateNotificati(corsoId) {
   info.classList.toggle('hidden', cnt === 0);
 }
 
-// Init on page load
 document.addEventListener('DOMContentLoaded', function() {
   const sel = document.getElementById('modal-corso-select');
   if (sel) updateNotificati(sel.value);
+  // Apri tab da query string ?tab=X
+  const tab = new URLSearchParams(window.location.search).get('tab');
+  if (tab) switchTab(tab);
 });
 
 function switchTab(tab) {
-  const panels = ['lead', 'utenti', 'tags'];
+  const panels = ['lead', 'utenti', 'campagne', 'tags'];
   const active = 'bg-white text-gray-900 shadow-sm';
   const inactive = 'text-gray-600 hover:text-gray-900';
   panels.forEach(p => {

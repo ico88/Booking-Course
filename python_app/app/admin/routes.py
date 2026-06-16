@@ -780,16 +780,34 @@ def marketing():
     all_tags = sorted({t for lead in leads for t in (lead.tags or [])})
     newsletter_tags = _get_newsletter_tags()
     utenti_marketing = Utente.query.filter_by(consenso_marketing=True).order_by(Utente.data_consenso.desc()).all()
-    # Count already-notified per corso
     from sqlalchemy import func as sqlfunc
-    notificati_per_corso = {
-        row.corso_id: row.cnt
-        for row in db.session.query(InvioMarketing.corso_id, sqlfunc.count().label("cnt"))
-                              .group_by(InvioMarketing.corso_id).all()
-    }
+    from datetime import timezone as _tz
+
+    # Count + last date per corso (per modal e tab campagne)
+    campagna_rows = db.session.query(
+        InvioMarketing.corso_id,
+        sqlfunc.count().label("cnt"),
+        sqlfunc.max(InvioMarketing.inviato_at).label("ultima"),
+    ).group_by(InvioMarketing.corso_id).all()
+    notificati_per_corso = {r.corso_id: r.cnt for r in campagna_rows}
+    ultima_per_corso = {r.corso_id: r.ultima for r in campagna_rows}
+
+    # Lista corsi con almeno un invio (per tab campagne)
+    corso_ids_con_invii = {r.corso_id for r in campagna_rows}
+    tutti_corsi = Corso.query.filter(Corso.id.in_(corso_ids_con_invii)).all() if corso_ids_con_invii else []
+    campagne = []
+    for c in tutti_corsi:
+        campagne.append({
+            "id": c.id,
+            "titolo": c.titolo,
+            "n_inviati": notificati_per_corso.get(c.id, 0),
+            "ultima_notifica": ultima_per_corso.get(c.id),
+        })
+    campagne.sort(key=lambda x: x["ultima_notifica"] or datetime.min.replace(tzinfo=_tz.utc), reverse=True)
+
     return render_template("admin/marketing/lista.html", leads=leads, corsi_pubblicati=corsi_pubblicati,
                            all_tags=all_tags, newsletter_tags=newsletter_tags, utenti_marketing=utenti_marketing,
-                           notificati_per_corso=notificati_per_corso)
+                           notificati_per_corso=notificati_per_corso, campagne=campagne)
 
 
 @admin_bp.route("/marketing/leads/<string:lead_id>/elimina", methods=["POST"])
@@ -921,6 +939,35 @@ def marketing_tags():
     db.session.commit()
     logger.info("Admin %s: tag newsletter aggiornati: %s", current_user.email, tags)
     flash("Tag aggiornati.", "success")
+    return redirect(url_for("admin.marketing"))
+
+
+@admin_bp.route("/marketing/campagne/<string:corso_id>")
+@admin_required
+def campagna_dettaglio(corso_id):
+    corso = Corso.query.get_or_404(corso_id)
+    invii = InvioMarketing.query.filter_by(corso_id=corso_id).order_by(InvioMarketing.inviato_at.desc()).all()
+    prima = invii[-1].inviato_at if invii else None
+    ultima = invii[0].inviato_at if invii else None
+
+    def _fmt(dt):
+        if not dt:
+            return "—"
+        return dt.strftime("%d/%m/%Y %H:%M") if dt else "—"
+
+    return render_template("admin/marketing/campagna_dettaglio.html",
+                           corso=corso, invii=invii,
+                           prima_notifica=_fmt(prima), ultima_notifica=_fmt(ultima))
+
+
+@admin_bp.route("/marketing/campagne/<string:corso_id>/reset", methods=["POST"])
+@admin_required
+def campagna_reset(corso_id):
+    corso = Corso.query.get_or_404(corso_id)
+    n = InvioMarketing.query.filter_by(corso_id=corso_id).delete()
+    db.session.commit()
+    logger.info("Admin %s: reset campagna corso %s (%d record eliminati)", current_user.email, corso_id, n)
+    flash(f"Campagna resettata: {n} record eliminati. Il prossimo invio raggiungerà tutti i destinatari.", "success")
     return redirect(url_for("admin.marketing"))
 
 
