@@ -2,7 +2,7 @@
 {% block title %}Partecipanti — {{ corso.titolo }}{% endblock %}
 
 {% block admin_content %}
-<div class="flex items-center justify-between mb-6">
+<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
   <div>
     <a href="{{ url_for('admin.corsi') }}" class="text-sm text-gray-400 hover:text-blue-600 inline-flex items-center gap-1 mb-1">
       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
@@ -41,6 +41,7 @@
 <!-- Lista partecipanti -->
 {% if prenotazioni %}
 <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+  <div class="overflow-x-auto">
   <table class="w-full text-sm">
     <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
       <tr>
@@ -78,6 +79,7 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
 </div>
 {% else %}
 <div class="bg-white border border-gray-200 rounded-xl px-8 py-12 text-center">

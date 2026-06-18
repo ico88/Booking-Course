@@ -23,7 +23,8 @@
     <span class="ml-1 bg-orange-100 text-orange-800 text-xs font-bold px-2 py-0.5 rounded-full">{{ da_validare | length }}</span>
   </h2>
   <div class="bg-orange-50 border border-orange-200 rounded-xl overflow-hidden">
-    <table class="w-full text-sm hidden md:table">
+    <div class="overflow-x-auto hidden md:block">
+    <table class="w-full text-sm">
       <thead class="bg-orange-100 text-orange-700 text-xs uppercase">
         <tr>
           <th class="px-5 py-3 text-left">Utente</th>
@@ -53,6 +54,7 @@
         {% endfor %}
       </tbody>
     </table>
+    </div>
     <div class="md:hidden divide-y divide-orange-100">
       {% for p in da_validare %}
       <a href="{{ url_for('admin.prenotazione_dettaglio', prenotazione_id=p.id) }}"
@@ -73,6 +75,7 @@
 
 {# ── Vista tabella (md+) ── #}
 <div class="hidden md:block bg-white border border-gray-200 rounded-xl overflow-hidden">
+  <div class="overflow-x-auto">
   <table class="w-full text-sm">
     <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
       <tr>
@@ -101,6 +104,7 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
 </div>
 
 {# ── Vista card (mobile) ── #}

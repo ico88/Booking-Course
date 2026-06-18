@@ -2,8 +2,11 @@
 {% block title %}Backup{% endblock %}
 
 {% block admin_content %}
-<div class="flex items-center justify-between mb-6">
+<div class="flex flex-wrap items-center gap-3 mb-6">
+  <div class="flex-1 min-w-0">
   <h1 class="text-2xl font-bold">Backup</h1>
+  </div>
+  <div class="shrink-0">
   <form method="POST">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="action" value="crea">
@@ -12,6 +15,7 @@
       Crea backup ora
     </button>
   </form>
+  </div>
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -23,6 +27,7 @@
         <span class="text-xs text-gray-400">{{ backups|length }} file</span>
       </div>
       {% if backups %}
+      <div class="overflow-x-auto">
       <table class="w-full text-sm">
         <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
           <tr>
@@ -60,6 +65,7 @@
           {% endfor %}
         </tbody>
       </table>
+      </div>
       {% else %}
       <div class="px-5 py-10 text-center text-gray-400 text-sm">
         Nessun backup disponibile. Premi "Crea backup ora" per il primo backup.

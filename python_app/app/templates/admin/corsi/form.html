@@ -24,13 +24,13 @@
 {% endblock %}
 
 {% block admin_content %}
-<div class="flex items-center justify-between mb-6">
-  <div>
+<div class="flex flex-wrap items-center gap-3 mb-6">
+  <div class="flex-1 min-w-0">
     <a href="{{ url_for('admin.corsi') }}" class="text-sm text-blue-600 hover:underline">← Corsi</a>
     <h1 class="text-2xl font-bold mt-1">{{ 'Modifica corso' if corso else 'Nuovo corso' }}</h1>
   </div>
   {% if corso %}
-  <div class="flex gap-2">
+  <div class="shrink-0 flex gap-2">
     <form method="POST" action="{{ url_for('admin.corso_duplica', corso_id=corso.id) }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button type="submit" class="bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg text-sm">Duplica</button>
@@ -58,7 +58,7 @@
           <div id="quill-desc" style="min-height:160px"></div>
           <textarea name="descrizione" id="textarea-descrizione" class="hidden"></textarea>
         </div>
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-medium mb-1">Data inizio</label>
             <input type="datetime-local" name="data_inizio"
@@ -72,7 +72,7 @@
                    class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
           </div>
         </div>
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-medium mb-1">Luogo</label>
             <input type="text" name="luogo" value="{{ corso.luogo if corso else '' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
@@ -82,7 +82,7 @@
             <input type="text" name="durata" value="{{ corso.durata if corso else '' }}" placeholder="es. 8 ore" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
           </div>
         </div>
-        <div class="grid grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label class="block text-sm font-medium mb-1">Costo (€)</label>
             <input type="number" name="costo" step="0.01" min="0" value="{{ corso.costo if corso else '0' }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">

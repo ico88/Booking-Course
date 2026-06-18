@@ -13,7 +13,7 @@
 ] %}
 {% set _active = tab or 'generale' %}
 
-<div class="flex items-center justify-between mb-6">
+<div class="flex flex-wrap items-center gap-3 mb-6">
   <h1 class="text-2xl font-bold">Impostazioni</h1>
 </div>
 
@@ -27,7 +27,7 @@
 </div>
 
 <!-- Layout 2 colonne -->
-<div class="flex gap-6 items-start">
+<div class="flex flex-col lg:flex-row gap-6 items-start">
 
   <!-- Sidebar navigazione (desktop) -->
   <aside class="hidden sm:flex flex-col w-48 shrink-0 bg-white border border-gray-200 rounded-xl overflow-hidden sticky top-24">
@@ -100,7 +100,7 @@
                    placeholder="Es. Acme S.r.l."
                    class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
           </div>
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium mb-1">Partita IVA</label>
               <input type="text" name="partita_iva" value="{{ settings.get('partita_iva', '') }}" maxlength="50"
@@ -246,7 +246,7 @@
                       placeholder="Es. Benvenuto nel portale di formazione professionale..."
                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 resize-none">{{ settings.get('hero_subtitle', '') }}</textarea>
           </div>
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium mb-1">Pulsante principale</label>
               <input type="text" name="hero_btn_primary" value="{{ settings.get('hero_btn_primary', '') }}" maxlength="50"
@@ -275,7 +275,7 @@
             <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
             <h2 class="font-semibold text-gray-800">Configurazione SMTP</h2>
           </div>
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium mb-1">Server SMTP</label>
               <input type="text" name="smtp_host" value="{{ settings.get('smtp_host', '') }}"
@@ -349,7 +349,7 @@
             <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z"/></svg>
             <h2 class="font-semibold text-gray-800">PayPal</h2>
           </div>
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium mb-1">Client ID</label>
               <input type="text" name="paypal_client_id" value="{{ settings.get('paypal_client_id', '') }}"

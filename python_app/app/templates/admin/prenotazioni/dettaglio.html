@@ -8,7 +8,7 @@
   <a href="{{ url_for('admin.prenotazioni') }}" class="text-sm text-blue-600 hover:underline">← Prenotazioni</a>
 </div>
 
-<div class="flex items-start justify-between mb-6 gap-4">
+<div class="flex flex-wrap items-start justify-between mb-6 gap-4">
   <div>
     <h1 class="text-2xl font-bold">{{ p.corso.titolo }}</h1>
     <div class="text-gray-500 mt-1">{{ p.utente.nome_completo }} — {{ p.utente.email }}</div>
