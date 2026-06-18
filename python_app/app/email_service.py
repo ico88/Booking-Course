@@ -578,3 +578,29 @@ def invia_email_conferma_consenso_marketing(utente):
         )
     )
     send_email(utente.email, f"Iscrizione alle notifiche - {app_name}", _html_wrapper(body, app_name, app_url, logo_url, legal, color_scheme))
+
+
+def invia_email_reminder_scadenza(prenotazione):
+    """Reminder inviato ~48h prima della scadenza pagamento."""
+    app_name, app_url, logo_url, legal, color_scheme = _ctx()
+    u = prenotazione.utente
+    c = prenotazione.corso
+    scadenza = prenotazione.scadenza_pagamento.strftime("%d/%m/%Y alle %H:%M") if prenotazione.scadenza_pagamento else "N/D"
+    importo = prenotazione.importo_totale
+    coord = c.coordinate_bancarie or ""
+    riepilogo = (
+        f"Corso: <strong style='color:#111827'>{c.titolo}</strong><br>"
+        f"Posti: {prenotazione.numero_posti}<br>"
+        f"Importo totale: <strong style='color:#111827'>€ {importo:.2f}</strong><br>"
+        f"Scadenza: <strong style='color:#dc2626'>{scadenza}</strong>"
+    )
+    body = (
+        _h2("Ricorda: carica la ricevuta di pagamento")
+        + _p(f"Ciao <strong style='color:#111827'>{u.nome}</strong>, la tua prenotazione per <strong style='color:#111827'>{c.titolo}</strong> scade tra circa 48 ore.")
+        + _p("Per completare l'iscrizione carica la ricevuta del bonifico dal tuo pannello personale.")
+        + _info_box(riepilogo)
+        + (_info_box(f"<strong style='color:#111827'>Dati bonifico:</strong><br><code style='font-size:13px;color:#a1a1aa'>{coord}</code>") if coord else "")
+        + _btn(f"{app_url}/dashboard/prenotazioni/{prenotazione.id}", "Carica ricevuta ora")
+        + _p("<small style='color:#6b7280'>Se hai già effettuato il pagamento e caricato la ricevuta, ignora questa email.</small>")
+    )
+    send_email(u.email, f"Promemoria: carica il pagamento entro {scadenza} — {c.titolo}", _html_wrapper(body, app_name, app_url, logo_url, legal, color_scheme))

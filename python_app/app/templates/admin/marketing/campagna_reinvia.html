@@ -1,0 +1,108 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Re-invio notifica — {{ corso.titolo }}{% endblock %}
+
+{% block admin_content %}
+<div class="flex flex-wrap items-start justify-between gap-3 mb-6">
+  <div class="flex-1 min-w-0">
+    <a href="{{ url_for('admin.campagna_dettaglio', corso_id=corso.id) }}"
+       class="text-sm text-gray-500 hover:text-gray-800 flex items-center gap-1 mb-1">
+      ← Torna al dettaglio campagna
+    </a>
+    <h1 class="text-2xl font-bold break-words">Re-invio: {{ corso.titolo }}</h1>
+  </div>
+</div>
+
+<!-- Riepilogo -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+  <div class="bg-white border border-gray-200 rounded-xl p-5 text-center">
+    <div class="text-3xl font-bold text-blue-600">{{ n_destinatari }}</div>
+    <div class="text-xs text-gray-500 mt-1">Destinatari del re-invio</div>
+    <div class="text-xs text-gray-400 mt-0.5">(lead + utenti, esclusi iscritti e bounce)</div>
+  </div>
+  <div class="bg-white border border-gray-200 rounded-xl p-5 text-center">
+    <div class="text-3xl font-bold text-gray-400">{{ n_gia_inviati }}</div>
+    <div class="text-xs text-gray-500 mt-1">Già notificati in passato</div>
+    <div class="text-xs text-gray-400 mt-0.5">(riceveranno di nuovo)</div>
+  </div>
+  <div class="bg-white border border-gray-200 rounded-xl p-5 text-center">
+    <div class="text-3xl font-bold text-orange-500">{{ n_gia_iscritti }}</div>
+    <div class="text-xs text-gray-500 mt-1">Iscritti al corso</div>
+    <div class="text-xs text-gray-400 mt-0.5">(esclusi automaticamente)</div>
+  </div>
+</div>
+
+<!-- Avviso -->
+<div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex gap-3">
+  <svg class="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+  </svg>
+  <div class="text-sm text-amber-800">
+    <strong>Attenzione:</strong> stai per inviare nuovamente la notifica del corso a <strong>{{ n_destinatari }} persone</strong>, incluse quelle che l'hanno già ricevuta in passato. Ogni invio viene tracciato separatamente nello storico.
+  </div>
+</div>
+
+{% if n_destinatari == 0 %}
+<div class="bg-white border border-gray-200 rounded-xl p-8 text-center text-gray-400">
+  Nessun destinatario disponibile. Tutti gli utenti con consenso marketing sono già iscritti al corso o hanno email non valida.
+</div>
+{% else %}
+<!-- Form conferma -->
+<div class="bg-white border border-gray-200 rounded-xl p-6">
+  <h2 class="font-semibold mb-4">Conferma re-invio</h2>
+  <form method="POST" onsubmit="return confirm('Confermi il re-invio della notifica a {{ n_destinatari }} destinatari?')">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="mb-4">
+      <label class="block text-sm font-medium text-gray-700 mb-1">Modalità invio</label>
+      <select name="modalita" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+        <option value="individuale">Individuale (personalizzata, con link disiscrizione)</option>
+        <option value="bcc">BCC (unica email, più veloce)</option>
+      </select>
+    </div>
+    <div class="flex gap-3">
+      <button type="submit"
+              class="bg-blue-700 text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors">
+        Conferma e invia a {{ n_destinatari }} destinatari
+      </button>
+      <a href="{{ url_for('admin.campagna_dettaglio', corso_id=corso.id) }}"
+         class="px-6 py-2.5 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">
+        Annulla
+      </a>
+    </div>
+  </form>
+</div>
+{% endif %}
+
+<!-- Storico invii precedenti -->
+{% if storico %}
+<div class="mt-6">
+  <h2 class="font-semibold text-sm text-gray-600 mb-2">Storico invii precedenti ({{ storico|length }} record)</h2>
+  <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+    <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+        <tr>
+          <th class="px-5 py-3 text-left">Email</th>
+          <th class="px-5 py-3 text-left whitespace-nowrap">Data invio</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        {% for inv in storico[:20] %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-5 py-3 font-mono text-xs">{{ inv.email }}</td>
+          <td class="px-5 py-3 text-gray-500 text-xs whitespace-nowrap">{{ format_date(inv.inviato_at) }}</td>
+        </tr>
+        {% endfor %}
+        {% if storico|length > 20 %}
+        <tr>
+          <td colspan="2" class="px-5 py-3 text-xs text-gray-400 text-center">
+            … e altri {{ storico|length - 20 }} record. <a href="{{ url_for('admin.campagna_dettaglio', corso_id=corso.id) }}" class="text-blue-600 hover:underline">Vedi tutti</a>
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

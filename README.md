@@ -30,10 +30,12 @@ Dimentica fogli Excel, email disperse e bonifici da tracciare manualmente. Con B
 
 ---
 
-## 🆕 Novità recenti (v1.6.0)
+## 🆕 Novità recenti (v1.7.0)
 
 | Funzionalità | Dettaglio |
 |---|---|
+| **Reminder scadenza prenotazione** | Email automatica ~48h prima della scadenza a chi non ha ancora caricato la ricevuta; inviato una sola volta per prenotazione |
+| **Re-invio notifica corso** | Dal dettaglio campagna è possibile re-inviare la notifica rispettando lo schema (escludi iscritti, escludi bounce, filtra tag); ogni invio tracciato separatamente |
 | **Backup ZIP completo** | Il backup include database + tutti i file caricati (attestati, ricevute, locandine, prerequisiti) in formato ZIP compresso |
 | **Ripristino backup** | Dalla lista backup, un click ripristina database e file; il sistema salva automaticamente un backup di emergenza prima di sovrascrivere |
 | **Bounce detection sincrona** | Gli indirizzi rifiutati con errore 5xx vengono marcati automaticamente come non validi e saltati negli invii futuri |

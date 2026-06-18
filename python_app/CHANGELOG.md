@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.7.0] — 2026-06-18
+
+### Nuove funzionalità
+
+- **Reminder scadenza prenotazione**: email automatica inviata ~48h prima della scadenza a chi ha una prenotazione "In attesa di pagamento" e non ha ancora caricato la ricevuta; inviata una sola volta per prenotazione tramite cron endpoint `/admin/cron/reminder-scadenza` protetto da token.
+- **Re-invio notifica corso**: dal dettaglio campagna marketing è possibile re-inviare la notifica del corso rispettando esclusione iscritti attivi, bounce e filtro tag; ogni re-invio viene tracciato separatamente nello storico con pagina di anteprima e conferma.
+
+---
+
 ## [1.6.0] — 2026-06-18
 
 ### Nuove funzionalità

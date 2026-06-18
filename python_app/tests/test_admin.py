@@ -193,3 +193,115 @@ class TestAdminBackup:
         r = client_admin.post("/admin/backup/ripristina/backup_20200101_000000.db", follow_redirects=True)
         assert r.status_code == 200
         assert b"ZIP" in r.data or b"formato" in r.data
+
+
+class TestReminderScadenza:
+    def test_cron_senza_token_403(self, client):
+        r = client.post("/admin/cron/reminder-scadenza")
+        assert r.status_code == 403
+
+    def test_cron_con_token_corretto(self, client_admin, app, db, corso, utente):
+        from datetime import datetime, timezone, timedelta
+        from app.models import Prenotazione, StatoPrenotazione
+        # Prenotazione in attesa pagamento con scadenza tra 24h
+        p = Prenotazione(
+            utente_id=utente.id,
+            corso_id=corso.id,
+            numero_posti=1,
+            stato=StatoPrenotazione.IN_ATTESA_PAGAMENTO,
+            scadenza_pagamento=datetime.now(timezone.utc) + timedelta(hours=24),
+        )
+        db.session.add(p)
+        db.session.flush()
+        secret = app.config["SECRET_KEY"]
+        r = client.post("/admin/cron/reminder-scadenza",
+                        headers={"X-Cron-Token": secret})
+        assert r.status_code == 200
+        data = r.get_json()
+        assert data["ok"] is True
+
+    def test_cron_non_invia_se_reminder_gia_inviato(self, client, app, db, corso, utente):
+        from datetime import datetime, timezone, timedelta
+        from app.models import Prenotazione, StatoPrenotazione
+        p = Prenotazione(
+            utente_id=utente.id,
+            corso_id=corso.id,
+            numero_posti=1,
+            stato=StatoPrenotazione.IN_ATTESA_PAGAMENTO,
+            scadenza_pagamento=datetime.now(timezone.utc) + timedelta(hours=24),
+            reminder_scadenza_inviato=True,
+        )
+        db.session.add(p)
+        db.session.flush()
+        secret = app.config["SECRET_KEY"]
+        r = client.post("/admin/cron/reminder-scadenza",
+                        headers={"X-Cron-Token": secret})
+        assert r.status_code == 200
+        assert r.get_json()["inviati"] == 0
+
+
+class TestCampagnaReinvia:
+    def test_pagina_reinvia_accessibile(self, client_admin, corso):
+        r = client_admin.get(f"/admin/marketing/campagna/{corso.id}/reinvia")
+        assert r.status_code == 200
+
+    def test_reinvia_non_accessibile_a_utente(self, client_utente, corso):
+        r = client_utente.get(f"/admin/marketing/campagna/{corso.id}/reinvia")
+        assert r.status_code in (302, 403)
+
+
+class TestReminderScadenza:
+    def test_cron_senza_token_403(self, client):
+        r = client.post("/admin/cron/reminder-scadenza")
+        assert r.status_code == 403
+
+    def test_cron_con_token_corretto(self, client, app, db, corso, utente):
+        from datetime import datetime, timezone, timedelta
+        from app.models import Prenotazione, StatoPrenotazione
+        p = Prenotazione(
+            utente_id=utente.id,
+            corso_id=corso.id,
+            numero_posti=1,
+            stato=StatoPrenotazione.IN_ATTESA_PAGAMENTO,
+            scadenza_pagamento=datetime.now(timezone.utc) + timedelta(hours=24),
+        )
+        db.session.add(p)
+        db.session.flush()
+        secret = app.config["SECRET_KEY"]
+        r = client.post("/admin/cron/reminder-scadenza",
+                        headers={"X-Cron-Token": secret})
+        assert r.status_code == 200
+        assert r.get_json()["ok"] is True
+
+    def test_cron_non_invia_se_reminder_gia_inviato(self, client, app, db, corso, utente):
+        from datetime import datetime, timezone, timedelta
+        from app.models import Prenotazione, StatoPrenotazione
+        p = Prenotazione(
+            utente_id=utente.id,
+            corso_id=corso.id,
+            numero_posti=1,
+            stato=StatoPrenotazione.IN_ATTESA_PAGAMENTO,
+            scadenza_pagamento=datetime.now(timezone.utc) + timedelta(hours=24),
+            reminder_scadenza_inviato=True,
+        )
+        db.session.add(p)
+        db.session.flush()
+        secret = app.config["SECRET_KEY"]
+        r = client.post("/admin/cron/reminder-scadenza",
+                        headers={"X-Cron-Token": secret})
+        assert r.status_code == 200
+        assert r.get_json()["inviati"] == 0
+
+
+class TestCampagnaReinvia:
+    def test_pagina_reinvia_accessibile(self, client_admin, db, corso):
+        r = client_admin.get(f"/admin/marketing/campagna/{corso.id}/reinvia")
+        assert r.status_code == 200
+
+    def test_reinvia_non_accessibile_a_segreteria(self, client_segreteria, db, corso):
+        r = client_segreteria.get(f"/admin/marketing/campagna/{corso.id}/reinvia")
+        assert r.status_code in (302, 403)
+
+    def test_reinvia_non_accessibile_a_utente(self, client_utente, db, corso):
+        r = client_utente.get(f"/admin/marketing/campagna/{corso.id}/reinvia")
+        assert r.status_code in (302, 403)

@@ -230,6 +230,13 @@
     <li>Gli utenti <strong>già iscritti o prenotati</strong> al corso selezionato vengono automaticamente esclusi dalla notifica.</li>
     <li>Gli indirizzi marcati come <strong>non validi</strong> (badge rosso "bounce") vengono saltati in tutti gli invii.</li>
   </ul>
+  <h3>Re-invio notifica corso</h3>
+  <ul>
+    <li>Dal dettaglio campagna clicca <strong>Re-invia notifica</strong>.</li>
+    <li>Una pagina di anteprima mostra quanti destinatari riceveranno l'email (esclusi iscritti e bounce), quanti erano già stati notificati in passato e quanti iscritti vengono esclusi.</li>
+    <li>Conferma con il dialog finale per avviare l'invio in background.</li>
+    <li>Ogni re-invio viene tracciato separatamente nello storico campagna.</li>
+  </ul>
   <h3>Gestione bounce</h3>
   <ul>
     <li>Se un'email viene rifiutata dal server di destinazione con un errore permanente (codice 5xx), l'indirizzo viene automaticamente marcato come non valido.</li>
@@ -326,6 +333,12 @@
   </ul>
   <div class="warn">Il ripristino è un'operazione irreversibile: assicurati di voler tornare allo stato del backup selezionato.</div>
   <div class="tip">Per aggiornare il software: sul server esegui <code>sudo git pull &amp;&amp; sudo bash update_python.sh</code>.</div>
+  <h3>Reminder scadenza prenotazione</h3>
+  <ul>
+    <li>Il sistema invia automaticamente un'email di reminder ~48 ore prima della scadenza a ogni utente con prenotazione <em>In attesa di pagamento</em>.</li>
+    <li>Il reminder viene inviato una sola volta per prenotazione.</li>
+    <li>Configura il cron sul server: <code>0 * * * * /opt/booking-corsi/python_app/cron_reminder.sh</code></li>
+  </ul>
 </div>
 
 <div class="man-section bg-white border border-gray-200 rounded-xl p-6">

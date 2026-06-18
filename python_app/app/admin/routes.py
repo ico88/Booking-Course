@@ -1125,6 +1125,136 @@ def campagna_reset(corso_id):
     return redirect(url_for("admin.marketing"))
 
 
+@admin_bp.route("/marketing/campagna/<corso_id>/reinvia", methods=["GET", "POST"])
+@superadmin_required
+def campagna_reinvia(corso_id):
+    from ..utils import generate_unsubscribe_token
+    import threading
+    corso = Corso.query.get_or_404(corso_id)
+    corso_tags = set(corso.tags or [])
+    secret = current_app.config.get("SECRET_KEY", "")
+
+    # Iscritti attivi al corso (esclusi da re-invio)
+    stati_attivi = [
+        StatoPrenotazione.IN_ATTESA_VALIDAZIONE,
+        StatoPrenotazione.IN_ATTESA_PAGAMENTO,
+        StatoPrenotazione.PAGAMENTO_CARICATO,
+        StatoPrenotazione.CONFERMATA,
+    ]
+    gia_iscritti = {
+        p.utente.email
+        for p in Prenotazione.query.filter(
+            Prenotazione.corso_id == corso_id,
+            Prenotazione.stato.in_(stati_attivi),
+        ).all()
+        if p.utente
+    }
+
+    class _FakeLead:
+        def __init__(self, u):
+            self.email = u.email
+            self.nome = u.nome
+            self.tags = u.tags_marketing or []
+
+    def _build_destinatari():
+        dest = []
+        seen = set()
+        for lead in LeadMarketing.query.filter_by(attivo=True, verificato=True, email_non_valida=False).all():
+            if lead.email in gia_iscritti or lead.email in seen:
+                continue
+            if corso_tags and lead.tags and not (set(lead.tags) & corso_tags):
+                continue
+            dest.append(lead)
+            seen.add(lead.email)
+        for u in Utente.query.filter_by(consenso_marketing=True, email_non_valida=False).all():
+            if u.email in gia_iscritti or u.email in seen:
+                continue
+            u_tags = set(u.tags_marketing or [])
+            if corso_tags and u_tags and not (u_tags & corso_tags):
+                continue
+            dest.append(_FakeLead(u))
+            seen.add(u.email)
+        return dest
+
+    if request.method == "GET":
+        # Mostra pagina di anteprima/conferma
+        destinatari = _build_destinatari()
+        storico = InvioMarketing.query.filter_by(corso_id=corso_id).order_by(InvioMarketing.inviato_at.desc()).all()
+        n_gia_inviati = len({r.email for r in storico})
+        return render_template(
+            "admin/marketing/campagna_reinvia.html",
+            corso=corso,
+            n_destinatari=len(destinatari),
+            n_gia_iscritti=len(gia_iscritti),
+            n_gia_inviati=n_gia_inviati,
+            storico=storico,
+        )
+
+    # POST → esegui re-invio
+    modalita = request.form.get("modalita", "individuale")
+    destinatari = _build_destinatari()
+
+    if not destinatari:
+        flash("Nessun destinatario disponibile per il re-invio.", "warning")
+        return redirect(url_for("admin.campagna_dettaglio", corso_id=corso_id))
+
+    app_obj = current_app._get_current_object()
+    corso_id_str = corso.id
+    emails_da_registrare = [d.email for d in destinatari]
+
+    def _send_all():
+        with app_obj.app_context():
+            c = Corso.query.get(corso_id_str)
+            if not c:
+                return
+            sent = 0
+            bounced = []
+            if modalita == "bcc":
+                from ..email_service import send_email_bcc, _build_marketing_html_bcc
+                html = _build_marketing_html_bcc(c)
+                bcc_list = [d.email for d in destinatari]
+                sent = send_email_bcc(bcc_list, f"Nuovo corso: {c.titolo}", html)
+            else:
+                messages = []
+                for dest in destinatari:
+                    try:
+                        token = generate_unsubscribe_token(dest.email, secret)
+                        messages.append(_build_marketing_html(dest, c, token))
+                    except Exception as e:
+                        logger.warning("Errore build marketing reinvio %s: %s", dest.email, e)
+                sent, bounced = send_email_bulk(messages)
+
+            if bounced:
+                bounced_set = set(bounced)
+                for lead in LeadMarketing.query.filter(LeadMarketing.email.in_(bounced_set)).all():
+                    lead.email_non_valida = True
+                for utente in Utente.query.filter(Utente.email.in_(bounced_set)).all():
+                    utente.email_non_valida = True
+                try:
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
+
+            sent_emails = [e for e in emails_da_registrare if e not in set(bounced)]
+            if sent > 0:
+                for email in sent_emails[:sent]:
+                    try:
+                        db.session.add(InvioMarketing(corso_id=corso_id_str, email=email))
+                    except Exception:
+                        pass
+                try:
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
+
+            logger.info("Re-invio marketing corso %s: inviati %d/%d, bounce %d",
+                        corso_id_str, sent, len(destinatari), len(bounced))
+
+    threading.Thread(target=_send_all, daemon=True).start()
+    flash(f"Re-invio avviato per {len(destinatari)} destinatari. Le email vengono inviate in background.", "success")
+    return redirect(url_for("admin.campagna_dettaglio", corso_id=corso_id))
+
+
 @admin_bp.route("/marketing/importa", methods=["POST"])
 @admin_required
 def marketing_importa():
@@ -1498,6 +1628,51 @@ def pagine_legali():
         "termini": DEFAULT_TERMINI,
     }
     return render_template("admin/pagine_legali.html", settings=settings, defaults=defaults)
+
+
+# ===========================================================================
+# CRON REMINDER SCADENZA
+# ===========================================================================
+
+@admin_bp.route("/cron/reminder-scadenza", methods=["POST"])
+def cron_reminder_scadenza():
+    """
+    Endpoint chiamato dal cron ogni ora.
+    Invia reminder a chi ha prenotazione IN_ATTESA_PAGAMENTO
+    con scadenza nelle prossime 48 ore e reminder non ancora inviato.
+    Protetto da token segreto (header X-Cron-Token).
+    """
+    token = request.headers.get("X-Cron-Token", "")
+    expected = current_app.config.get("SECRET_KEY", "")
+    if not token or token != expected:
+        abort(403)
+
+    from datetime import timedelta
+    from ..email_service import invia_email_reminder_scadenza
+
+    now = datetime.now(timezone.utc)
+    limite_sup = now + timedelta(hours=48)
+
+    prenotazioni = Prenotazione.query.filter(
+        Prenotazione.stato == StatoPrenotazione.IN_ATTESA_PAGAMENTO,
+        Prenotazione.scadenza_pagamento <= limite_sup,
+        Prenotazione.scadenza_pagamento > now,
+        Prenotazione.reminder_scadenza_inviato == False,
+    ).all()
+
+    inviati = 0
+    for p in prenotazioni:
+        try:
+            invia_email_reminder_scadenza(p)
+            p.reminder_scadenza_inviato = True
+            inviati += 1
+        except Exception as exc:
+            logger.error("Reminder scadenza prenotazione %s: %s", p.id, exc)
+    if inviati:
+        db.session.commit()
+
+    logger.info("Cron reminder scadenza: %d email inviate", inviati)
+    return {"ok": True, "inviati": inviati}, 200
 
 
 # ===========================================================================
