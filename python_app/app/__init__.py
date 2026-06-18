@@ -29,6 +29,36 @@ def create_app(config_name=None):
 
     db.init_app(app)
     migrate.init_app(app, db)
+
+    # Aggiunge colonne mancanti senza rompere DB esistenti (safe ALTER TABLE)
+    @app.before_request
+    def _auto_add_missing_columns():
+        # Eseguito una sola volta per processo
+        if getattr(_auto_add_missing_columns, "_done", False):
+            return
+        _auto_add_missing_columns._done = True
+        _safe_add_columns = [
+            ("prenotazioni", "reminder_scadenza_inviato", "INTEGER DEFAULT 0 NOT NULL"),
+            ("prenotazioni", "reminder_scadenza_inviato_at", "DATETIME"),
+            ("utenti", "email_non_valida", "INTEGER DEFAULT 0 NOT NULL"),
+            ("leads_marketing", "email_non_valida", "INTEGER DEFAULT 0 NOT NULL"),
+        ]
+        try:
+            from sqlalchemy import text, inspect
+            with db.engine.connect() as conn:
+                insp = inspect(db.engine)
+                for table, col, col_def in _safe_add_columns:
+                    try:
+                        existing = [c["name"] for c in insp.get_columns(table)]
+                        if col not in existing:
+                            conn.execute(text(f'ALTER TABLE "{table}" ADD COLUMN "{col}" {col_def}'))
+                            conn.commit()
+                            app.logger.info("Auto-migrazione: aggiunta colonna %s.%s", table, col)
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
     csrf.init_app(app)
     limiter.init_app(app)
     login_manager.init_app(app)
