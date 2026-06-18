@@ -154,6 +154,14 @@ Il file CSV deve avere le colonne: `email`, `nome` (opz.), `cognome` (opz.)
 ### Eliminare un lead
 Dalla lista dei lead, clicca **Elimina** accanto al lead.
 
+### Email non valide (bounce sincroni)
+Se il server SMTP rifiuta definitivamente una email durante un invio (es. indirizzo inesistente, dominio non esistente — errore 5xx), il sistema marca automaticamente quell'indirizzo come **non valido**:
+- Il lead o l'utente riceve il badge **bounce** in rosso accanto all'email nella lista marketing.
+- Nelle spedizioni successive quell'indirizzo viene **saltato automaticamente**.
+- Il contatore "Email non valide" in cima alla pagina Marketing mostra il totale complessivo.
+
+> **Nota**: vengono rilevati solo i bounce sincroni (rifiuto immediato durante l'invio). Bounce differiti (NDR ricevuti via IMAP) non sono gestiti automaticamente.
+
 ---
 
 ## 7. Pagamenti

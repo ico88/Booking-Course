@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.5.0] — 2026-06-18
+
+### Nuove funzionalità
+
+- **Rilevamento bounce sincroni**: quando il server SMTP rifiuta una email con codice permanente 5xx (indirizzo inesistente, casella non valida), l'indirizzo viene automaticamente marcato come "non valido" (`email_non_valida = true`) sia su `LeadMarketing` che su `Utente`.
+- **Esclusione automatica email non valide**: gli indirizzi marcati come non validi vengono esclusi dagli invii marketing futuri senza necessità di intervento manuale.
+- **Badge "bounce" in lista marketing**: nella pagina Marketing i lead e gli utenti con email non valida mostrano un badge rosso "bounce" accanto all'indirizzo.
+- **Contatore email non valide**: aggiunto un quinto riquadro statistiche nella pagina Marketing con il totale delle email non valide.
+
+---
+
 ## [1.4.0] — 2026-06-16
 
 ### Nuove funzionalità

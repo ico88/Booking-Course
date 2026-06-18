@@ -956,14 +956,14 @@ def marketing_notifica():
     # Costruisce lista destinatari (unici, non ancora notificati)
     destinatari = []
     emailed = set()
-    all_leads = LeadMarketing.query.filter_by(attivo=True, verificato=True).all()
+    all_leads = LeadMarketing.query.filter_by(attivo=True, verificato=True, email_non_valida=False).all()
     leads = [l for l in all_leads if not corso_tags or not l.tags or set(l.tags) & corso_tags]
     for lead in leads:
         if lead.email in gia_inviati:
             continue
         destinatari.append(lead)
         emailed.add(lead.email)
-    for u in Utente.query.filter_by(consenso_marketing=True).all():
+    for u in Utente.query.filter_by(consenso_marketing=True, email_non_valida=False).all():
         if u.email in emailed or u.email in gia_inviati:
             continue
         u_tags = set(u.tags_marketing or [])
@@ -988,6 +988,7 @@ def marketing_notifica():
             if not c:
                 return
             sent = 0
+            bounced = []
             if modalita == "bcc":
                 from ..email_service import send_email_bcc, _build_marketing_html_bcc
                 html = _build_marketing_html_bcc(c)
@@ -1001,11 +1002,25 @@ def marketing_notifica():
                         messages.append(_build_marketing_html(dest, c, token))
                     except Exception as e:
                         logger.warning("Errore build marketing per %s: %s", dest.email, e)
-                sent = send_email_bulk(messages)
+                sent, bounced = send_email_bulk(messages)
+
+            # Marca email con bounce permanente come non valide
+            if bounced:
+                bounced_set = set(bounced)
+                for lead in LeadMarketing.query.filter(LeadMarketing.email.in_(bounced_set)).all():
+                    lead.email_non_valida = True
+                for utente in Utente.query.filter(Utente.email.in_(bounced_set)).all():
+                    utente.email_non_valida = True
+                try:
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
+                logger.warning("Bounce permanenti corso %s: %d email marcate non valide", corso_id_str, len(bounced))
 
             # Registra invii riusciti
+            sent_emails = [e for e in emails_da_registrare if e not in set(bounced)]
             if sent > 0:
-                for email in emails_da_registrare[:sent]:
+                for email in sent_emails[:sent]:
                     try:
                         db.session.add(InvioMarketing(corso_id=corso_id_str, email=email))
                     except Exception:
@@ -1015,8 +1030,8 @@ def marketing_notifica():
                 except Exception:
                     db.session.rollback()
 
-            logger.info("Marketing corso %s (%s): inviate %d/%d email, %d già notificati",
-                        corso_id_str, modalita, sent, len(destinatari), len(gia_inviati))
+            logger.info("Marketing corso %s (%s): inviate %d/%d email, %d già notificati, %d bounce",
+                        corso_id_str, modalita, sent, len(destinatari), len(gia_inviati), len(bounced))
 
     t = threading.Thread(target=_send_all, daemon=True)
     t.start()

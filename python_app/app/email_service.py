@@ -104,13 +104,16 @@ def send_email(to: str, subject: str, html_body: str):
 
 def send_email_bulk(messages: list):
     """Invia una lista di (to, subject, html_body) su una singola connessione SMTP.
-    Riconnette automaticamente se la connessione cade."""
+    Riconnette automaticamente se la connessione cade.
+    Restituisce (sent_count, bounced_emails) dove bounced contiene gli indirizzi
+    con errore permanente 5xx (bounce sincrono)."""
     cfg = _get_smtp_config()
     if not cfg["host"] or not cfg["user"]:
         current_app.logger.warning("SMTP non configurato, invio bulk annullato.")
-        return 0
+        return 0, []
 
     sent = 0
+    bounced = []
     server = None
 
     def _connect():
@@ -119,6 +122,11 @@ def send_email_bulk(messages: list):
         s.starttls()
         s.login(cfg["user"], cfg["password"])
         return s
+
+    def _is_permanent_bounce(exc):
+        if isinstance(exc, smtplib.SMTPRecipientsRefused):
+            return any(code >= 500 for code, _msg in exc.recipients.values())
+        return False
 
     try:
         server = _connect()
@@ -131,12 +139,21 @@ def send_email_bulk(messages: list):
             try:
                 server.sendmail(cfg["from_addr"], [to], msg.as_string())
                 sent += 1
+            except smtplib.SMTPRecipientsRefused as e:
+                if _is_permanent_bounce(e):
+                    current_app.logger.warning("Bounce permanente per %s: %s", to, e)
+                    bounced.append(to)
+                else:
+                    current_app.logger.warning("Errore invio bulk a %s: %s", to, e)
             except smtplib.SMTPServerDisconnected:
-                # Riconnette e riprova una volta
                 try:
                     server = _connect()
                     server.sendmail(cfg["from_addr"], [to], msg.as_string())
                     sent += 1
+                except smtplib.SMTPRecipientsRefused as e:
+                    if _is_permanent_bounce(e):
+                        bounced.append(to)
+                    current_app.logger.warning("Errore invio bulk a %s: %s", to, e)
                 except Exception as e:
                     current_app.logger.warning("Errore invio bulk a %s: %s", to, e)
             except Exception as e:
@@ -150,7 +167,7 @@ def send_email_bulk(messages: list):
             except Exception:
                 pass
 
-    return sent
+    return sent, bounced
 
 
 # ---------------------------------------------------------------------------

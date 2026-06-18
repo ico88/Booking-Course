@@ -17,7 +17,7 @@
 </div>
 
 <!-- Stats -->
-<div class="grid grid-cols-4 gap-4 mb-6">
+<div class="grid grid-cols-5 gap-4 mb-6">
   <div class="bg-white border border-gray-200 rounded-xl p-4 text-center">
     <div class="text-2xl font-bold">{{ leads|length }}</div>
     <div class="text-xs text-gray-500 mt-1">Lead esterni</div>
@@ -33,6 +33,11 @@
   <div class="bg-white border border-gray-200 rounded-xl p-4 text-center">
     <div class="text-2xl font-bold text-purple-600">{{ utenti_marketing|length }}</div>
     <div class="text-xs text-gray-500 mt-1">Utenti registrati</div>
+  </div>
+  <div class="bg-white border border-red-200 rounded-xl p-4 text-center">
+    {% set n_bounce = (leads|selectattr('email_non_valida')|list|length) + (utenti_marketing|selectattr('email_non_valida')|list|length) %}
+    <div class="text-2xl font-bold text-red-600">{{ n_bounce }}</div>
+    <div class="text-xs text-gray-500 mt-1">Email non valide</div>
   </div>
 </div>
 
@@ -115,7 +120,10 @@
           data-tags="{{ (lead.tags or [])|join(',') }}"
           data-verificato="{{ 'true' if lead.verificato else 'false' }}"
           data-attivo="{{ 'true' if lead.attivo else 'false' }}">
-        <td class="px-5 py-3 font-mono text-xs">{{ lead.email }}</td>
+        <td class="px-5 py-3 font-mono text-xs">
+          {{ lead.email }}
+          {% if lead.email_non_valida %}<span class="ml-1 bg-red-100 text-red-700 text-xs px-1.5 py-0.5 rounded-full">bounce</span>{% endif %}
+        </td>
         <td class="px-5 py-3 text-gray-600">{{ ((lead.nome or '') + ' ' + (lead.cognome or '')).strip() or '—' }}</td>
         <td class="px-5 py-3">
           {% for tag in (lead.tags or []) %}
@@ -191,7 +199,10 @@
               <span class="font-medium">{{ u.nome_completo }}</span>
             </div>
           </td>
-          <td class="px-5 py-3 font-mono text-xs text-gray-600">{{ u.email }}</td>
+          <td class="px-5 py-3 font-mono text-xs text-gray-600">
+            {{ u.email }}
+            {% if u.email_non_valida %}<span class="ml-1 bg-red-100 text-red-700 text-xs px-1.5 py-0.5 rounded-full">bounce</span>{% endif %}
+          </td>
           <td class="px-5 py-3">
             {% if u_tags %}
               {% for slug in u_tags %}
