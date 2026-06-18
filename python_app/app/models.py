@@ -161,6 +161,7 @@ class Prenotazione(db.Model):
     attestato_emesso = db.Column(db.Boolean, default=False)
     attestato_emesso_at = db.Column(db.DateTime(timezone=True))
     reminder_scadenza_inviato = db.Column(db.Boolean, default=False, server_default="0", nullable=False)
+    reminder_scadenza_inviato_at = db.Column(db.DateTime(timezone=True))
     created_at = db.Column(db.DateTime(timezone=True), default=now_utc)
     updated_at = db.Column(db.DateTime(timezone=True), default=now_utc, onupdate=now_utc)
 

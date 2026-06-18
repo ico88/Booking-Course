@@ -1665,6 +1665,7 @@ def cron_reminder_scadenza():
         try:
             invia_email_reminder_scadenza(p)
             p.reminder_scadenza_inviato = True
+            p.reminder_scadenza_inviato_at = datetime.now(timezone.utc)
             inviati += 1
         except Exception as exc:
             logger.error("Reminder scadenza prenotazione %s: %s", p.id, exc)

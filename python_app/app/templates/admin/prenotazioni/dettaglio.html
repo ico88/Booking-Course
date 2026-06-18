@@ -223,6 +223,16 @@
       {% if p.id_transazione %}<div class="flex justify-between"><span class="text-gray-500">Transazione</span><span class="font-mono text-xs">{{ p.id_transazione }}</span></div>{% endif %}
       <div class="flex justify-between"><span class="text-gray-500">Creata</span><span>{{ format_date(p.created_at) }}</span></div>
       {% if p.scadenza_pagamento %}<div class="flex justify-between"><span class="text-gray-500">Scadenza</span><span>{{ format_date(p.scadenza_pagamento) }}</span></div>{% endif %}
+      <div class="flex justify-between items-center">
+        <span class="text-gray-500">Reminder inviato</span>
+        {% if p.reminder_scadenza_inviato_at %}
+          <span class="text-xs text-green-700 bg-green-50 px-2 py-0.5 rounded-full">{{ format_date(p.reminder_scadenza_inviato_at) }}</span>
+        {% elif p.reminder_scadenza_inviato %}
+          <span class="text-xs text-green-700 bg-green-50 px-2 py-0.5 rounded-full">Sì</span>
+        {% else %}
+          <span class="text-xs text-gray-400">Non ancora</span>
+        {% endif %}
+      </div>
     </div>
     {% if p.note %}
     <div class="bg-white border border-gray-200 rounded-xl p-5">
