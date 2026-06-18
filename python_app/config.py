@@ -70,8 +70,21 @@ class ProductionConfig(Config):
     SESSION_COOKIE_SAMESITE = "Strict"
 
 
+class TestingConfig(Config):
+    TESTING = True
+    DEBUG = True
+    # Usa file SQLite temporaneo condiviso (SQLite :memory: non è thread-safe tra richieste)
+    SQLALCHEMY_DATABASE_URI = "sqlite:////tmp/test_booking.db"
+    WTF_CSRF_ENABLED = False
+    MAIL_SUPPRESS_SEND = True
+    SESSION_COOKIE_SECURE = False
+    SESSION_COOKIE_SAMESITE = "Lax"
+    RATELIMIT_ENABLED = False
+
+
 config = {
     "development": DevelopmentConfig,
     "production": ProductionConfig,
+    "testing": TestingConfig,
     "default": DevelopmentConfig,
 }
