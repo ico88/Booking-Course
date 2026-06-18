@@ -193,10 +193,8 @@ info "Migrazione database..."
 cd "$APP_DIR"
 
 # Rimuovi migrazioni auto-generate che non fanno parte del repo (causano "multiple heads").
-# Le migrazioni valide sono quelle presenti nel git index; quelle extra vanno eliminate.
 VERSIONS_DIR="$APP_DIR/migrations/versions"
 if [[ -d "$VERSIONS_DIR" ]]; then
-  # Ottieni la lista di file tracciati da git
   TRACKED_FILES="$(git -C "$APP_DIR" ls-files migrations/versions/ 2>/dev/null | xargs -I{} basename {} 2>/dev/null || true)"
   for f in "$VERSIONS_DIR"/*.py; do
     [[ -f "$f" ]] || continue
@@ -206,6 +204,28 @@ if [[ -d "$VERSIONS_DIR" ]]; then
       rm -f "$f"
     fi
   done
+fi
+
+# Se il DB non ha ancora la tabella alembic_version (DB creato con db.create_all()
+# senza passare per flask db upgrade), esegui stamp head per allineare lo stato
+# prima di applicare le migrazioni mancanti.
+DB_PATH="$(grep '^DATABASE_URL=' "$APP_DIR/.env" 2>/dev/null | cut -d= -f2- | sed 's|sqlite:///||')"
+if [[ -f "$DB_PATH" ]]; then
+  HAS_ALEMBIC="$(python3 -c "
+import sqlite3
+try:
+    c = sqlite3.connect('$DB_PATH')
+    r = c.execute(\"SELECT name FROM sqlite_master WHERE type='table' AND name='alembic_version'\").fetchone()
+    print('1' if r else '0')
+except:
+    print('0')
+")"
+  if [[ "$HAS_ALEMBIC" == "0" ]]; then
+    info "Tabella alembic_version assente — esecuzione stamp head per allineare lo stato Alembic..."
+    sudo -u "$APP_USER" "$VENV_DIR/bin/python" -m flask --app wsgi:app db stamp head \
+      && ok "Stato Alembic allineato" \
+      || warn "flask db stamp head fallito — si procede comunque con upgrade"
+  fi
 fi
 
 sudo -u "$APP_USER" "$VENV_DIR/bin/python" -m flask --app wsgi:app db upgrade
