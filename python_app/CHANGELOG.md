@@ -1,5 +1,106 @@
 # Changelog
 
+## [1.5.0] — 2026-06-18
+
+### Nuove funzionalità
+
+- **Rilevamento bounce sincroni**: quando il server SMTP rifiuta una email con codice permanente 5xx (indirizzo inesistente, casella non valida), l'indirizzo viene automaticamente marcato come "non valido" (`email_non_valida = true`) sia su `LeadMarketing` che su `Utente`.
+- **Esclusione automatica email non valide**: gli indirizzi marcati come non validi vengono esclusi dagli invii marketing futuri senza necessità di intervento manuale.
+- **Badge "bounce" in lista marketing**: nella pagina Marketing i lead e gli utenti con email non valida mostrano un badge rosso "bounce" accanto all'indirizzo.
+- **Contatore email non valide**: aggiunto un quinto riquadro statistiche nella pagina Marketing con il totale delle email non valide.
+
+---
+
+## [1.4.0] — 2026-06-16
+
+### Nuove funzionalità
+
+- **Deduplicazione email marketing**: il sistema tiene traccia delle email già inviate per ogni corso (tabella `invii_marketing`). Reinviando una notifica, i destinatari già contattati vengono saltati automaticamente con indicazione del conteggio.
+- **Modalità CCN (BCC)**: nel modale di invio notifica è ora possibile scegliere tra invio individuale (con token disiscrizione personalizzato) e invio in CCN (un'unica email con tutti i destinatari nascosti in copia, più veloce per grandi liste).
+- **Contatore "già notificati"**: nel modale di invio, al cambio del corso selezionato appare il numero di destinatari già contattati in precedenza per quel corso.
+- **Invio email in background**: le email marketing vengono inviate in un thread separato per evitare timeout HTTP su liste grandi.
+- **Connessione SMTP condivisa**: l'invio bulk riusa la stessa connessione SMTP per tutti i messaggi (con riconnessione automatica in caso di disconnessione).
+
+### Fix
+
+- **Errore battitura** "10 postoi disponibili" → "10 posti disponibili" nella card corso in homepage.
+
+---
+
+## [1.3.0] — 2026-06-14
+
+### Nuove funzionalità
+
+- **Gestione utenti GDPR-compliant**: l'eliminazione totale è ora bloccata per utenti con prenotazioni associate. Introdotte tre azioni distinte:
+  - **Disattiva / Riattiva** — l'utente non può accedere ma i dati restano intatti (soft delete)
+  - **Anonimizza (Art. 17 GDPR)** — cancella tutti i dati personali mantenendo lo storico prenotazioni anonimizzato
+  - **Elimina** — disponibile solo per utenti senza nessuna prenotazione
+- **Badge "Disattivato"** visibile in lista utenti; righe disattivate appaiono in semitrasparenza
+- **Login bloccato per utenti disattivati** con messaggio esplicativo
+- **Favicon personalizzabile** — upload da Admin → Impostazioni → Aspetto (ICO, PNG, SVG, WebP)
+- **Immagine di sfondo hero** — upload immagine personalizzata per la homepage; sovrappone overlay scuro con testo bianco
+- **SSL / HTTPS su corsi.cricatania.it** — configurazione Let's Encrypt tramite certbot
+- **Fix permessi nginx**: le directory nel path verso `static/uploads` sono ora attraversabili da nginx (`o+x`) — risolto errore 403 sul logo e sugli upload
+
+### Fix
+
+- **Eliminazione utente con prenotazioni**: il tentativo di eliminare un utente con prenotazioni associate ora mostra un messaggio chiaro invece di fallire silenziosamente con errore di integrità referenziale
+- **Permessi static/uploads**: installazione fresca generava 403 su logo e file caricati perché `APP_DIR` aveva permessi `750`
+
+---
+
+## [1.2.0] — 2026-06-13
+
+### Nuove funzionalità
+
+- **Navbar con avatar**: sostituito il nome utente testuale con un cerchio iniziali (es. "FD") con dropdown contenente prenotazioni, dati personali, pannello admin e logout.
+- **Home pubblica riprogettata**: hero section con gradiente e colori del tema, statistiche (corsi attivi, partecipanti), carousel corsi e footer multi-colonna scuro con dati aziendali.
+- **Hero personalizzabile**: sottotitolo e testo dei due pulsanti principali editabili dal pannello admin (Aspetto → Hero).
+- **Footer con dati aziendali**: il footer pubblico mostra ragione sociale e link al sito prelevandoli dalle impostazioni.
+- **Impostazioni admin con sidebar**: pagina impostazioni completamente ridisegnata con navigazione verticale a tab (Generale, Azienda, Aspetto, Email, Pagamenti, Notifiche, Sicurezza).
+- **Tab Azienda**: nuovo tab dedicato a ragione sociale, P.IVA e indirizzo sede (usati nel footer email e nel footer pubblico).
+- **Tab Aspetto**: raggruppa logo, schema colori e editor hero in un unico posto.
+- **Cloudflare Turnstile CAPTCHA**: toggle abilitazione/disabilitazione nel tab Sicurezza, attivabile solo se le chiavi sono presenti; il widget scompare dal form di registrazione quando disabilitato.
+- **Lista corsi admin**: campo ricerca live per titolo/luogo; azioni "Modifica" e "Partecipanti" diventati pulsanti con icone.
+- **Aggiunta manuale partecipanti**: dalla pagina partecipanti di un corso è possibile aggiungere un utente cercandolo tra quelli registrati o creandone uno nuovo direttamente.
+- **Lista utenti admin**: campo ricerca live; pulsanti Modifica (con modal) ed Elimina (con conferma); avatar con iniziali colorato per ruolo.
+- **Modifica dati utente**: modal admin per modificare nome, cognome, email, telefono, CF, ruolo e password (opzionale) di qualsiasi utente.
+- **Backup con cron integrato**: è possibile configurare la pianificazione dei backup automatici direttamente dal pannello admin senza toccare il server.
+- **Email con color scheme**: l'header e i bottoni delle email seguono il tema colori impostato (blu/rosso/verde).
+- **Logo nelle email**: il logo viene incluso nelle email come URL assoluto (richiede URL App compilato nelle impostazioni).
+
+### Fix
+
+- **Test email**: la route `/impostazioni/test-email` crashava con Internal Server Error perché `_ctx()` restituiva 4 valori ma ne venivano spacchettati solo 2.
+- **Cloudflare Turnstile visibile anche se disabilitato**: il widget compariva in fase di registrazione indipendentemente dal flag di abilitazione.
+- **Salvataggio hero non funzionante**: i campi hero erano nel form del tab Aspetto ma `_TAB_KEYS` li cercava nel tab Generale.
+- **Salvataggio dati azienda**: i campi ragione_sociale, P.IVA, indirizzo non avevano un tab dedicato in `_TAB_KEYS`.
+- **Email colore fisso**: header e bottoni usavano sempre blu `#1d4ed8` ignorando il color scheme impostato.
+
+---
+
+## [1.1.0] — 2026-06-11
+
+### Nuove funzionalità
+
+- **Tag newsletter con nome e slug**: ogni tag ha un nome visualizzato per gli iscritti (es. "Corsi BLSD") e uno slug interno per il filtraggio (es. `fulld`). Gestibile da Marketing → Gestione Tag nel formato `Nome | slug`.
+- **Sidebar admin responsive**: su mobile la sidebar è nascosta di default; un pulsante hamburger nella topbar la apre come drawer con overlay. Su desktop il layout rimane invariato.
+- **Manuale utente integrato**: guida in-app accessibile da admin, segreteria e utenti, con contenuto differenziato per ruolo.
+- **Changelog e versione**: numero di versione visibile nel pannello admin; pagina changelog accessibile solo agli amministratori.
+- **Test email migliorato**: il campo destinatario è ora personalizzabile nella tab Email delle impostazioni; il redirect dopo l'invio torna correttamente alla tab Email.
+- `reset_admin.sh`: script per reimpostare la password admin da shell senza accedere all'app.
+- `uninstall_python.sh`: script per disinstallazione completa con backup opzionale del database.
+
+### Fix
+
+- **Logo su Ubuntu Server**: il logo non veniva servito correttamente da nginx quando l'app era installata sotto `/home/`. Fix: percorso salvato relativo a `static/` e risolto con `url_for('static', ...)`. Aggiornati i permessi `uploads/` a 755 con `chmod 644` esplicito su ogni file caricato.
+- **Percorso installazione**: installer e updater ora usano `/opt/booking-corsi/` come percorso raccomandato (world-traversable, nessun ACL hack necessario). Warning se si installa fuori da `/opt`.
+- **update_python.sh**: rimossa la riga `export $(grep .env | xargs)` che causava errori silenziosi; aggiunto check esplicito della presenza di `.env` con rigenerazione automatica se mancante; `APP_DIR` ora letto dal servizio systemd installato come fonte di verità.
+- **Bottoni email**: aggiunto `style` inline su tutti i `<a class="btn">` per garantire testo bianco anche in Gmail (che ignora i CSS nelle `<style>`).
+- **Preview logo nelle impostazioni**: usava il path grezzo del DB invece di `logo_url` dal context processor.
+
+---
+
 ## [1.0.0] — 2026-06-09
 
 ### Riscrittura completa in Python

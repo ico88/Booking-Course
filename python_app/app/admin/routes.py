@@ -566,30 +566,108 @@ def lead_elimina(lead_id):
 @admin_bp.route("/marketing/notifica", methods=["POST"])
 @admin_required
 def marketing_notifica():
-    corso_id = request.form.get("corso_id")
-    corso = Corso.query.get_or_404(corso_id)
-    all_leads = LeadMarketing.query.filter_by(attivo=True, verificato=True).all()
-
-    # Tag filtering: if corso has tags, send only to leads with at least one matching
-    # tag or to leads with no tags set (they receive everything)
-    corso_tags = set(corso.tags or [])
-    if corso_tags:
-        leads = [l for l in all_leads if not l.tags or set(l.tags) & corso_tags]
-    else:
-        leads = all_leads
-
-    sent = 0
-    secret = current_app.config.get("SECRET_KEY", "")
     from ..utils import generate_unsubscribe_token
+    import threading
+    corso_id = request.form.get("corso_id")
+    modalita = request.form.get("modalita", "individuale")
+    corso = Corso.query.get_or_404(corso_id)
+    secret = current_app.config.get("SECRET_KEY", "")
+    corso_tags = set(corso.tags or [])
+
+    # Email già notificate per questo corso
+    gia_inviati = {r.email for r in InvioMarketing.query.filter_by(corso_id=corso_id).all()}
+
+    class _FakeLead:
+        def __init__(self, utente):
+            self.email = utente.email
+            self.nome = utente.nome
+            self.tags = utente.tags_marketing or []
+
+    # Costruisce lista destinatari (unici, non ancora notificati)
+    destinatari = []
+    emailed = set()
+    all_leads = LeadMarketing.query.filter_by(attivo=True, verificato=True, email_non_valida=False).all()
+    leads = [l for l in all_leads if not corso_tags or not l.tags or set(l.tags) & corso_tags]
     for lead in leads:
-        try:
-            token = generate_unsubscribe_token(lead.email, secret)
-            invia_email_marketing(lead, corso, token)
-            sent += 1
-        except Exception:
-            pass
-    logger.info("Admin %s: notifica marketing per corso %s a %d lead (tag filter: %s)", current_user.email, corso.id, sent, bool(corso_tags))
-    flash(f"Notifica inviata a {sent} lead.", "success")
+        if lead.email in gia_inviati:
+            continue
+        destinatari.append(lead)
+        emailed.add(lead.email)
+    for u in Utente.query.filter_by(consenso_marketing=True, email_non_valida=False).all():
+        if u.email in emailed or u.email in gia_inviati:
+            continue
+        u_tags = set(u.tags_marketing or [])
+        if corso_tags and u_tags and not (u_tags & corso_tags):
+            continue
+        destinatari.append(_FakeLead(u))
+        emailed.add(u.email)
+
+    saltati = len(gia_inviati & (emailed | gia_inviati))
+
+    if not destinatari:
+        flash(f"Nessun nuovo destinatario: tutti ({len(gia_inviati)}) hanno già ricevuto questa notifica.", "warning")
+        return redirect(url_for("admin.marketing"))
+
+    app = current_app._get_current_object()
+    corso_id_str = corso.id
+    emails_da_registrare = [d.email for d in destinatari]
+
+    def _send_all():
+        with app.app_context():
+            c = Corso.query.get(corso_id_str)
+            if not c:
+                return
+            sent = 0
+            bounced = []
+            if modalita == "bcc":
+                from ..email_service import send_email_bcc, _build_marketing_html_bcc
+                html = _build_marketing_html_bcc(c)
+                bcc_list = [d.email for d in destinatari]
+                sent = send_email_bcc(bcc_list, f"Nuovo corso: {c.titolo}", html)
+            else:
+                messages = []
+                for dest in destinatari:
+                    try:
+                        token = generate_unsubscribe_token(dest.email, secret)
+                        messages.append(_build_marketing_html(dest, c, token))
+                    except Exception as e:
+                        logger.warning("Errore build marketing per %s: %s", dest.email, e)
+                sent, bounced = send_email_bulk(messages)
+
+            # Marca email con bounce permanente come non valide
+            if bounced:
+                bounced_set = set(bounced)
+                for lead in LeadMarketing.query.filter(LeadMarketing.email.in_(bounced_set)).all():
+                    lead.email_non_valida = True
+                for utente in Utente.query.filter(Utente.email.in_(bounced_set)).all():
+                    utente.email_non_valida = True
+                try:
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
+                logger.warning("Bounce permanenti corso %s: %d email marcate non valide", corso_id_str, len(bounced))
+
+            # Registra invii riusciti
+            sent_emails = [e for e in emails_da_registrare if e not in set(bounced)]
+            if sent > 0:
+                for email in sent_emails[:sent]:
+                    try:
+                        db.session.add(InvioMarketing(corso_id=corso_id_str, email=email))
+                    except Exception:
+                        pass
+                try:
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
+
+            logger.info("Marketing corso %s (%s): inviate %d/%d email, %d già notificati, %d bounce",
+                        corso_id_str, modalita, sent, len(destinatari), len(gia_inviati), len(bounced))
+
+    t = threading.Thread(target=_send_all, daemon=True)
+    t.start()
+
+    msg_saltati = f", {len(gia_inviati)} già notificati saltati" if gia_inviati else ""
+    flash(f"Invio avviato a {len(destinatari)} nuovi destinatari{msg_saltati}.", "success")
     return redirect(url_for("admin.marketing"))
 
 

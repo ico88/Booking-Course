@@ -17,7 +17,7 @@
 </div>
 
 <!-- Stats -->
-<div class="grid grid-cols-4 gap-4 mb-6">
+<div class="grid grid-cols-5 gap-4 mb-6">
   <div class="bg-white border border-gray-200 rounded-xl p-4 text-center">
     <div class="text-2xl font-bold">{{ leads|length }}</div>
     <div class="text-xs text-gray-500 mt-1">Lead esterni</div>
@@ -33,6 +33,11 @@
   <div class="bg-white border border-gray-200 rounded-xl p-4 text-center">
     <div class="text-2xl font-bold text-purple-600">{{ utenti_marketing|length }}</div>
     <div class="text-xs text-gray-500 mt-1">Utenti registrati</div>
+  </div>
+  <div class="bg-white border border-red-200 rounded-xl p-4 text-center">
+    {% set n_bounce = (leads|selectattr('email_non_valida')|list|length) + (utenti_marketing|selectattr('email_non_valida')|list|length) %}
+    <div class="text-2xl font-bold text-red-600">{{ n_bounce }}</div>
+    <div class="text-xs text-gray-500 mt-1">Email non valide</div>
   </div>
 </div>
 
@@ -109,7 +114,10 @@
           data-tags="{{ (lead.tags or [])|join(',') }}"
           data-verificato="{{ 'true' if lead.verificato else 'false' }}"
           data-attivo="{{ 'true' if lead.attivo else 'false' }}">
-        <td class="px-5 py-3 font-mono text-xs">{{ lead.email }}</td>
+        <td class="px-5 py-3 font-mono text-xs">
+          {{ lead.email }}
+          {% if lead.email_non_valida %}<span class="ml-1 bg-red-100 text-red-700 text-xs px-1.5 py-0.5 rounded-full">bounce</span>{% endif %}
+        </td>
         <td class="px-5 py-3 text-gray-600">{{ ((lead.nome or '') + ' ' + (lead.cognome or '')).strip() or '—' }}</td>
         <td class="px-5 py-3">
           {% for tag in (lead.tags or []) %}
@@ -152,10 +160,41 @@
       </thead>
       <tbody class="divide-y divide-gray-100">
         {% for u in utenti_marketing %}
+<<<<<<< Updated upstream
         <tr class="hover:bg-gray-50">
           <td class="px-5 py-3 font-medium">{{ u.nome_completo }}</td>
           <td class="px-5 py-3 font-mono text-xs text-gray-600">{{ u.email }}</td>
           <td class="px-5 py-3 text-gray-500">{{ u.telefono or '—' }}</td>
+=======
+        {% set parts = u.nome_completo.split() %}
+        {% set initials = (parts[0][0] ~ parts[-1][0])|upper if parts|length > 1 else u.nome[:2]|upper %}
+        {% set u_tags = u.tags_marketing or [] %}
+        <tr class="hover:bg-gray-50 utente-mkt-row"
+            data-email="{{ u.email|lower }}"
+            data-nome="{{ u.nome_completo|lower }}"
+            data-tags="{{ u_tags|join(',') }}">
+          <td class="px-5 py-3">
+            <div class="flex items-center gap-3">
+              <div class="w-7 h-7 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-xs font-bold flex-shrink-0">{{ initials }}</div>
+              <span class="font-medium">{{ u.nome_completo }}</span>
+            </div>
+          </td>
+          <td class="px-5 py-3 font-mono text-xs text-gray-600">
+            {{ u.email }}
+            {% if u.email_non_valida %}<span class="ml-1 bg-red-100 text-red-700 text-xs px-1.5 py-0.5 rounded-full">bounce</span>{% endif %}
+          </td>
+          <td class="px-5 py-3">
+            {% if u_tags %}
+              {% for slug in u_tags %}
+                {% set tag_label = namespace(v=slug) %}
+                {% for nt in newsletter_tags %}{% if nt.slug == slug %}{% set tag_label.v = nt.label %}{% endif %}{% endfor %}
+                <span class="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded mr-1 mb-1">{{ tag_label.v }}</span>
+              {% endfor %}
+            {% else %}
+              <span class="text-xs text-gray-400">Tutti</span>
+            {% endif %}
+          </td>
+>>>>>>> Stashed changes
           <td class="px-5 py-3 text-gray-400 text-xs">{{ format_date(u.data_consenso) if u.data_consenso else '—' }}</td>
         </tr>
         {% endfor %}
