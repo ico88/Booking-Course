@@ -40,7 +40,14 @@
         <tbody class="divide-y divide-gray-100">
           {% for b in backups %}
           <tr class="hover:bg-gray-50">
-            <td class="px-5 py-3 font-mono text-xs text-gray-700">{{ b.nome }}</td>
+            <td class="px-5 py-3 font-mono text-xs text-gray-700">
+              {{ b.nome }}
+              {% if b.nome.endswith('.zip') %}
+                <span class="ml-1 bg-blue-50 text-blue-600 text-xs px-1.5 py-0.5 rounded">DB + file</span>
+              {% else %}
+                <span class="ml-1 bg-gray-100 text-gray-500 text-xs px-1.5 py-0.5 rounded">solo DB</span>
+              {% endif %}
+            </td>
             <td class="px-5 py-3 text-gray-500 text-xs">{{ "%.1f"|format(b.dimensione / 1024) }} KB</td>
             <td class="px-5 py-3 text-gray-400 text-xs">{{ b.data.strftime('%d/%m/%Y %H:%M') }}</td>
             <td class="px-5 py-3">
@@ -81,8 +88,12 @@
       <h2 class="font-semibold mb-3 text-sm">Informazioni</h2>
       <div class="space-y-2 text-sm text-gray-600">
         <div>
-          <span class="text-xs text-gray-400 block">Tipo database</span>
-          SQLite
+          <span class="text-xs text-gray-400 block">Contenuto backup</span>
+          Database SQLite + tutti i file caricati (attestati, ricevute, locandine, prerequisiti)
+        </div>
+        <div>
+          <span class="text-xs text-gray-400 block">Formato</span>
+          ZIP compresso
         </div>
         <div>
           <span class="text-xs text-gray-400 block">Cartella backup</span>

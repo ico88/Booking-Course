@@ -1525,12 +1525,20 @@ def backup():
         if action == "crea":
             db_path = _sqlite_db_path()
             if db_path and os.path.exists(db_path):
-                import shutil
+                import zipfile
                 ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-                dest = os.path.join(backup_dir, f"backup_{ts}.db")
-                shutil.copy2(db_path, dest)
+                dest = os.path.join(backup_dir, f"backup_{ts}.zip")
+                upload_folder = current_app.config.get("UPLOAD_FOLDER", "")
+                with zipfile.ZipFile(dest, "w", zipfile.ZIP_DEFLATED) as zf:
+                    zf.write(db_path, "database.db")
+                    if upload_folder and os.path.isdir(upload_folder):
+                        for root, _dirs, files in os.walk(upload_folder):
+                            for fname in files:
+                                fpath = os.path.join(root, fname)
+                                arcname = os.path.join("uploads", os.path.relpath(fpath, upload_folder))
+                                zf.write(fpath, arcname)
                 logger.info("Admin %s: backup creato %s", current_user.email, dest)
-                flash("Backup creato con successo.", "success")
+                flash("Backup creato con successo (DB + uploads).", "success")
             else:
                 flash("File database non trovato.", "error")
         elif action == "elimina":
@@ -1607,12 +1615,37 @@ def _salva_cron(backup_dir: str):
 
     # Genera script di backup
     db_path = _sqlite_db_path()
+    upload_folder = current_app.config.get("UPLOAD_FOLDER", "")
     script = _backup_script_path(backup_dir)
-    script_content = f"""#!/bin/bash
-mkdir -p "{backup_dir}"
-cp "{db_path}" "{backup_dir}/backup_$(date +%Y%m%d_%H%M%S).db"
+    script_content = f"""#!/usr/bin/env python3
+import os, zipfile
+from datetime import datetime
+
+backup_dir = "{backup_dir}"
+db_path = "{db_path}"
+upload_folder = "{upload_folder}"
+os.makedirs(backup_dir, exist_ok=True)
+
+ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+dest = os.path.join(backup_dir, f"backup_{{ts}}.zip")
+
+with zipfile.ZipFile(dest, "w", zipfile.ZIP_DEFLATED) as zf:
+    if os.path.exists(db_path):
+        zf.write(db_path, "database.db")
+    if os.path.isdir(upload_folder):
+        for root, _dirs, files in os.walk(upload_folder):
+            for fname in files:
+                fpath = os.path.join(root, fname)
+                arcname = os.path.join("uploads", os.path.relpath(fpath, upload_folder))
+                zf.write(fpath, arcname)
+
 # Mantieni solo gli ultimi 30 backup
-ls -t "{backup_dir}"/backup_*.db 2>/dev/null | tail -n +31 | xargs rm -f
+zips = sorted(
+    [f for f in os.listdir(backup_dir) if f.startswith("backup_") and f.endswith(".zip")],
+    reverse=True
+)
+for old in zips[30:]:
+    os.remove(os.path.join(backup_dir, old))
 """
     with open(script, "w") as f:
         f.write(script_content)
