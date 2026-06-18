@@ -227,6 +227,14 @@
   <ul>
     <li>Clicca <strong>Invia notifica</strong>, seleziona il corso e conferma.</li>
     <li>L'email viene inviata solo ai lead con tag corrispondenti (o a tutti se il corso non ha tag).</li>
+    <li>Gli utenti <strong>già iscritti o prenotati</strong> al corso selezionato vengono automaticamente esclusi dalla notifica.</li>
+    <li>Gli indirizzi marcati come <strong>non validi</strong> (badge rosso "bounce") vengono saltati in tutti gli invii.</li>
+  </ul>
+  <h3>Gestione bounce</h3>
+  <ul>
+    <li>Se un'email viene rifiutata dal server di destinazione con un errore permanente (codice 5xx), l'indirizzo viene automaticamente marcato come non valido.</li>
+    <li>Gli indirizzi non validi appaiono con un badge rosso <em>bounce</em> nella lista lead e nella lista utenti con consenso marketing.</li>
+    <li>Il contatore <em>Email non valide</em> nella dashboard marketing mostra il totale degli indirizzi problematici.</li>
   </ul>
 </div>
 
@@ -304,9 +312,19 @@
   </ul>
   <h3>Backup</h3>
   <ul>
-    <li>Vai su <strong>Backup</strong> per scaricare una copia del database.</li>
+    <li>Vai su <strong>Backup</strong> per creare o scaricare un backup completo.</li>
+    <li>Il backup include il <strong>database</strong> e tutti i <strong>file caricati</strong> (attestati, ricevute, locandine, prerequisiti), in formato ZIP compresso.</li>
     <li>Esegui backup regolari prima di ogni aggiornamento importante.</li>
+    <li>Configura il <strong>backup automatico</strong> (giornaliero, settimanale o mensile) con la sezione <em>Backup automatico</em> nella stessa pagina.</li>
   </ul>
+  <h3>Ripristino backup</h3>
+  <ul>
+    <li>Dalla lista dei backup, clicca <strong>Ripristina</strong> accanto a un file ZIP.</li>
+    <li>Viene mostrata una finestra di conferma: il ripristino sovrascrive il database e i file correnti con quelli contenuti nel backup.</li>
+    <li>Prima di sovrascrivere, il sistema crea automaticamente un <strong>backup di emergenza</strong> del database attuale (file <code>pre_restore_*.db</code> nella cartella backup).</li>
+    <li>Il ripristino degli upload non elimina i file esistenti: aggiunge/sovrascrive quelli presenti nel ZIP.</li>
+  </ul>
+  <div class="warn">Il ripristino è un'operazione irreversibile: assicurati di voler tornare allo stato del backup selezionato.</div>
   <div class="tip">Per aggiornare il software: sul server esegui <code>sudo git pull &amp;&amp; sudo bash update_python.sh</code>.</div>
 </div>
 

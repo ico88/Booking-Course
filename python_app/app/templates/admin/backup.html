@@ -51,12 +51,23 @@
             <td class="px-5 py-3 text-gray-500 text-xs">{{ "%.1f"|format(b.dimensione / 1024) }} KB</td>
             <td class="px-5 py-3 text-gray-400 text-xs">{{ b.data.strftime('%d/%m/%Y %H:%M') }}</td>
             <td class="px-5 py-3">
-              <div class="flex items-center justify-end gap-2">
+              <div class="flex items-center justify-end gap-2 flex-wrap">
                 <a href="{{ url_for('admin.backup_scarica', filename=b.nome) }}"
                    class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-1m-4-4-4 4m0 0-4-4m4 4V4"/></svg>
                   Scarica
                 </a>
+                {% if b.nome.endswith('.zip') %}
+                <form method="POST"
+                      action="{{ url_for('admin.backup_ripristina', filename=b.nome) }}"
+                      onsubmit="return confirm('ATTENZIONE: il ripristino sovrascriverà il database e i file correnti con quelli del backup {{ b.nome }}.\n\nViene creato automaticamente un backup di emergenza del DB corrente.\n\nProcedere?')">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-md bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    Ripristina
+                  </button>
+                </form>
+                {% endif %}
                 <form method="POST" onsubmit="return confirm('Eliminare il backup {{ b.nome }}?')">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <input type="hidden" name="action" value="elimina">

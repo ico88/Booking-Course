@@ -20,13 +20,26 @@ Dimentica fogli Excel, email disperse e bonifici da tracciare manualmente. Con B
 - **Email di conferma dettagliate** — riepilogo completo del corso con date, luogo e istruzioni
 
 ### Per la segreteria e gli amministratori
-- **Pannello di controllo completo** — gestisci corsi, iscrizioni, pagamenti e utenti da un'unica interfaccia
+- **Pannello di controllo completo** — gestisci corsi, iscrizioni, pagamenti e utenti da un'unica interfaccia; ottimizzato per smartphone e tablet
 - **Gestione posti in tempo reale** — i posti si aggiornano automaticamente, niente doppie iscrizioni
 - **Workflow pagamenti guidato** — dalla prenotazione alla conferma, ogni passaggio è tracciato
 - **Attestati digitali** — genera e invia automaticamente gli attestati di partecipazione personalizzati
-- **Newsletter e marketing** — comunica con i tuoi iscritti tramite campagne email segmentate per interessi; gli indirizzi che rimbalzano con errore permanente vengono marcati automaticamente e saltati negli invii futuri
-- **Backup automatico** — il database viene salvato automaticamente, con possibilità di ripristino
+- **Newsletter e marketing intelligente** — campagne email segmentate per interessi con esclusione automatica degli iscritti al corso notificato; rilevamento bounce sincroni (errori 5xx) con marcatura automatica degli indirizzi non validi
+- **Backup completo con ripristino** — ZIP con database + tutti i file caricati (attestati, ricevute, locandine); backup automatico pianificabile; ripristino in un click con backup di emergenza automatico
 - **Gestione utenti GDPR-compliant** — disattivazione account, anonimizzazione dati personali (Art. 17), eliminazione sicura solo senza dati correlati
+
+---
+
+## 🆕 Novità recenti (v1.6.0)
+
+| Funzionalità | Dettaglio |
+|---|---|
+| **Backup ZIP completo** | Il backup include database + tutti i file caricati (attestati, ricevute, locandine, prerequisiti) in formato ZIP compresso |
+| **Ripristino backup** | Dalla lista backup, un click ripristina database e file; il sistema salva automaticamente un backup di emergenza prima di sovrascrivere |
+| **Bounce detection sincrona** | Gli indirizzi rifiutati con errore 5xx vengono marcati automaticamente come non validi e saltati negli invii futuri |
+| **Esclusione iscritti dal marketing** | Gli utenti già prenotati a un corso non ricevono la notifica marketing per quel corso |
+| **Pannello admin mobile** | Tutte le pagine del pannello admin sono ottimizzate per smartphone (tabelle scrollabili, header responsive, griglie adattive) |
+| **Suite di test automatici** | Test unitari e di integrazione coprono modelli, autenticazione, pannello admin, email e pagine pubbliche |
 
 ---
 

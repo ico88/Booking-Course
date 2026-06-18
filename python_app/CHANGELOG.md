@@ -5,6 +5,7 @@
 ### Nuove funzionalità
 
 - **Backup completo (DB + file)**: il backup ora crea uno ZIP che include il database SQLite e tutti i file caricati (attestati, ricevute di pagamento, locandine corsi, documenti prerequisiti). In precedenza veniva salvato solo il database.
+- **Ripristino backup**: dalla lista backup, il pulsante "Ripristina" riporta il sistema allo stato del backup selezionato (database + uploads). Prima di sovrascrivere viene salvato automaticamente un backup di emergenza del DB corrente (`pre_restore_*.db`).
 - **Badge tipo backup**: nella lista backup, ogni file mostra un badge che indica se contiene "DB + file" (ZIP) o "solo DB" (vecchi backup `.db`).
 - **Script cron aggiornato**: il backup automatico pianificato genera anch'esso il nuovo formato ZIP completo.
 - **Layout admin mobile**: tutte le pagine del pannello admin sono ora ottimizzate per smartphone (tabelle con scroll orizzontale, header responsive, griglie adattive).

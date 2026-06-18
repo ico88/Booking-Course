@@ -1696,6 +1696,66 @@ def backup_scarica(filename):
     return send_from_directory(backup_dir, filename, as_attachment=True)
 
 
+@admin_bp.route("/backup/ripristina/<filename>", methods=["POST"])
+@superadmin_required
+def backup_ripristina(filename):
+    if not re.match(r'^[\w\-\.]+$', filename):
+        abort(400)
+    if not filename.endswith(".zip"):
+        flash("Il ripristino è supportato solo per i backup in formato ZIP.", "error")
+        return redirect(url_for("admin.backup"))
+
+    import zipfile, shutil, tempfile
+    backup_dir = os.path.join(current_app.instance_path, "backups")
+    zip_path = os.path.join(backup_dir, filename)
+    if not os.path.isfile(zip_path):
+        abort(404)
+
+    db_path = _sqlite_db_path()
+    upload_folder = current_app.config.get("UPLOAD_FOLDER", "")
+    errors = []
+
+    try:
+        with zipfile.ZipFile(zip_path, "r") as zf:
+            names = zf.namelist()
+
+            # Ripristina database
+            if "database.db" in names and db_path:
+                # Fai prima un backup di emergenza del DB corrente
+                ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+                shutil.copy2(db_path, os.path.join(backup_dir, f"pre_restore_{ts}.db"))
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".db") as tmp:
+                    tmp.write(zf.read("database.db"))
+                    tmp_path = tmp.name
+                shutil.move(tmp_path, db_path)
+            else:
+                errors.append("database.db non trovato nel backup")
+
+            # Ripristina uploads
+            if upload_folder and os.path.isdir(upload_folder):
+                upload_entries = [n for n in names if n.startswith("uploads/")]
+                if upload_entries:
+                    for entry in upload_entries:
+                        rel = entry[len("uploads/"):]
+                        if not rel:
+                            continue
+                        dest = os.path.join(upload_folder, rel)
+                        os.makedirs(os.path.dirname(dest), exist_ok=True)
+                        with zf.open(entry) as src, open(dest, "wb") as dst:
+                            dst.write(src.read())
+
+        logger.info("Admin %s: ripristino backup %s completato", current_user.email, filename)
+        msg = "Ripristino completato con successo."
+        if errors:
+            msg += " Avvisi: " + "; ".join(errors)
+        flash(msg, "success" if not errors else "warning")
+    except Exception as exc:
+        logger.error("Errore ripristino backup %s: %s", filename, exc)
+        flash(f"Errore durante il ripristino: {exc}", "error")
+
+    return redirect(url_for("admin.backup"))
+
+
 # ===========================================================================
 # CHANGELOG
 # ===========================================================================

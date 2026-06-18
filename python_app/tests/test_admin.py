@@ -145,3 +145,51 @@ class TestAdminMarketing:
         assert r.status_code == 200
         # Nessuna email inviata — l'utente è già iscritto
         assert b"iscritti" in r.data or b"destinatari" in r.data
+
+
+class TestAdminBackup:
+    def test_pagina_backup(self, client_admin):
+        r = client_admin.get("/admin/backup")
+        assert r.status_code == 200
+
+    def test_crea_backup_zip(self, client_admin, app):
+        """Il backup deve creare un file ZIP nella cartella backups."""
+        import os, zipfile
+        r = client_admin.post("/admin/backup", data={"action": "crea"}, follow_redirects=True)
+        assert r.status_code == 200
+        backup_dir = os.path.join(app.instance_path, "backups")
+        zips = [f for f in os.listdir(backup_dir) if f.startswith("backup_") and f.endswith(".zip")]
+        assert len(zips) >= 1
+        # Il file ZIP deve contenere database.db
+        with zipfile.ZipFile(os.path.join(backup_dir, zips[0])) as zf:
+            assert "database.db" in zf.namelist()
+
+    def test_backup_non_accessibile_a_segreteria(self, client_segreteria):
+        r = client_segreteria.get("/admin/backup")
+        assert r.status_code in (403, 302)
+
+    def test_ripristino_backup(self, client_admin, app, db):
+        """Crea un backup e poi lo ripristina — deve terminare senza errori."""
+        import os, zipfile
+        # Prima crea il backup
+        client_admin.post("/admin/backup", data={"action": "crea"}, follow_redirects=True)
+        backup_dir = os.path.join(app.instance_path, "backups")
+        zips = sorted([f for f in os.listdir(backup_dir) if f.startswith("backup_") and f.endswith(".zip")])
+        assert zips, "Nessun backup ZIP trovato"
+        # Ripristina l'ultimo backup
+        r = client_admin.post(f"/admin/backup/ripristina/{zips[-1]}", follow_redirects=True)
+        assert r.status_code == 200
+        assert b"Ripristino completato" in r.data
+
+    def test_ripristino_db_non_zip_rifiutato(self, client_admin, app, db):
+        """I vecchi backup .db non devono essere ripristinabili."""
+        import os, shutil
+        backup_dir = os.path.join(app.instance_path, "backups")
+        os.makedirs(backup_dir, exist_ok=True)
+        # Crea un finto file .db
+        fake = os.path.join(backup_dir, "backup_20200101_000000.db")
+        with open(fake, "wb") as f:
+            f.write(b"SQLite format 3")
+        r = client_admin.post("/admin/backup/ripristina/backup_20200101_000000.db", follow_redirects=True)
+        assert r.status_code == 200
+        assert b"ZIP" in r.data or b"formato" in r.data
