@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Carica documento prerequisito — {{ corso.titolo }}{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto">
+
+  <a href="{{ url_for('dashboard.prenotazione_dettaglio', prenotazione_id=prenotazione.id) }}"
+     class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 mb-6 transition-colors">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+    </svg>
+    Torna alla prenotazione
+  </a>
+
+  <h1 class="text-2xl font-bold mb-2">Carica documento prerequisito</h1>
+  <p class="text-gray-600 mb-6">Corso: <strong>{{ corso.titolo }}</strong></p>
+
+  {% if corso.descrizione_prerequisito %}
+  <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+    <p class="text-sm font-semibold text-amber-800 mb-1">Istruzioni</p>
+    <p class="text-sm text-amber-700">{{ corso.descrizione_prerequisito }}</p>
+  </div>
+  {% endif %}
+
+  <form method="POST" enctype="multipart/form-data" class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div>
+      <label class="block text-sm font-medium mb-2" for="prerequisito">Documento (PDF, JPG, PNG — max 10 MB)</label>
+      <input type="file" name="prerequisito" id="prerequisito" accept=".pdf,.jpg,.jpeg,.png"
+             required
+             class="block w-full text-sm text-gray-700 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+    </div>
+
+    <button type="submit"
+            class="w-full bg-blue-700 text-white py-2.5 rounded-lg font-medium hover:bg-blue-800 transition-colors">
+      Carica documento
+    </button>
+  </form>
+
+</div>
+{% endblock %}

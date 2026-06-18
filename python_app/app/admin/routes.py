@@ -23,7 +23,7 @@ from ..models import (
 from ..email_service import (
     invia_email_conferma_prenotazione, invia_email_attestato,
     invia_email_marketing, invia_email_benvenuto, send_email_bulk,
-    _build_marketing_html,
+    _build_marketing_html, invia_email_prenotazione, invia_email_rifiuto_validazione,
 )
 from ..utils import allowed_file, safe_filename, sanitize_html, validate_email_address
 
@@ -243,6 +243,8 @@ def _corso_da_form(corso: Corso) -> Corso:
     corso.pubblicato = request.form.get("pubblicato") == "on"
     corso.attestato_abilitato = request.form.get("attestato_abilitato") == "on"
     corso.attestato_html_template = request.form.get("attestato_html_template", "").strip() or None
+    corso.validazione_preventiva = request.form.get("validazione_preventiva") == "on"
+    corso.descrizione_prerequisito = request.form.get("descrizione_prerequisito", "").strip()[:500] or None
     corso.tags = request.form.getlist("tags")[:20]
 
     for field, fmt in [("data_inizio", "%Y-%m-%dT%H:%M"), ("data_fine", "%Y-%m-%dT%H:%M")]:
@@ -432,7 +434,8 @@ def prenotazioni():
         except ValueError:
             pass
     prenotazioni = q.all()
-    return render_template("admin/prenotazioni/lista.html", prenotazioni=prenotazioni, stato_filtro=stato)
+    da_validare = Prenotazione.query.filter_by(stato=StatoPrenotazione.IN_ATTESA_VALIDAZIONE).order_by(Prenotazione.created_at.desc()).all()
+    return render_template("admin/prenotazioni/lista.html", prenotazioni=prenotazioni, stato_filtro=stato, da_validare=da_validare)
 
 
 @admin_bp.route("/prenotazioni/<string:prenotazione_id>", methods=["GET", "POST"])
@@ -471,6 +474,41 @@ def prenotazione_annulla(prenotazione_id):
     db.session.commit()
     logger.info("Admin %s: prenotazione annullata %s", current_user.email, p.id)
     flash("Prenotazione annullata.", "success")
+    return redirect(url_for("admin.prenotazione_dettaglio", prenotazione_id=p.id))
+
+
+@admin_bp.route("/prenotazioni/<string:prenotazione_id>/valida", methods=["POST"])
+@admin_required
+def prenotazione_valida(prenotazione_id):
+    p = Prenotazione.query.get_or_404(prenotazione_id)
+    p.stato = StatoPrenotazione.IN_ATTESA_PAGAMENTO
+    p.scadenza_pagamento = datetime.now(timezone.utc) + timedelta(hours=p.corso.timeout_pagamento_ore or 24)
+    db.session.commit()
+    logger.info("Admin %s: prerequisito validato per prenotazione %s", current_user.email, p.id)
+    try:
+        invia_email_prenotazione(p)
+    except Exception as exc:
+        logger.error("Errore email valida: %s", exc)
+    flash("Prerequisito approvato. L'utente riceverà le istruzioni di pagamento.", "success")
+    return redirect(url_for("admin.prenotazione_dettaglio", prenotazione_id=p.id))
+
+
+@admin_bp.route("/prenotazioni/<string:prenotazione_id>/rifiuta", methods=["POST"])
+@admin_required
+def prenotazione_rifiuta(prenotazione_id):
+    p = Prenotazione.query.get_or_404(prenotazione_id)
+    nota = request.form.get("note_rifiuto", "").strip()[:2000]
+    if p.stato not in (StatoPrenotazione.ANNULLATA, StatoPrenotazione.SCADUTA):
+        p.corso.posti_occupati = max(0, (p.corso.posti_occupati or 0) - (p.numero_posti or 1))
+    p.stato = StatoPrenotazione.ANNULLATA
+    p.note_rifiuto = nota
+    db.session.commit()
+    logger.info("Admin %s: prerequisito rifiutato per prenotazione %s", current_user.email, p.id)
+    try:
+        invia_email_rifiuto_validazione(p, nota)
+    except Exception as exc:
+        logger.error("Errore email rifiuto validazione: %s", exc)
+    flash("Prenotazione rifiutata.", "success")
     return redirect(url_for("admin.prenotazione_dettaglio", prenotazione_id=p.id))
 
 

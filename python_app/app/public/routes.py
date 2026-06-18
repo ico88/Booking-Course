@@ -1,3 +1,4 @@
+import os
 import secrets
 import hashlib
 import logging
@@ -9,7 +10,7 @@ from ..email_service import (
     invia_email_prenotazione, invia_email_conferma_prenotazione,
     invia_email_notifica_segreteria, invia_email_verifica_lead,
 )
-from ..utils import validate_email_address, verify_unsubscribe_token, validate_int_range, sanitize_html
+from ..utils import validate_email_address, verify_unsubscribe_token, validate_int_range, sanitize_html, allowed_file, safe_filename
 from .. import limiter
 
 public_bp = Blueprint("public", __name__)
@@ -99,9 +100,15 @@ def prenota(corso_id):
             return redirect(url_for("dashboard.prenotazione_dettaglio", prenotazione_id=existing.id))
 
         scadenza = datetime.now(timezone.utc) + timedelta(hours=corso.timeout_pagamento_ore or 24)
+        if corso.validazione_preventiva:
+            stato_iniziale = StatoPrenotazione.IN_ATTESA_VALIDAZIONE
+            scadenza_iniziale = None
+        else:
+            stato_iniziale = StatoPrenotazione.IN_ATTESA_PAGAMENTO
+            scadenza_iniziale = scadenza
         prenotazione = Prenotazione(
             utente_id=current_user.id, corso_id=corso_id, numero_posti=numero_posti,
-            note=note, scadenza_pagamento=scadenza, stato=StatoPrenotazione.IN_ATTESA_PAGAMENTO,
+            note=note, scadenza_pagamento=scadenza_iniziale, stato=stato_iniziale,
         )
         db.session.add(prenotazione)
         corso.posti_occupati = (corso.posti_occupati or 0) + numero_posti
@@ -147,6 +154,17 @@ def prenota(corso_id):
 
         db.session.commit()
 
+        if corso.validazione_preventiva:
+            try:
+                invia_email_notifica_segreteria(
+                    f"Nuova prenotazione (validazione richiesta) - {corso.titolo}",
+                    f"{current_user.nome_completo} ha prenotato {numero_posti} posto/i per {corso.titolo} e deve caricare il prerequisito.",
+                )
+            except Exception as exc:
+                logger.error("Errore email notifica segreteria: %s", exc)
+            flash("Prenotazione effettuata! Carica ora il documento prerequisito.", "success")
+            return redirect(url_for("public.carica_prerequisito", prenotazione_id=prenotazione.id))
+
         try:
             invia_email_prenotazione(prenotazione)
             invia_email_notifica_segreteria(
@@ -171,6 +189,47 @@ def prenota(corso_id):
             "info",
         )
     return render_template("public/prenota.html", corso=corso, prenotazione_esistente=prenotazione_esistente)
+
+
+@public_bp.route("/dashboard/prenotazioni/<string:prenotazione_id>/carica-prerequisito", methods=["GET", "POST"])
+@login_required
+def carica_prerequisito(prenotazione_id):
+    prenotazione = Prenotazione.query.get_or_404(prenotazione_id)
+    if prenotazione.utente_id != current_user.id:
+        abort(403)
+    corso = prenotazione.corso
+
+    if request.method == "POST":
+        file = request.files.get("prerequisito")
+        if not file or not file.filename:
+            flash("Nessun file selezionato.", "error")
+            return render_template("public/carica_prerequisito.html", prenotazione=prenotazione, corso=corso)
+
+        if not allowed_file(file.filename, {"pdf", "jpg", "jpeg", "png"}):
+            flash("Formato non consentito. Carica un file PDF, JPG o PNG.", "error")
+            return render_template("public/carica_prerequisito.html", prenotazione=prenotazione, corso=corso)
+
+        file.seek(0, 2)
+        size = file.tell()
+        file.seek(0)
+        if size > 10 * 1024 * 1024:
+            flash("Il file supera il limite di 10 MB.", "error")
+            return render_template("public/carica_prerequisito.html", prenotazione=prenotazione, corso=corso)
+
+        filename = safe_filename(file.filename)
+        saved_name = f"{prenotazione.id}_{filename}"
+        upload_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], "prerequisiti")
+        os.makedirs(upload_dir, exist_ok=True)
+        file.save(os.path.join(upload_dir, saved_name))
+
+        prenotazione.prerequisito_url = f"/static/uploads/prerequisiti/{saved_name}"
+        prenotazione.prerequisito_nome_file = filename
+        db.session.commit()
+
+        flash("Documento caricato con successo. La segreteria verificherà il prerequisito.", "success")
+        return redirect(url_for("dashboard.prenotazione_dettaglio", prenotazione_id=prenotazione.id))
+
+    return render_template("public/carica_prerequisito.html", prenotazione=prenotazione, corso=corso)
 
 
 @public_bp.route("/notifiche-corsi", methods=["GET", "POST"])

@@ -532,6 +532,20 @@ def invia_email_verifica_lead(lead, verifica_url: str):
     send_email(lead.email, f"Conferma la tua email - {app_name}", _html_wrapper(body, app_name, app_url, logo_url, legal, color_scheme))
 
 
+def invia_email_rifiuto_validazione(prenotazione, nota: str):
+    app_name, app_url, logo_url, legal, color_scheme = _ctx()
+    u = prenotazione.utente
+    c = prenotazione.corso
+    body = (
+        _h2("Prenotazione non confermata")
+        + _p(f"Ciao <strong>{u.nome}</strong>, la tua prenotazione per <strong>{c.titolo}</strong> non è stata confermata.")
+        + _info_box(f"<strong>Motivazione:</strong><br>{nota}")
+        + _p("Puoi contattarci per ulteriori informazioni.")
+        + _btn(f"{app_url}/corsi/{c.id}", "Vedi il corso")
+    )
+    send_email(u.email, f"Prenotazione non confermata - {c.titolo}", _html_wrapper(body, app_name, app_url, logo_url, legal, color_scheme))
+
+
 def invia_email_conferma_consenso_marketing(utente):
     app_name, app_url, logo_url, legal, color_scheme = _ctx()
     body = (

@@ -38,6 +38,7 @@ class Ruolo(str, enum.Enum):
 
 
 class StatoPrenotazione(str, enum.Enum):
+    IN_ATTESA_VALIDAZIONE = "IN_ATTESA_VALIDAZIONE"
     IN_ATTESA_PAGAMENTO = "IN_ATTESA_PAGAMENTO"
     PAGAMENTO_CARICATO = "PAGAMENTO_CARICATO"
     CONFERMATA = "CONFERMATA"
@@ -118,6 +119,8 @@ class Corso(db.Model):
     attestato_nome_file = db.Column(db.String(255))
     attestato_html_template = db.Column(db.Text)
     attestato_abilitato = db.Column(db.Boolean, default=False)
+    validazione_preventiva = db.Column(db.Boolean, default=False)
+    descrizione_prerequisito = db.Column(db.String(500))
     ultima_notifica_marketing = db.Column(db.DateTime(timezone=True))
     ultima_notifica_leads = db.Column(db.DateTime(timezone=True))
     created_at = db.Column(db.DateTime(timezone=True), default=now_utc)
@@ -150,6 +153,9 @@ class Prenotazione(db.Model):
     nome_file_contabile = db.Column(db.String(255))
     note = db.Column(db.Text)
     note_segreteria = db.Column(db.Text)
+    prerequisito_url = db.Column(db.String(500))
+    prerequisito_nome_file = db.Column(db.String(255))
+    note_rifiuto = db.Column(db.Text)
     attestato_url = db.Column(db.String(500))
     attestato_emesso = db.Column(db.Boolean, default=False)
     attestato_emesso_at = db.Column(db.DateTime(timezone=True))
@@ -167,6 +173,7 @@ class Prenotazione(db.Model):
         return 0.0
 
     STATO_LABEL = {
+        StatoPrenotazione.IN_ATTESA_VALIDAZIONE: ("In attesa di validazione", "orange"),
         StatoPrenotazione.IN_ATTESA_PAGAMENTO: ("In attesa di pagamento", "yellow"),
         StatoPrenotazione.PAGAMENTO_CARICATO: ("Pagamento caricato", "blue"),
         StatoPrenotazione.CONFERMATA: ("Confermata", "green"),

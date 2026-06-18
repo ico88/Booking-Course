@@ -122,7 +122,7 @@
           <p class="text-sm text-gray-400 mt-1">Nessun tag configurato. Aggiungili da <a href="{{ url_for('admin.marketing') }}" class="text-blue-600 hover:underline">Marketing → Tag newsletter</a>.</p>
           {% endif %}
         </div>
-        <div class="flex gap-6">
+        <div class="flex gap-6 flex-wrap">
           <label class="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" name="pubblicato" {{ 'checked' if corso and corso.pubblicato }}>
             <span class="text-sm font-medium">Pubblicato</span>
@@ -131,6 +131,19 @@
             <input type="checkbox" name="attestato_abilitato" {{ 'checked' if corso and corso.attestato_abilitato }}>
             <span class="text-sm font-medium">Attestato abilitato</span>
           </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" name="validazione_preventiva" id="check-val-prev" {{ 'checked' if corso and corso.validazione_preventiva }}>
+            <span class="text-sm font-medium">Validazione prerequisito</span>
+          </label>
+        </div>
+        <div id="prerequisito-box" class="{{ '' if corso and corso.validazione_preventiva else 'hidden' }}">
+          <label class="block text-sm font-medium mb-1">Descrizione prerequisito
+            <span class="text-gray-400 font-normal text-xs ml-1">— istruzioni mostrate all'utente al momento dell'iscrizione</span>
+          </label>
+          <input type="text" name="descrizione_prerequisito" maxlength="500"
+                 value="{{ corso.descrizione_prerequisito if corso and corso.descrizione_prerequisito else '' }}"
+                 placeholder="es. Carica copia del patentino o del diploma richiesto"
+                 class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 text-sm">
         </div>
         <div id="attestato-template-box" class="{{ '' if corso and corso.attestato_abilitato else 'hidden' }}">
           <label class="block text-sm font-medium mb-1">Template HTML attestato
@@ -214,6 +227,15 @@ const templateBox = document.getElementById('attestato-template-box');
 if (attestatoCheck && templateBox) {
   attestatoCheck.addEventListener('change', () => {
     templateBox.classList.toggle('hidden', !attestatoCheck.checked);
+  });
+}
+
+// Show/hide prerequisito description box
+const valPrevCheck = document.getElementById('check-val-prev');
+const prerequisitoBox = document.getElementById('prerequisito-box');
+if (valPrevCheck && prerequisitoBox) {
+  valPrevCheck.addEventListener('change', () => {
+    prerequisitoBox.classList.toggle('hidden', !valPrevCheck.checked);
   });
 }
 
