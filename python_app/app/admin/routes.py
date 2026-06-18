@@ -953,18 +953,34 @@ def marketing_notifica():
             self.nome = utente.nome
             self.tags = utente.tags_marketing or []
 
-    # Costruisce lista destinatari (unici, non ancora notificati)
+    # Utenti già iscritti/prenotati a questo corso (esclusi ANNULLATA e SCADUTA)
+    stati_attivi = [
+        StatoPrenotazione.IN_ATTESA_VALIDAZIONE,
+        StatoPrenotazione.IN_ATTESA_PAGAMENTO,
+        StatoPrenotazione.PAGAMENTO_CARICATO,
+        StatoPrenotazione.CONFERMATA,
+    ]
+    gia_iscritti = {
+        p.utente.email
+        for p in Prenotazione.query.filter(
+            Prenotazione.corso_id == corso_id,
+            Prenotazione.stato.in_(stati_attivi),
+        ).all()
+        if p.utente
+    }
+
+    # Costruisce lista destinatari (unici, non già notificati, non già iscritti)
     destinatari = []
     emailed = set()
     all_leads = LeadMarketing.query.filter_by(attivo=True, verificato=True, email_non_valida=False).all()
     leads = [l for l in all_leads if not corso_tags or not l.tags or set(l.tags) & corso_tags]
     for lead in leads:
-        if lead.email in gia_inviati:
+        if lead.email in gia_inviati or lead.email in gia_iscritti:
             continue
         destinatari.append(lead)
         emailed.add(lead.email)
     for u in Utente.query.filter_by(consenso_marketing=True, email_non_valida=False).all():
-        if u.email in emailed or u.email in gia_inviati:
+        if u.email in emailed or u.email in gia_inviati or u.email in gia_iscritti:
             continue
         u_tags = set(u.tags_marketing or [])
         if corso_tags and u_tags and not (u_tags & corso_tags):
@@ -975,7 +991,13 @@ def marketing_notifica():
     saltati = len(gia_inviati & (emailed | gia_inviati))
 
     if not destinatari:
-        flash(f"Nessun nuovo destinatario: tutti ({len(gia_inviati)}) hanno già ricevuto questa notifica.", "warning")
+        motivi = []
+        if gia_inviati:
+            motivi.append(f"{len(gia_inviati)} già notificati")
+        if gia_iscritti:
+            motivi.append(f"{len(gia_iscritti)} già iscritti al corso")
+        motivi_str = ", ".join(motivi) if motivi else "nessun destinatario disponibile"
+        flash(f"Nessun nuovo destinatario da contattare ({motivi_str}).", "warning")
         return redirect(url_for("admin.marketing"))
 
     app = current_app._get_current_object()
@@ -1036,8 +1058,13 @@ def marketing_notifica():
     t = threading.Thread(target=_send_all, daemon=True)
     t.start()
 
-    msg_saltati = f", {len(gia_inviati)} già notificati saltati" if gia_inviati else ""
-    flash(f"Invio avviato a {len(destinatari)} nuovi destinatari{msg_saltati}.", "success")
+    parti = []
+    if gia_inviati:
+        parti.append(f"{len(gia_inviati)} già notificati")
+    if gia_iscritti:
+        parti.append(f"{len(gia_iscritti)} già iscritti al corso")
+    msg_saltati = f" ({', '.join(parti)} saltati)" if parti else ""
+    flash(f"Invio avviato a {len(destinatari)} destinatari{msg_saltati}.", "success")
     return redirect(url_for("admin.marketing"))
 
 

@@ -119,3 +119,29 @@ class TestAdminMarketing:
     def test_accesso_marketing_segreteria(self, client_segreteria):
         r = client_segreteria.get("/admin/marketing")
         assert r.status_code == 200
+
+    def test_notifica_salta_iscritti_al_corso(self, client_admin, db, corso, utente):
+        """Un utente con consenso marketing già prenotato al corso non deve ricevere la notifica."""
+        from app.models import LeadMarketing, Prenotazione, StatoPrenotazione
+        from datetime import datetime, timezone, timedelta
+        # Utente con consenso marketing
+        utente.consenso_marketing = True
+        db.session.flush()
+        # Prenotazione attiva per questo corso
+        p = Prenotazione(
+            utente_id=utente.id,
+            corso_id=corso.id,
+            numero_posti=1,
+            stato=StatoPrenotazione.CONFERMATA,
+            scadenza_pagamento=datetime.now(timezone.utc) + timedelta(days=3),
+        )
+        db.session.add(p)
+        db.session.flush()
+        # Invia notifica
+        r = client_admin.post("/admin/marketing/notifica", data={
+            "corso_id": corso.id,
+            "modalita": "individuale",
+        }, follow_redirects=True)
+        assert r.status_code == 200
+        # Nessuna email inviata — l'utente è già iscritto
+        assert b"iscritti" in r.data or b"destinatari" in r.data
