@@ -2,9 +2,9 @@
 {% block title %}Marketing Leads{% endblock %}
 
 {% block admin_content %}
-<div class="flex items-center justify-between mb-6">
-  <h1 class="text-2xl font-bold">Marketing Leads</h1>
-  <div class="flex gap-2">
+<div class="flex flex-wrap items-center gap-3 mb-6">
+  <h1 class="text-2xl font-bold flex-1 min-w-0">Marketing Leads</h1>
+  <div class="flex gap-2 shrink-0">
     <label class="bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg text-sm cursor-pointer font-medium">
       Importa CSV
       <input type="file" class="hidden" id="csv-input" accept=".csv" onchange="importCsv(this)">
@@ -17,7 +17,7 @@
 </div>
 
 <!-- Stats -->
-<div class="grid grid-cols-5 gap-4 mb-6">
+<div class="grid grid-cols-3 sm:grid-cols-5 gap-3 mb-6">
   <div class="bg-white border border-gray-200 rounded-xl p-4 text-center">
     <div class="text-2xl font-bold">{{ leads|length }}</div>
     <div class="text-xs text-gray-500 mt-1">Lead esterni</div>
@@ -41,27 +41,29 @@
   </div>
 </div>
 
-<!-- Tab selector -->
-<div class="flex gap-1 mb-4 bg-gray-100 rounded-xl p-1 w-fit">
-  <button id="tab-lead" onclick="switchTab('lead')"
-          class="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-white text-gray-900 shadow-sm">
-    Lead esterni
-  </button>
-  <button id="tab-utenti" onclick="switchTab('utenti')"
-          class="px-4 py-2 rounded-lg text-sm font-medium transition-colors text-gray-600 hover:text-gray-900">
-    Utenti con consenso marketing
-    {% if utenti_marketing %}<span class="ml-1 bg-purple-100 text-purple-700 text-xs px-1.5 py-0.5 rounded-full">{{ utenti_marketing|length }}</span>{% endif %}
-  </button>
-  <button id="tab-campagne" onclick="switchTab('campagne')"
-          class="px-4 py-2 rounded-lg text-sm font-medium transition-colors text-gray-600 hover:text-gray-900">
-    Campagne
-  </button>
-  {% if current_user.ruolo.value == 'ADMIN' %}
-  <button id="tab-tags" onclick="switchTab('tags')"
-          class="px-4 py-2 rounded-lg text-sm font-medium transition-colors text-gray-600 hover:text-gray-900">
-    Gestione Tag
-  </button>
-  {% endif %}
+<!-- Tab selector: scorribile orizzontalmente su mobile -->
+<div class="mb-4 overflow-x-auto">
+  <div class="flex gap-1 bg-gray-100 rounded-xl p-1 w-max min-w-full">
+    <button id="tab-lead" onclick="switchTab('lead')"
+            class="px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap bg-white text-gray-900 shadow-sm">
+      Lead esterni
+    </button>
+    <button id="tab-utenti" onclick="switchTab('utenti')"
+            class="px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap text-gray-600 hover:text-gray-900">
+      Utenti
+      {% if utenti_marketing %}<span class="ml-1 bg-purple-100 text-purple-700 text-xs px-1.5 py-0.5 rounded-full">{{ utenti_marketing|length }}</span>{% endif %}
+    </button>
+    <button id="tab-campagne" onclick="switchTab('campagne')"
+            class="px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap text-gray-600 hover:text-gray-900">
+      Campagne
+    </button>
+    {% if current_user.ruolo.value == 'ADMIN' %}
+    <button id="tab-tags" onclick="switchTab('tags')"
+            class="px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap text-gray-600 hover:text-gray-900">
+      Tag
+    </button>
+    {% endif %}
+  </div>
 </div>
 
 <!-- Pannello lead esterni -->
@@ -100,16 +102,17 @@
 </div>
 
 <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+  <div class="overflow-x-auto">
   <table class="w-full text-sm" id="leads-table">
     <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
       <tr>
-        <th class="px-5 py-3 text-left">Email</th>
-        <th class="px-5 py-3 text-left">Nome e cognome</th>
-        <th class="px-5 py-3 text-left">Tag</th>
-        <th class="px-5 py-3 text-left">Verificato</th>
-        <th class="px-5 py-3 text-left">Attivo</th>
-        <th class="px-5 py-3 text-left">Iscritto</th>
-        <th class="px-5 py-3"></th>
+        <th class="px-4 py-3 text-left">Email</th>
+        <th class="px-4 py-3 text-left hidden sm:table-cell">Nome</th>
+        <th class="px-4 py-3 text-left hidden md:table-cell">Tag</th>
+        <th class="px-4 py-3 text-left hidden md:table-cell">Verif.</th>
+        <th class="px-4 py-3 text-left hidden lg:table-cell">Attivo</th>
+        <th class="px-4 py-3 text-left hidden lg:table-cell">Iscritto</th>
+        <th class="px-4 py-3"></th>
       </tr>
     </thead>
     <tbody class="divide-y divide-gray-100" id="leads-tbody">
@@ -120,24 +123,24 @@
           data-tags="{{ (lead.tags or [])|join(',') }}"
           data-verificato="{{ 'true' if lead.verificato else 'false' }}"
           data-attivo="{{ 'true' if lead.attivo else 'false' }}">
-        <td class="px-5 py-3 font-mono text-xs">
+        <td class="px-4 py-3 font-mono text-xs max-w-[200px] truncate">
           {{ lead.email }}
           {% if lead.email_non_valida %}<span class="ml-1 bg-red-100 text-red-700 text-xs px-1.5 py-0.5 rounded-full">bounce</span>{% endif %}
         </td>
-        <td class="px-5 py-3 text-gray-600">{{ ((lead.nome or '') + ' ' + (lead.cognome or '')).strip() or '—' }}</td>
-        <td class="px-5 py-3">
+        <td class="px-4 py-3 text-gray-600 hidden sm:table-cell">{{ ((lead.nome or '') + ' ' + (lead.cognome or '')).strip() or '—' }}</td>
+        <td class="px-4 py-3 hidden md:table-cell">
           {% for tag in (lead.tags or []) %}
           <span class="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded mr-1">{{ tag }}</span>
           {% endfor %}
         </td>
-        <td class="px-5 py-3">
-          <span class="text-{{ 'green' if lead.verificato else 'gray' }}-600 text-xs font-medium">{{ '✓ Sì' if lead.verificato else '✗ No' }}</span>
+        <td class="px-4 py-3 hidden md:table-cell">
+          <span class="text-{{ 'green' if lead.verificato else 'gray' }}-600 text-xs font-medium">{{ '✓' if lead.verificato else '✗' }}</span>
         </td>
-        <td class="px-5 py-3">
+        <td class="px-4 py-3 hidden lg:table-cell">
           <span class="text-{{ 'green' if lead.attivo else 'red' }}-600 text-xs font-medium">{{ 'Sì' if lead.attivo else 'No' }}</span>
         </td>
-        <td class="px-5 py-3 text-gray-400 text-xs">{{ format_date(lead.created_at) }}</td>
-        <td class="px-5 py-3">
+        <td class="px-4 py-3 text-gray-400 text-xs hidden lg:table-cell">{{ format_date(lead.created_at) }}</td>
+        <td class="px-4 py-3">
           <form method="POST" action="{{ url_for('admin.lead_elimina', lead_id=lead.id) }}" onsubmit="return confirm('Eliminare?')">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button class="text-red-500 hover:text-red-700 text-xs">Elimina</button>
@@ -147,6 +150,7 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>{# end overflow-x-auto #}
   <div id="no-results" class="hidden px-5 py-8 text-center text-gray-400 text-sm">Nessun lead trovato con i filtri selezionati.</div>
 </div>
 </div>{# end panel-lead #}
@@ -175,13 +179,14 @@
 
   <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
     {% if utenti_marketing %}
+    <div class="overflow-x-auto">
     <table class="w-full text-sm">
       <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
         <tr>
           <th class="px-5 py-3 text-left">Utente</th>
-          <th class="px-5 py-3 text-left">Email</th>
-          <th class="px-5 py-3 text-left">Tag interessi</th>
-          <th class="px-5 py-3 text-left">Consenso dal</th>
+          <th class="px-5 py-3 text-left hidden sm:table-cell">Email</th>
+          <th class="px-5 py-3 text-left hidden md:table-cell">Tag interessi</th>
+          <th class="px-5 py-3 text-left hidden lg:table-cell">Consenso dal</th>
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-100" id="utenti-tbody">
@@ -199,11 +204,11 @@
               <span class="font-medium">{{ u.nome_completo }}</span>
             </div>
           </td>
-          <td class="px-5 py-3 font-mono text-xs text-gray-600">
+          <td class="px-5 py-3 font-mono text-xs text-gray-600 hidden sm:table-cell max-w-[200px] truncate">
             {{ u.email }}
             {% if u.email_non_valida %}<span class="ml-1 bg-red-100 text-red-700 text-xs px-1.5 py-0.5 rounded-full">bounce</span>{% endif %}
           </td>
-          <td class="px-5 py-3">
+          <td class="px-5 py-3 hidden md:table-cell">
             {% if u_tags %}
               {% for slug in u_tags %}
                 {% set tag_label = namespace(v=slug) %}
@@ -214,11 +219,12 @@
               <span class="text-xs text-gray-400">Tutti</span>
             {% endif %}
           </td>
-          <td class="px-5 py-3 text-gray-400 text-xs">{{ format_date(u.data_consenso) if u.data_consenso else '—' }}</td>
+          <td class="px-5 py-3 text-gray-400 text-xs hidden lg:table-cell">{{ format_date(u.data_consenso) if u.data_consenso else '—' }}</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
+    </div>
     <div id="u-no-results" class="hidden px-5 py-8 text-center text-gray-400 text-sm">Nessun utente trovato.</div>
     {% else %}
     <div class="px-5 py-12 text-center text-gray-400 text-sm">
@@ -233,12 +239,13 @@
 <div id="panel-campagne" class="hidden">
   <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
     {% if campagne %}
+    <div class="overflow-x-auto">
     <table class="w-full text-sm">
       <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
         <tr>
           <th class="px-5 py-3 text-left">Corso</th>
-          <th class="px-5 py-3 text-left">Ultima notifica</th>
-          <th class="px-5 py-3 text-center">Email inviate</th>
+          <th class="px-5 py-3 text-left hidden sm:table-cell">Ultima notifica</th>
+          <th class="px-5 py-3 text-center hidden sm:table-cell">Email inviate</th>
           <th class="px-5 py-3"></th>
         </tr>
       </thead>
@@ -246,8 +253,8 @@
         {% for c in campagne %}
         <tr class="hover:bg-gray-50">
           <td class="px-5 py-3 font-medium">{{ c.titolo }}</td>
-          <td class="px-5 py-3 text-gray-500 text-xs">{{ format_date(c.ultima_notifica) if c.ultima_notifica else '—' }}</td>
-          <td class="px-5 py-3 text-center">
+          <td class="px-5 py-3 text-gray-500 text-xs hidden sm:table-cell">{{ format_date(c.ultima_notifica) if c.ultima_notifica else '—' }}</td>
+          <td class="px-5 py-3 text-center hidden sm:table-cell">
             <span class="inline-block bg-blue-50 text-blue-700 text-xs font-semibold px-2 py-0.5 rounded-full">{{ c.n_inviati }}</span>
           </td>
           <td class="px-5 py-3 text-right">
@@ -258,6 +265,7 @@
         {% endfor %}
       </tbody>
     </table>
+    </div>
     {% else %}
     <div class="px-5 py-12 text-center text-gray-400 text-sm">
       Nessuna campagna inviata ancora. Usa il pulsante "Invia notifica" per avviare la prima.
