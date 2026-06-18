@@ -2,37 +2,39 @@
 {% block title %}Campagna — {{ corso.titolo }}{% endblock %}
 
 {% block admin_content %}
-<div class="flex items-center justify-between mb-6">
-  <div>
+<div class="flex flex-wrap items-start justify-between gap-3 mb-6">
+  <div class="flex-1 min-w-0">
     <a href="{{ url_for('admin.marketing') }}?tab=campagne"
        class="text-sm text-gray-500 hover:text-gray-800 flex items-center gap-1 mb-1">
       ← Torna alle campagne
     </a>
-    <h1 class="text-2xl font-bold">Campagna: {{ corso.titolo }}</h1>
+    <h1 class="text-2xl font-bold break-words">Campagna: {{ corso.titolo }}</h1>
   </div>
   {% if invii %}
+  <div class="shrink-0">
   <form method="POST" action="{{ url_for('admin.campagna_reset', corso_id=corso.id) }}"
         onsubmit="return confirm('Eliminare tutti i {{ invii|length }} record di invio per questo corso? Il prossimo invio ripartirà da zero.')">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <button class="bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 px-4 py-2 rounded-lg text-sm font-medium">
+    <button class="bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap">
       Reset campagna
     </button>
   </form>
+  </div>
   {% endif %}
 </div>
 
 <!-- Stats -->
-<div class="grid grid-cols-3 gap-4 mb-6">
+<div class="grid grid-cols-3 gap-3 mb-6">
   <div class="bg-white border border-gray-200 rounded-xl p-4 text-center">
     <div class="text-2xl font-bold text-blue-600">{{ invii|length }}</div>
     <div class="text-xs text-gray-500 mt-1">Email inviate totali</div>
   </div>
   <div class="bg-white border border-gray-200 rounded-xl p-4 text-center">
-    <div class="text-2xl font-bold">{{ prima_notifica }}</div>
+    <div class="text-lg font-bold leading-tight">{{ prima_notifica }}</div>
     <div class="text-xs text-gray-500 mt-1">Prima notifica</div>
   </div>
   <div class="bg-white border border-gray-200 rounded-xl p-4 text-center">
-    <div class="text-2xl font-bold">{{ ultima_notifica }}</div>
+    <div class="text-lg font-bold leading-tight">{{ ultima_notifica }}</div>
     <div class="text-xs text-gray-500 mt-1">Ultima notifica</div>
   </div>
 </div>
@@ -47,22 +49,24 @@
            class="w-full max-w-xs border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500">
     <span class="ml-3 text-xs text-gray-400" id="invii-count">{{ invii|length }} destinatari</span>
   </div>
+  <div class="overflow-x-auto">
   <table class="w-full text-sm" id="invii-table">
     <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
       <tr>
         <th class="px-5 py-3 text-left">Email</th>
-        <th class="px-5 py-3 text-left">Data invio</th>
+        <th class="px-5 py-3 text-left whitespace-nowrap">Data invio</th>
       </tr>
     </thead>
     <tbody class="divide-y divide-gray-100" id="invii-tbody">
       {% for inv in invii %}
       <tr class="hover:bg-gray-50 inv-row" data-email="{{ inv.email|lower }}">
-        <td class="px-5 py-3 font-mono text-xs">{{ inv.email }}</td>
-        <td class="px-5 py-3 text-gray-500 text-xs">{{ format_date(inv.inviato_at) }}</td>
+        <td class="px-5 py-3 font-mono text-xs break-all">{{ inv.email }}</td>
+        <td class="px-5 py-3 text-gray-500 text-xs whitespace-nowrap">{{ format_date(inv.inviato_at) }}</td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
+  </div>
   <div id="invii-noresults" class="hidden px-5 py-8 text-center text-gray-400 text-sm">Nessun risultato.</div>
   {% else %}
   <div class="px-5 py-12 text-center text-gray-400 text-sm">
