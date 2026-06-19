@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 import bcrypt
-from sqlalchemy import event
+from sqlalchemy import event, types
 from sqlalchemy.engine import Engine
 import sqlite3
 
@@ -25,6 +25,35 @@ def gen_id():
 
 def now_utc():
     return datetime.now(timezone.utc)
+
+
+class TZDateTime(types.TypeDecorator):
+    """DateTime che funziona correttamente sia con SQLite (naive) che con altri DB (aware)."""
+    impl = types.DateTime
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
+        if isinstance(value, datetime):
+            # Converte in naive UTC per SQLite
+            if value.tzinfo is not None:
+                value = value.astimezone(timezone.utc).replace(tzinfo=None)
+            return value
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return None
+        if isinstance(value, str):
+            try:
+                value = datetime.fromisoformat(value)
+            except (ValueError, TypeError):
+                return None
+        # Aggiunge UTC se naive
+        if isinstance(value, datetime) and value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value
 
 
 # ---------------------------------------------------------------------------
@@ -67,17 +96,17 @@ class Utente(UserMixin, db.Model):
     codice_fiscale = db.Column(db.String(20))
     password_hash = db.Column(db.String(255))
     ruolo = db.Column(db.Enum(Ruolo), nullable=False, default=Ruolo.UTENTE)
-    email_verificata = db.Column(db.DateTime(timezone=True))
+    email_verificata = db.Column(TZDateTime)
     token_reset = db.Column(db.String(255))
-    scadenza_token = db.Column(db.DateTime(timezone=True))
+    scadenza_token = db.Column(TZDateTime)
     consenso_privacy = db.Column(db.Boolean, default=False)
     consenso_marketing = db.Column(db.Boolean, default=False)
     email_non_valida = db.Column(db.Boolean, default=False, server_default="0", nullable=False)
     tags_marketing = db.Column(db.JSON, default=list)
-    data_consenso = db.Column(db.DateTime(timezone=True))
+    data_consenso = db.Column(TZDateTime)
     attivo = db.Column(db.Boolean, default=True, server_default="1", nullable=False)
-    created_at = db.Column(db.DateTime(timezone=True), default=now_utc)
-    updated_at = db.Column(db.DateTime(timezone=True), default=now_utc, onupdate=now_utc)
+    created_at = db.Column(TZDateTime, default=now_utc)
+    updated_at = db.Column(TZDateTime, default=now_utc, onupdate=now_utc)
 
     prenotazioni = db.relationship("Prenotazione", back_populates="utente", lazy="dynamic")
 
@@ -103,8 +132,8 @@ class Corso(db.Model):
     id = db.Column(db.String, primary_key=True, default=gen_id)
     titolo = db.Column(db.String(255), nullable=False)
     descrizione = db.Column(db.Text)
-    data_inizio = db.Column(db.DateTime(timezone=True))
-    data_fine = db.Column(db.DateTime(timezone=True))
+    data_inizio = db.Column(TZDateTime)
+    data_fine = db.Column(TZDateTime)
     orario = db.Column(db.String(100))
     durata = db.Column(db.String(100))
     luogo = db.Column(db.String(255))
@@ -122,10 +151,10 @@ class Corso(db.Model):
     attestato_abilitato = db.Column(db.Boolean, default=False)
     validazione_preventiva = db.Column(db.Boolean, default=False)
     descrizione_prerequisito = db.Column(db.String(500))
-    ultima_notifica_marketing = db.Column(db.DateTime(timezone=True))
-    ultima_notifica_leads = db.Column(db.DateTime(timezone=True))
-    created_at = db.Column(db.DateTime(timezone=True), default=now_utc)
-    updated_at = db.Column(db.DateTime(timezone=True), default=now_utc, onupdate=now_utc)
+    ultima_notifica_marketing = db.Column(TZDateTime)
+    ultima_notifica_leads = db.Column(TZDateTime)
+    created_at = db.Column(TZDateTime, default=now_utc)
+    updated_at = db.Column(TZDateTime, default=now_utc, onupdate=now_utc)
 
     prenotazioni = db.relationship("Prenotazione", back_populates="corso", lazy="dynamic")
     materiali = db.relationship("MaterialeDidattico", secondary="corso_materiale", back_populates="corsi")
@@ -147,7 +176,7 @@ class Prenotazione(db.Model):
     corso_id = db.Column(db.String, db.ForeignKey("corsi.id", ondelete="CASCADE"), nullable=False)
     numero_posti = db.Column(db.Integer, default=1)
     stato = db.Column(db.Enum(StatoPrenotazione), default=StatoPrenotazione.IN_ATTESA_PAGAMENTO)
-    scadenza_pagamento = db.Column(db.DateTime(timezone=True))
+    scadenza_pagamento = db.Column(TZDateTime)
     metodo_pagamento = db.Column(db.Enum(MetodoPagamento))
     id_transazione = db.Column(db.String(255))
     importo_pagato = db.Column(db.Numeric(10, 2))
@@ -160,11 +189,11 @@ class Prenotazione(db.Model):
     note_rifiuto = db.Column(db.Text)
     attestato_url = db.Column(db.String(500))
     attestato_emesso = db.Column(db.Boolean, default=False)
-    attestato_emesso_at = db.Column(db.DateTime(timezone=True))
+    attestato_emesso_at = db.Column(TZDateTime)
     reminder_scadenza_inviato = db.Column(db.Boolean, default=False, server_default="0", nullable=False)
-    reminder_scadenza_inviato_at = db.Column(db.DateTime(timezone=True))
-    created_at = db.Column(db.DateTime(timezone=True), default=now_utc)
-    updated_at = db.Column(db.DateTime(timezone=True), default=now_utc, onupdate=now_utc)
+    reminder_scadenza_inviato_at = db.Column(TZDateTime)
+    created_at = db.Column(TZDateTime, default=now_utc)
+    updated_at = db.Column(TZDateTime, default=now_utc, onupdate=now_utc)
 
     utente = db.relationship("Utente", back_populates="prenotazioni")
     corso = db.relationship("Corso", back_populates="prenotazioni")
@@ -215,8 +244,8 @@ class Impostazione(db.Model):
     chiave = db.Column(db.String(100), unique=True, nullable=False, index=True)
     valore = db.Column(db.Text)
     gruppo = db.Column(db.String(50))
-    created_at = db.Column(db.DateTime(timezone=True), default=now_utc)
-    updated_at = db.Column(db.DateTime(timezone=True), default=now_utc, onupdate=now_utc)
+    created_at = db.Column(TZDateTime, default=now_utc)
+    updated_at = db.Column(TZDateTime, default=now_utc, onupdate=now_utc)
 
     @classmethod
     def get(cls, chiave: str, default=None):
@@ -244,12 +273,12 @@ class LeadMarketing(db.Model):
     tags = db.Column(db.JSON, default=list)
     verificato = db.Column(db.Boolean, default=False)
     token_verifica = db.Column(db.String(255))
-    token_scadenza = db.Column(db.DateTime(timezone=True))
+    token_scadenza = db.Column(TZDateTime)
     attivo = db.Column(db.Boolean, default=True)
     email_non_valida = db.Column(db.Boolean, default=False, server_default="0", nullable=False)
-    created_at = db.Column(db.DateTime(timezone=True), default=now_utc)
-    updated_at = db.Column(db.DateTime(timezone=True), default=now_utc, onupdate=now_utc)
-    ultimo_contatto = db.Column(db.DateTime(timezone=True))
+    created_at = db.Column(TZDateTime, default=now_utc)
+    updated_at = db.Column(TZDateTime, default=now_utc, onupdate=now_utc)
+    ultimo_contatto = db.Column(TZDateTime)
 
 
 class InvioMarketing(db.Model):
@@ -260,7 +289,7 @@ class InvioMarketing(db.Model):
     id = db.Column(db.String, primary_key=True, default=gen_id)
     corso_id = db.Column(db.String, db.ForeignKey("corsi.id", ondelete="CASCADE"), nullable=False, index=True)
     email = db.Column(db.String(255), nullable=False, index=True)
-    inviato_at = db.Column(db.DateTime(timezone=True), default=now_utc)
+    inviato_at = db.Column(TZDateTime, default=now_utc)
 
 
 class MediaFile(db.Model):
@@ -273,7 +302,7 @@ class MediaFile(db.Model):
     mime_type = db.Column(db.String(100))
     dimensione = db.Column(db.Integer)  # bytes
     url = db.Column(db.String(500), nullable=False)
-    created_at = db.Column(db.DateTime(timezone=True), default=now_utc)
+    created_at = db.Column(TZDateTime, default=now_utc)
     uploaded_by = db.Column(db.String, db.ForeignKey("utenti.id", ondelete="SET NULL"), nullable=True)
 
 
@@ -285,7 +314,7 @@ class CampagnaLibera(db.Model):
     corpo_html = db.Column(db.Text, nullable=False)
     tag_filtro = db.Column(db.Text)  # JSON list di slug, None = tutti
     allegato_id = db.Column(db.String, db.ForeignKey("media_files.id", ondelete="SET NULL"), nullable=True)
-    created_at = db.Column(db.DateTime(timezone=True), default=now_utc)
+    created_at = db.Column(TZDateTime, default=now_utc)
     creato_da = db.Column(db.String, db.ForeignKey("utenti.id", ondelete="SET NULL"), nullable=True)
 
     allegato = db.relationship("MediaFile", foreign_keys=[allegato_id])
@@ -313,14 +342,14 @@ class InvioCampagnaLibera(db.Model):
     id = db.Column(db.String, primary_key=True, default=gen_id)
     campagna_id = db.Column(db.String, db.ForeignKey("campagne_libere.id", ondelete="CASCADE"), nullable=False)
     email = db.Column(db.String(255), nullable=False)
-    inviato_at = db.Column(db.DateTime(timezone=True), default=now_utc)
+    inviato_at = db.Column(TZDateTime, default=now_utc)
 
 
 class VisitaCorso(db.Model):
     __tablename__ = "visite_corso"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     corso_id = db.Column(db.String, db.ForeignKey("corsi.id", ondelete="CASCADE"), nullable=False, index=True)
-    visitato_at = db.Column(db.DateTime(timezone=True), default=now_utc, index=True)
+    visitato_at = db.Column(TZDateTime, default=now_utc, index=True)
     ip_hash = db.Column(db.String(64))  # SHA256 of IP, anonymized
     utente_id = db.Column(db.String, db.ForeignKey("utenti.id", ondelete="SET NULL"), nullable=True)
 
@@ -334,7 +363,7 @@ class MaterialeDidattico(db.Model):
     nome_file = db.Column(db.String(255), nullable=False)
     mime_type = db.Column(db.String(100))
     dimensione = db.Column(db.Integer)
-    created_at = db.Column(db.DateTime(timezone=True), default=now_utc)
+    created_at = db.Column(TZDateTime, default=now_utc)
     uploaded_by = db.Column(db.String, db.ForeignKey("utenti.id", ondelete="SET NULL"), nullable=True)
 
     corsi = db.relationship("Corso", secondary="corso_materiale", back_populates="materiali")
@@ -345,5 +374,5 @@ corso_materiale = db.Table(
     "corso_materiale",
     db.Column("corso_id", db.String, db.ForeignKey("corsi.id", ondelete="CASCADE"), primary_key=True),
     db.Column("materiale_id", db.String, db.ForeignKey("materiale_didattico.id", ondelete="CASCADE"), primary_key=True),
-    db.Column("aggiunto_at", db.DateTime(timezone=True), default=now_utc),
+    db.Column("aggiunto_at", TZDateTime, default=now_utc),
 )
