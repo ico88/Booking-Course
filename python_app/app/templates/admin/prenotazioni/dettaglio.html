@@ -49,6 +49,17 @@
         </form>
         {% endif %}
 
+        {# Promemoria manuale — solo se in attesa pagamento e non ancora inviato #}
+        {% if p.stato.value == 'IN_ATTESA_PAGAMENTO' and not p.reminder_scadenza_inviato %}
+        <form method="POST" action="{{ url_for('admin.prenotazione_reminder_manuale', prenotazione_id=p.id) }}"
+              onsubmit="return confirm('Inviare il promemoria di scadenza a {{ p.utente.nome }} {{ p.utente.cognome }}?')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="bg-amber-50 text-amber-700 border border-amber-200 px-4 py-2 rounded-lg text-sm hover:bg-amber-100">
+            🔔 Invia promemoria
+          </button>
+        </form>
+        {% endif %}
+
         {# Annulla — nascosto se attestato già emesso #}
         {% if p.stato.value not in ('ANNULLATA', 'SCADUTA') and not p.attestato_emesso %}
         <form method="POST" action="{{ url_for('admin.prenotazione_annulla', prenotazione_id=p.id) }}"

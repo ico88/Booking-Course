@@ -1774,6 +1774,27 @@ def pagine_legali():
 # CRON REMINDER SCADENZA
 # ===========================================================================
 
+@admin_bp.route("/prenotazioni/<string:prenotazione_id>/reminder-manuale", methods=["POST"])
+@admin_required
+def prenotazione_reminder_manuale(prenotazione_id):
+    """Invia manualmente il promemoria di scadenza pagamento."""
+    p = Prenotazione.query.get_or_404(prenotazione_id)
+    if p.stato != StatoPrenotazione.IN_ATTESA_PAGAMENTO:
+        flash("Il promemoria può essere inviato solo per prenotazioni in attesa di pagamento.", "error")
+        return redirect(url_for("admin.prenotazione_dettaglio", prenotazione_id=p.id))
+    try:
+        from ..email_service import invia_email_reminder_scadenza
+        invia_email_reminder_scadenza(p)
+        p.reminder_scadenza_inviato = True
+        p.reminder_scadenza_inviato_at = datetime.now(timezone.utc)
+        db.session.commit()
+        flash("Promemoria inviato con successo.", "success")
+    except Exception as e:
+        logger.error("Reminder manuale fallito per %s: %s", p.id, e)
+        flash("Errore durante l'invio del promemoria.", "error")
+    return redirect(url_for("admin.prenotazione_dettaglio", prenotazione_id=p.id))
+
+
 @admin_bp.route("/cron/reminder-scadenza", methods=["POST"])
 def cron_reminder_scadenza():
     """
