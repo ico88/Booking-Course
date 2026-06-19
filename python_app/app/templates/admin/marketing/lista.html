@@ -237,6 +237,15 @@
 
 <!-- Pannello campagne -->
 <div id="panel-campagne" class="hidden">
+  <div class="flex justify-end mb-4">
+    <a href="{{ url_for('admin.campagna_libera_nuova') }}"
+       class="inline-flex items-center gap-1.5 bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-purple-800 transition-colors">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+      </svg>
+      Nuova campagna email
+    </a>
+  </div>
   <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
     {% if campagne %}
     <div class="overflow-x-auto">
@@ -272,6 +281,51 @@
     </div>
     {% endif %}
   </div>
+
+  {% if campagne_libere %}
+  <div class="mt-6">
+    <h3 class="text-sm font-semibold text-gray-600 mb-2 flex items-center gap-2">
+      Campagne email libere
+      <span class="bg-purple-100 text-purple-700 text-xs px-2 py-0.5 rounded-full">{{ campagne_libere|length }}</span>
+    </h3>
+    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+          <tr>
+            <th class="px-5 py-3 text-left">Oggetto</th>
+            <th class="px-5 py-3 text-left hidden sm:table-cell">Data</th>
+            <th class="px-5 py-3 text-center hidden sm:table-cell">Inviate</th>
+            <th class="px-5 py-3"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for c in campagne_libere %}
+          <tr class="hover:bg-gray-50">
+            <td class="px-5 py-3 font-medium">
+              {{ c.oggetto }}
+              {% if c.tag_filtro_list %}
+                {% for slug in c.tag_filtro_list %}
+                  <span class="ml-1 bg-blue-50 text-blue-600 text-xs px-1.5 py-0.5 rounded">{{ slug }}</span>
+                {% endfor %}
+              {% endif %}
+            </td>
+            <td class="px-5 py-3 text-gray-500 text-xs hidden sm:table-cell">{{ format_date(c.created_at) }}</td>
+            <td class="px-5 py-3 text-center hidden sm:table-cell">
+              <span class="inline-block bg-purple-50 text-purple-700 text-xs font-semibold px-2 py-0.5 rounded-full">{{ c.n_inviati }}</span>
+            </td>
+            <td class="px-5 py-3 text-right">
+              <a href="{{ url_for('admin.campagna_libera_dettaglio', campagna_id=c.id) }}"
+                 class="text-blue-600 hover:text-blue-800 text-xs font-medium">Dettaglio</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 </div>
 
 <!-- Pannello gestione tag newsletter -->

@@ -1,0 +1,166 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Nuova campagna email{% endblock %}
+
+{% block admin_content %}
+<div class="flex flex-wrap items-center gap-3 mb-6">
+  <div class="flex-1 min-w-0">
+    <a href="{{ url_for('admin.marketing') }}?tab=campagne"
+       class="text-sm text-gray-500 hover:text-gray-800 flex items-center gap-1 mb-1">← Torna al marketing</a>
+    <h1 class="text-2xl font-bold">Nuova campagna email</h1>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+  <!-- Composer -->
+  <div class="space-y-4">
+    <form method="POST" id="form-campagna">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="corpo_html" id="corpo_html_hidden">
+
+      <div class="bg-white border border-gray-200 rounded-xl p-5">
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">
+          Oggetto email <span class="text-red-500">*</span>
+        </label>
+        <input type="text" name="oggetto" id="oggetto" required placeholder="es. Novità e aggiornamenti"
+               oninput="aggiornaAnteprima()"
+               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+      </div>
+
+      <div class="bg-white border border-gray-200 rounded-xl p-5">
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">
+          Corpo email <span class="text-red-500">*</span>
+        </label>
+        <div id="quill-editor" style="min-height:220px" class="border border-gray-200 rounded-lg"></div>
+      </div>
+
+      {% if media_docs %}
+      <div class="bg-white border border-gray-200 rounded-xl p-5">
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">Allegato PDF (opzionale)</label>
+        <select name="allegato_id"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+          <option value="">— Nessun allegato —</option>
+          {% for doc in media_docs %}
+          <option value="{{ doc.id }}">{{ doc.nome }} ({{ "%.0f"|format(doc.dimensione/1024) }} KB)</option>
+          {% endfor %}
+        </select>
+        <p class="text-xs text-gray-400 mt-1">
+          <a href="{{ url_for('admin.media_lista') }}" class="text-blue-600 hover:underline">Gestisci i tuoi PDF →</a>
+        </p>
+      </div>
+      {% endif %}
+
+      <div class="bg-white border border-gray-200 rounded-xl p-5">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Destinatari</label>
+        <label class="flex items-center gap-2 text-sm mb-3 cursor-pointer">
+          <input type="checkbox" id="tutti-check" checked onchange="toggleTutti(this)"
+                 class="rounded border-gray-300 text-blue-600">
+          <span class="font-medium">Tutti (lead + utenti con consenso)</span>
+        </label>
+        <div id="tag-section" class="hidden space-y-1.5 pl-2 border-l-2 border-gray-100">
+          <p class="text-xs text-gray-500 mb-2">Invia solo a chi ha selezionato questi tag:</p>
+          {% for tag in newsletter_tags %}
+          <label class="flex items-center gap-2 text-sm cursor-pointer">
+            <input type="checkbox" name="tags" value="{{ tag.slug }}"
+                   class="rounded border-gray-300 text-blue-600">
+            {{ tag.label }}
+          </label>
+          {% endfor %}
+          {% if not newsletter_tags %}
+          <p class="text-xs text-gray-400 italic">Nessun tag newsletter configurato.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="bg-white border border-gray-200 rounded-xl p-5">
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">Modalità invio</label>
+        <select name="modalita"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 mb-4">
+          <option value="individuale">Individuale (personalizzata)</option>
+          <option value="bcc">BCC (unica email, più veloce)</option>
+        </select>
+        <button type="submit"
+                onclick="document.getElementById('corpo_html_hidden').value = quill.root.innerHTML"
+                class="w-full bg-blue-700 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-800 transition-colors">
+          Invia campagna
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Anteprima -->
+  <div class="lg:sticky lg:top-6 self-start">
+    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+        <h2 class="text-sm font-semibold text-gray-700">Anteprima email</h2>
+        <span class="text-xs text-gray-400" id="anteprima-status">—</span>
+      </div>
+      <div class="p-2 bg-gray-50">
+        <div class="text-xs text-gray-500 px-2 py-1 mb-1">
+          Oggetto: <strong id="anteprima-oggetto" class="text-gray-800">—</strong>
+        </div>
+        <iframe id="anteprima-iframe" class="w-full rounded border border-gray-200 bg-white"
+                style="height:520px"
+                srcdoc="<p style='padding:20px;color:#9ca3af;font-size:13px'>Inizia a scrivere per vedere l'anteprima...</p>">
+        </iframe>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<link href="/static/vendor/quill/quill.snow.css" rel="stylesheet">
+<script src="/static/vendor/quill/quill.js"></script>
+<script>
+const quill = new Quill('#quill-editor', {
+  theme: 'snow',
+  modules: { toolbar: [
+    [{ header: [1,2,3,false] }],
+    ['bold','italic','underline'],
+    [{ color: [] },{ background: [] }],
+    [{ list: 'ordered' },{ list: 'bullet' }],
+    ['link'],
+    ['clean']
+  ]}
+});
+
+quill.on('text-change', () => aggiornaAnteprima());
+
+let _anteprima_timer = null;
+function aggiornaAnteprima() {
+  clearTimeout(_anteprima_timer);
+  _anteprima_timer = setTimeout(_fetchAnteprima, 600);
+}
+
+async function _fetchAnteprima() {
+  const oggetto = document.getElementById('oggetto').value;
+  const corpo = quill.root.innerHTML;
+  document.getElementById('anteprima-oggetto').textContent = oggetto || '—';
+  if (!corpo || corpo === '<p><br></p>') return;
+  document.getElementById('anteprima-status').textContent = 'Aggiornamento...';
+  try {
+    const r = await fetch('{{ url_for("admin.campagna_libera_anteprima") }}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token() }}'
+      },
+      body: JSON.stringify({ oggetto, corpo })
+    });
+    const data = await r.json();
+    document.getElementById('anteprima-iframe').srcdoc = data.html;
+    document.getElementById('anteprima-status').textContent = 'Aggiornata';
+    setTimeout(() => document.getElementById('anteprima-status').textContent = '', 2000);
+  } catch(e) {
+    document.getElementById('anteprima-status').textContent = 'Errore anteprima';
+  }
+}
+
+function toggleTutti(cb) {
+  document.getElementById('tag-section').classList.toggle('hidden', cb.checked);
+  if (cb.checked) {
+    document.querySelectorAll('input[name="tags"]').forEach(el => el.checked = false);
+  }
+}
+</script>
+{% endblock %}

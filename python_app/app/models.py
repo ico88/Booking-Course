@@ -262,6 +262,59 @@ class InvioMarketing(db.Model):
     inviato_at = db.Column(db.DateTime(timezone=True), default=now_utc)
 
 
+class MediaFile(db.Model):
+    __tablename__ = "media_files"
+
+    id = db.Column(db.String, primary_key=True, default=gen_id)
+    nome = db.Column(db.String(255), nullable=False)
+    nome_file = db.Column(db.String(255), nullable=False)
+    tipo = db.Column(db.String(20), nullable=False)  # "immagine" | "documento"
+    mime_type = db.Column(db.String(100))
+    dimensione = db.Column(db.Integer)  # bytes
+    url = db.Column(db.String(500), nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), default=now_utc)
+    uploaded_by = db.Column(db.String, db.ForeignKey("utenti.id", ondelete="SET NULL"), nullable=True)
+
+
+class CampagnaLibera(db.Model):
+    __tablename__ = "campagne_libere"
+
+    id = db.Column(db.String, primary_key=True, default=gen_id)
+    oggetto = db.Column(db.String(255), nullable=False)
+    corpo_html = db.Column(db.Text, nullable=False)
+    tag_filtro = db.Column(db.Text)  # JSON list di slug, None = tutti
+    allegato_id = db.Column(db.String, db.ForeignKey("media_files.id", ondelete="SET NULL"), nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), default=now_utc)
+    creato_da = db.Column(db.String, db.ForeignKey("utenti.id", ondelete="SET NULL"), nullable=True)
+
+    allegato = db.relationship("MediaFile", foreign_keys=[allegato_id])
+    invii = db.relationship("InvioCampagnaLibera", backref="campagna", lazy="dynamic",
+                            cascade="all, delete-orphan")
+
+    @property
+    def tag_filtro_list(self):
+        import json
+        if not self.tag_filtro:
+            return []
+        try:
+            return json.loads(self.tag_filtro)
+        except Exception:
+            return []
+
+    @property
+    def n_inviati(self):
+        return self.invii.count()
+
+
+class InvioCampagnaLibera(db.Model):
+    __tablename__ = "invii_campagne_libere"
+
+    id = db.Column(db.String, primary_key=True, default=gen_id)
+    campagna_id = db.Column(db.String, db.ForeignKey("campagne_libere.id", ondelete="CASCADE"), nullable=False)
+    email = db.Column(db.String(255), nullable=False)
+    inviato_at = db.Column(db.DateTime(timezone=True), default=now_utc)
+
+
 class VisitaCorso(db.Model):
     __tablename__ = "visite_corso"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)

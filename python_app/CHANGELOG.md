@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.8.0] — 2026-06-19
+
+### Nuove funzionalità
+
+- **Media Library**: sezione dedicata (menu admin) per caricare e gestire immagini e PDF; griglia con filtro per tipo (immagine/documento); upload modal con nome personalizzato, eliminazione file fisico + DB; endpoint JSON per integrazione con altri form.
+- **Campagna email libera**: composer Quill con anteprima live in iframe (aggiornamento asincrono); filtro tag opzionale per destinatari; allegato PDF selezionabile dalla Media Library; modalità individuale o BCC; storico invii per campagna con contatore.
+- Migrazione DB `add_media_library` con tabelle `media_files`, `campagne_libere`, `invii_campagne_libere`.
+
+---
+
 ## [1.7.0] — 2026-06-18
 
 ### Nuove funzionalità

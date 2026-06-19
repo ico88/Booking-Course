@@ -1,0 +1,69 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Campagna: {{ camp.oggetto }}{% endblock %}
+
+{% block admin_content %}
+<div class="flex flex-wrap items-start justify-between gap-3 mb-6">
+  <div class="flex-1 min-w-0">
+    <a href="{{ url_for('admin.marketing') }}?tab=campagne"
+       class="text-sm text-gray-500 hover:text-gray-800 flex items-center gap-1 mb-1">← Campagne</a>
+    <h1 class="text-2xl font-bold break-words">{{ camp.oggetto }}</h1>
+    <div class="flex flex-wrap gap-2 mt-1">
+      <span class="inline-block bg-purple-100 text-purple-700 text-xs font-semibold px-2 py-0.5 rounded-full">Campagna libera</span>
+      {% if camp.tag_filtro_list %}
+        {% for slug in camp.tag_filtro_list %}
+          <span class="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded">{{ slug }}</span>
+        {% endfor %}
+      {% else %}
+        <span class="inline-block bg-gray-100 text-gray-500 text-xs px-2 py-0.5 rounded">Tutti i contatti</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
+  <div class="bg-white border border-gray-200 rounded-xl p-4 text-center">
+    <div class="text-2xl font-bold text-blue-600">{{ camp.n_inviati }}</div>
+    <div class="text-xs text-gray-500 mt-1">Email inviate</div>
+  </div>
+  <div class="bg-white border border-gray-200 rounded-xl p-4 text-center">
+    <div class="text-sm font-bold text-gray-700">{{ format_date(camp.created_at) }}</div>
+    <div class="text-xs text-gray-500 mt-1">Data invio</div>
+  </div>
+  {% if camp.allegato %}
+  <div class="bg-white border border-gray-200 rounded-xl p-4 text-center">
+    <div class="text-sm font-bold text-gray-700 truncate">{{ camp.allegato.nome }}</div>
+    <div class="text-xs text-gray-500 mt-1">
+      <a href="{{ camp.allegato.url }}" target="_blank" class="text-blue-600 hover:underline">Scarica allegato</a>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+  {% set invii_list = camp.invii.all() %}
+  {% if invii_list %}
+  <div class="overflow-x-auto">
+  <table class="w-full text-sm">
+    <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+      <tr>
+        <th class="px-5 py-3 text-left">Email</th>
+        <th class="px-5 py-3 text-left whitespace-nowrap">Data invio</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {% for inv in invii_list %}
+      <tr class="hover:bg-gray-50">
+        <td class="px-5 py-3 font-mono text-xs">{{ inv.email }}</td>
+        <td class="px-5 py-3 text-gray-500 text-xs whitespace-nowrap">{{ format_date(inv.inviato_at) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <div class="px-5 py-10 text-center text-gray-400 text-sm">
+    Invio in corso o nessun destinatario registrato.
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

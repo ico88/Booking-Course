@@ -917,9 +917,13 @@ def marketing():
         })
     campagne.sort(key=lambda x: x["ultima_notifica"] or datetime.min.replace(tzinfo=_tz.utc), reverse=True)
 
+    from ..models import CampagnaLibera
+    campagne_libere = CampagnaLibera.query.order_by(CampagnaLibera.created_at.desc()).all()
+
     return render_template("admin/marketing/lista.html", leads=leads, corsi_pubblicati=corsi_pubblicati,
                            all_tags=all_tags, newsletter_tags=newsletter_tags, utenti_marketing=utenti_marketing,
-                           notificati_per_corso=notificati_per_corso, campagne=campagne)
+                           notificati_per_corso=notificati_per_corso, campagne=campagne,
+                           campagne_libere=campagne_libere)
 
 
 @admin_bp.route("/marketing/leads/<string:lead_id>/elimina", methods=["POST"])
@@ -1674,6 +1678,305 @@ def cron_reminder_scadenza():
 
     logger.info("Cron reminder scadenza: %d email inviate", inviati)
     return {"ok": True, "inviati": inviati}, 200
+
+
+# ===========================================================================
+# MEDIA LIBRARY
+# ===========================================================================
+
+@admin_bp.route("/media")
+@superadmin_required
+def media_lista():
+    from ..models import MediaFile
+    tipo = request.args.get("tipo", "tutti")
+    q = MediaFile.query.order_by(MediaFile.created_at.desc())
+    if tipo in ("immagine", "documento"):
+        q = q.filter_by(tipo=tipo)
+    files = q.all()
+    return render_template("admin/media/lista.html", files=files, tipo_filtro=tipo)
+
+
+@admin_bp.route("/media/upload", methods=["POST"])
+@superadmin_required
+def media_upload():
+    from ..models import MediaFile
+    import uuid as _uuid
+    f = request.files.get("file")
+    if not f or not f.filename:
+        flash("Nessun file selezionato.", "error")
+        return redirect(url_for("admin.media_lista"))
+
+    ALLOWED_MIME = {
+        "image/jpeg": ("immagine", ".jpg"),
+        "image/png": ("immagine", ".png"),
+        "image/webp": ("immagine", ".webp"),
+        "image/gif": ("immagine", ".gif"),
+        "application/pdf": ("documento", ".pdf"),
+    }
+    mime = f.content_type or ""
+    if mime not in ALLOWED_MIME:
+        ext = os.path.splitext(f.filename)[1].lower()
+        ext_map = {".jpg": ("immagine", ".jpg"), ".jpeg": ("immagine", ".jpg"),
+                   ".png": ("immagine", ".png"), ".webp": ("immagine", ".webp"),
+                   ".gif": ("immagine", ".gif"), ".pdf": ("documento", ".pdf")}
+        if ext not in ext_map:
+            flash("Tipo file non consentito. Usa JPG, PNG, WebP, GIF o PDF.", "error")
+            return redirect(url_for("admin.media_lista"))
+        tipo, default_ext = ext_map[ext]
+    else:
+        tipo, default_ext = ALLOWED_MIME[mime]
+
+    data = f.read()
+    if len(data) > 15 * 1024 * 1024:
+        flash("File troppo grande (max 15 MB).", "error")
+        return redirect(url_for("admin.media_lista"))
+
+    ext = os.path.splitext(f.filename)[1].lower() or default_ext
+    safe_name = _uuid.uuid4().hex + ext
+    media_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], "media")
+    os.makedirs(media_dir, exist_ok=True)
+    dest = os.path.join(media_dir, safe_name)
+    with open(dest, "wb") as fh:
+        fh.write(data)
+
+    nome = request.form.get("nome", "").strip() or os.path.splitext(f.filename)[0]
+    url = url_for("static", filename=f"uploads/media/{safe_name}")
+
+    mf = MediaFile(
+        nome=nome,
+        nome_file=safe_name,
+        tipo=tipo,
+        mime_type=mime or None,
+        dimensione=len(data),
+        url=url,
+        uploaded_by=current_user.id,
+    )
+    db.session.add(mf)
+    db.session.commit()
+    flash(f"File '{nome}' caricato.", "success")
+    return redirect(url_for("admin.media_lista"))
+
+
+@admin_bp.route("/media/<media_id>/elimina", methods=["POST"])
+@superadmin_required
+def media_elimina(media_id):
+    from ..models import MediaFile
+    mf = MediaFile.query.get_or_404(media_id)
+    media_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], "media")
+    fpath = os.path.join(media_dir, mf.nome_file)
+    try:
+        if os.path.isfile(fpath):
+            os.remove(fpath)
+    except Exception:
+        pass
+    db.session.delete(mf)
+    db.session.commit()
+    flash(f"File '{mf.nome}' eliminato.", "success")
+    return redirect(url_for("admin.media_lista"))
+
+
+@admin_bp.route("/media/json")
+@superadmin_required
+def media_json():
+    from ..models import MediaFile
+    tipo = request.args.get("tipo")
+    q = MediaFile.query.order_by(MediaFile.created_at.desc())
+    if tipo:
+        q = q.filter_by(tipo=tipo)
+    return {"files": [{"id": f.id, "nome": f.nome, "url": f.url, "tipo": f.tipo} for f in q.all()]}
+
+
+# ===========================================================================
+# CAMPAGNE EMAIL LIBERE
+# ===========================================================================
+
+@admin_bp.route("/marketing/campagna-libera/anteprima", methods=["POST"])
+@superadmin_required
+def campagna_libera_anteprima():
+    from ..email_service import _html_wrapper, _ctx
+    corpo = request.json.get("corpo", "")
+    app_name, app_url, logo_url, legal, color_scheme = _ctx()
+    html = _html_wrapper(corpo, app_name, app_url, logo_url, legal, color_scheme)
+    return {"html": html}
+
+
+@admin_bp.route("/marketing/campagna-libera/nuova", methods=["GET", "POST"])
+@superadmin_required
+def campagna_libera_nuova():
+    from ..models import MediaFile, CampagnaLibera, InvioCampagnaLibera
+    import threading, json as _json
+
+    newsletter_tags = _get_newsletter_tags()
+    media_docs = MediaFile.query.filter_by(tipo="documento").order_by(MediaFile.created_at.desc()).all()
+
+    if request.method == "GET":
+        return render_template("admin/marketing/campagna_libera_nuova.html",
+                               newsletter_tags=newsletter_tags,
+                               media_docs=media_docs)
+
+    oggetto = request.form.get("oggetto", "").strip()
+    corpo_html = request.form.get("corpo_html", "").strip()
+    tag_selezionati = request.form.getlist("tags")
+    allegato_id = request.form.get("allegato_id") or None
+    modalita = request.form.get("modalita", "individuale")
+
+    if not oggetto or not corpo_html:
+        flash("Oggetto e corpo sono obbligatori.", "error")
+        return render_template("admin/marketing/campagna_libera_nuova.html",
+                               newsletter_tags=newsletter_tags, media_docs=media_docs)
+
+    campagna = CampagnaLibera(
+        oggetto=oggetto,
+        corpo_html=corpo_html,
+        tag_filtro=_json.dumps(tag_selezionati) if tag_selezionati else None,
+        allegato_id=allegato_id,
+        creato_da=current_user.id,
+    )
+    db.session.add(campagna)
+    db.session.commit()
+    campagna_id = campagna.id
+
+    corso_tags = set(tag_selezionati) if tag_selezionati else set()
+
+    class _FakeLead:
+        def __init__(self, u):
+            self.email = u.email
+            self.nome = u.nome
+
+    destinatari = []
+    seen = set()
+    for lead in LeadMarketing.query.filter_by(attivo=True, verificato=True, email_non_valida=False).all():
+        if lead.email in seen:
+            continue
+        if corso_tags and lead.tags and not (set(lead.tags) & corso_tags):
+            continue
+        destinatari.append(lead)
+        seen.add(lead.email)
+    for u in Utente.query.filter_by(consenso_marketing=True, email_non_valida=False).all():
+        if u.email in seen:
+            continue
+        u_tags = set(u.tags_marketing or [])
+        if corso_tags and u_tags and not (u_tags & corso_tags):
+            continue
+        destinatari.append(_FakeLead(u))
+        seen.add(u.email)
+
+    if not destinatari:
+        flash("Nessun destinatario disponibile con i filtri selezionati.", "warning")
+        return redirect(url_for("admin.campagna_libera_dettaglio", campagna_id=campagna_id))
+
+    app_obj = current_app._get_current_object()
+    emails_da_registrare = [d.email for d in destinatari]
+    _modalita = modalita
+
+    def _send_all():
+        with app_obj.app_context():
+            from ..email_service import _html_wrapper, _ctx
+            from ..models import CampagnaLibera, InvioCampagnaLibera, MediaFile
+            camp = CampagnaLibera.query.get(campagna_id)
+            if not camp:
+                return
+            app_name, app_url, logo_url, legal, color_scheme = _ctx()
+            html_body = _html_wrapper(camp.corpo_html, app_name, app_url, logo_url, legal, color_scheme)
+
+            allegato_data = None
+            allegato_nome = None
+            if camp.allegato_id:
+                mf = MediaFile.query.get(camp.allegato_id)
+                if mf:
+                    fpath = os.path.join(app_obj.config["UPLOAD_FOLDER"], "media", mf.nome_file)
+                    if os.path.isfile(fpath):
+                        with open(fpath, "rb") as fh:
+                            allegato_data = fh.read()
+                        allegato_nome = mf.nome if mf.nome.endswith(".pdf") else mf.nome + ".pdf"
+
+            sent = 0
+            bounced = []
+            if _modalita == "bcc":
+                from ..email_service import send_email_bcc
+                sent = send_email_bcc([d.email for d in destinatari], camp.oggetto, html_body)
+            else:
+                from ..email_service import _get_smtp_config
+                from email.mime.multipart import MIMEMultipart
+                from email.mime.text import MIMEText
+                from email.mime.base import MIMEBase
+                from email import encoders
+                import smtplib
+                cfg = _get_smtp_config()
+                if not cfg["host"] or not cfg["user"]:
+                    return
+                try:
+                    server = smtplib.SMTP(cfg["host"], cfg["port"], timeout=30)
+                    server.ehlo()
+                    server.starttls()
+                    server.login(cfg["user"], cfg["password"])
+                    for dest in destinatari:
+                        try:
+                            msg = MIMEMultipart()
+                            msg["Subject"] = camp.oggetto
+                            msg["From"] = f"{cfg['from_name']} <{cfg['from_addr']}>"
+                            msg["To"] = dest.email
+                            msg.attach(MIMEText(html_body, "html", "utf-8"))
+                            if allegato_data and allegato_nome:
+                                part = MIMEBase("application", "pdf")
+                                part.set_payload(allegato_data)
+                                encoders.encode_base64(part)
+                                part.add_header("Content-Disposition",
+                                                f'attachment; filename="{allegato_nome}"')
+                                msg.attach(part)
+                            server.sendmail(cfg["from_addr"], [dest.email], msg.as_string())
+                            sent += 1
+                        except smtplib.SMTPRecipientsRefused as exc:
+                            if any(code >= 500 for code, _ in exc.recipients.values()):
+                                bounced.append(dest.email)
+                        except Exception as exc:
+                            logger.warning("Errore invio campagna libera a %s: %s", dest.email, exc)
+                    server.quit()
+                except Exception as exc:
+                    logger.error("Errore connessione SMTP campagna libera: %s", exc)
+
+            if bounced:
+                bounced_set = set(bounced)
+                for lead in LeadMarketing.query.filter(LeadMarketing.email.in_(bounced_set)).all():
+                    lead.email_non_valida = True
+                for utente in Utente.query.filter(Utente.email.in_(bounced_set)).all():
+                    utente.email_non_valida = True
+                try:
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
+
+            bounced_set = set(bounced)
+            count = 0
+            for email in emails_da_registrare:
+                if email in bounced_set:
+                    continue
+                if count >= sent:
+                    break
+                try:
+                    db.session.add(InvioCampagnaLibera(campagna_id=campagna_id, email=email))
+                    count += 1
+                except Exception:
+                    pass
+            try:
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+
+            logger.info("Campagna libera %s: inviati %d/%d, bounce %d",
+                        campagna_id, sent, len(destinatari), len(bounced))
+
+    threading.Thread(target=_send_all, daemon=True).start()
+    flash(f"Campagna '{oggetto}' avviata per {len(destinatari)} destinatari.", "success")
+    return redirect(url_for("admin.campagna_libera_dettaglio", campagna_id=campagna_id))
+
+
+@admin_bp.route("/marketing/campagna-libera/<campagna_id>")
+@superadmin_required
+def campagna_libera_dettaglio(campagna_id):
+    from ..models import CampagnaLibera
+    camp = CampagnaLibera.query.get_or_404(campagna_id)
+    return render_template("admin/marketing/campagna_libera_dettaglio.html", camp=camp)
 
 
 # ===========================================================================
