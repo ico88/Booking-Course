@@ -67,25 +67,47 @@
   <h3>Iscriversi a un corso</h3>
   <ul>
     <li>Dal catalogo corsi clicca il corso desiderato e poi <strong>Prenota</strong>.</li>
-    <li>Inserisci i dati dei partecipanti e scegli il metodo di pagamento.</li>
+    <li>Inserisci i dati dei partecipanti (nome, cognome, email, codice fiscale) e scegli il metodo di pagamento.</li>
     <li>Riceverai un'email di conferma con le istruzioni per il pagamento.</li>
+  </ul>
+  <h3>Prenotare per più persone</h3>
+  <ul>
+    <li>Al momento della prenotazione puoi indicare il numero di posti desiderati.</li>
+    <li>Per ogni posto devi inserire i dati di ogni partecipante (nome, cognome, email, codice fiscale).</li>
+    <li>Il totale viene calcolato automaticamente moltiplicando il costo per il numero di posti.</li>
+    <li>Tutti i partecipanti sono visibili nella tua pagina di prenotazione sotto la sezione <strong>Partecipanti</strong>.</li>
+  </ul>
+  <h3>Seguire lo stato della prenotazione</h3>
+  <ul>
+    <li>Dalla tua area (<strong>Le mie prenotazioni</strong>) trovi l'elenco di tutte le tue prenotazioni con lo stato attuale.</li>
+    <li><strong>In attesa di validazione</strong> — la segreteria sta verificando i requisiti. Riceverai una email quando la prenotazione viene approvata.</li>
+    <li><strong>In attesa di pagamento</strong> — devi effettuare il bonifico e caricare la ricevuta entro la scadenza indicata.</li>
+    <li><strong>Ricevuta caricata</strong> — la segreteria sta verificando il pagamento.</li>
+    <li><strong>Confermata</strong> — sei ufficialmente iscritto al corso.</li>
+    <li><strong>Annullata</strong> o <strong>Scaduta</strong> — la prenotazione non è più attiva. Puoi prenotare nuovamente dal catalogo.</li>
   </ul>
   <h3>Pagare con bonifico</h3>
   <ul>
-    <li>Effettua il bonifico usando le coordinate bancarie ricevute via email.</li>
-    <li>Dalla tua prenotazione carica la <strong>ricevuta</strong> (PDF o immagine).</li>
-    <li>La segreteria verificherà il pagamento e confermerà l'iscrizione.</li>
+    <li>Effettua il bonifico usando le coordinate bancarie ricevute via email o visibili nella tua prenotazione.</li>
+    <li>Dalla pagina prenotazione trascina o seleziona la <strong>ricevuta</strong> (PDF, JPG o PNG, max 10 MB) e caricala.</li>
+    <li>La segreteria verificherà il pagamento e confermerà l'iscrizione via email.</li>
   </ul>
-  <div class="warn">La prenotazione ha una scadenza: se non carichi la ricevuta entro il termine indicato, i posti vengono liberati automaticamente.</div>
+  <div class="warn">La prenotazione ha una scadenza: se non carichi la ricevuta entro il termine indicato, i posti vengono liberati automaticamente e riceverai un avviso via email.</div>
   <h3>Pagare con carta / PayPal</h3>
   <ul>
     <li>Seleziona Stripe (carta) o PayPal al momento della prenotazione.</li>
-    <li>Il pagamento viene verificato automaticamente: nessun caricamento necessario.</li>
+    <li>Il pagamento viene verificato automaticamente: non devi caricare nessuna ricevuta.</li>
   </ul>
-  <h3>Attestato</h3>
+  <h3>Dove trovo l'attestato?</h3>
   <ul>
-    <li>A completamento del corso la segreteria emette l'attestato.</li>
-    <li>Riceverai un'email con il link per il download; puoi scaricarlo anche dalla tua area prenotazioni.</li>
+    <li>A completamento del corso la segreteria emette l'attestato di partecipazione.</li>
+    <li>Riceverai un'email con il link diretto per scaricarlo.</li>
+    <li>In qualsiasi momento puoi scaricarlo anche da <strong>Le mie prenotazioni → dettaglio prenotazione</strong>: troverai il pulsante <em>Scarica attestato</em> in cima alla pagina.</li>
+  </ul>
+  <h3>Materiale didattico</h3>
+  <ul>
+    <li>Se la segreteria ha caricato materiali per il corso (dispense, PDF, ecc.), li trovi nella pagina di dettaglio della tua prenotazione una volta che è <strong>Confermata</strong>.</li>
+    <li>Clicca <em>Scarica</em> accanto a ogni documento per salvarlo sul tuo dispositivo.</li>
   </ul>
   <h3>Annullare una prenotazione</h3>
   <ul>
@@ -126,12 +148,19 @@
   <ul>
     <li>Dal pannello admin vai su <strong>Prenotazioni</strong> per vedere tutte le prenotazioni.</li>
     <li>Filtra per stato: <em>In attesa di pagamento</em>, <em>Pagamento caricato</em>, <em>Confermata</em>, <em>Annullata</em>, <em>Scaduta</em>.</li>
+    <li>Clicca su qualsiasi intestazione di colonna (Utente, Corso, Posti, Stato, Importo, Data) per <strong>ordinare la tabella</strong>: un secondo clic inverte l'ordine.</li>
   </ul>
   <h3>Verificare un pagamento</h3>
   <ul>
     <li>Quando un utente carica la ricevuta, lo stato diventa <strong>Pagamento caricato</strong>.</li>
     <li>Apri la prenotazione, scarica la ricevuta e clicca <strong>Conferma prenotazione</strong> per accettare, oppure <strong>Annulla</strong> se non valida.</li>
     <li>L'utente riceve automaticamente un'email di conferma.</li>
+  </ul>
+  <h3>Promemoria pagamento manuale</h3>
+  <ul>
+    <li>Se una prenotazione è <em>In attesa di pagamento</em> e il reminder automatico non è ancora stato inviato, nella pagina di dettaglio compare il pulsante <strong>🔔 Invia promemoria</strong>.</li>
+    <li>Cliccandolo viene inviata subito un'email di sollecito all'utente con le istruzioni di pagamento e la scadenza.</li>
+    <li>Il pulsante sparisce dopo il primo invio (manuale o automatico) per evitare duplicati.</li>
   </ul>
   <h3>Iscrivere un utente manualmente</h3>
   <ul>
@@ -178,6 +207,13 @@
   <ul>
     <li>Dalla lista corsi clicca <strong>Modifica</strong> per aggiornare i dati.</li>
     <li>La duplicazione copia tutte le impostazioni ma non le prenotazioni.</li>
+  </ul>
+  <h3>Materiali didattici</h3>
+  <ul>
+    <li>Nella scheda <strong>Modifica corso</strong> trovi la sezione <em>Materiali didattici</em> nella barra laterale destra.</li>
+    <li>Puoi caricare un PDF direttamente dalla scheda corso trascinandolo nella zona di upload, oppure selezionarlo tra i file già presenti nella libreria.</li>
+    <li>Spunta i materiali da associare e clicca <strong>Salva</strong>: diventano disponibili per il download agli utenti con prenotazione <em>Confermata</em>.</li>
+    <li>Per gestire tutta la libreria di file vai su <strong>Materiali</strong> nel menu laterale.</li>
   </ul>
   <h3>Template attestato</h3>
   <ul>
@@ -229,6 +265,16 @@
     <li>L'email viene inviata solo ai lead con tag corrispondenti (o a tutti se il corso non ha tag).</li>
     <li>Gli utenti <strong>già iscritti o prenotati</strong> al corso selezionato vengono automaticamente esclusi dalla notifica.</li>
     <li>Gli indirizzi marcati come <strong>non validi</strong> (badge rosso "bounce") vengono saltati in tutti gli invii.</li>
+  </ul>
+  <h3>Campagna email libera</h3>
+  <ul>
+    <li>Vai su <strong>Marketing → Nuova campagna</strong> per inviare un'email personalizzata a lead e utenti.</li>
+    <li>Usa la barra degli strumenti dell'editor per formattare il testo: grassetto, corsivo, titoli, liste e link.</li>
+    <li>Puoi <strong>inserire immagini</strong> dalla Media Library cliccando il pulsante <em>Inserisci immagine</em> sotto l'editor. Le immagini devono essere caricate preventivamente nella sezione <strong>Media</strong>.</li>
+    <li>Una volta inserita, clicca sull'immagine per selezionarla: comparirà una barra in cui puoi impostare la dimensione (25%, 50%, 75%, 100% o in pixel) e l'allineamento (sinistra, centro, destra).</li>
+    <li>Puoi allegare un <strong>PDF</strong> scegliendo un file dalla Media Library nella sezione Allegato.</li>
+    <li>La colonna destra mostra un'<strong>anteprima live</strong> dell'email: si aggiorna automaticamente mentre scrivi.</li>
+    <li>Scegli se inviare in modalità <em>Individuale</em> (personalizzata con il nome del destinatario) o <em>BCC</em> (unica email, più veloce per grandi liste).</li>
   </ul>
   <h3>Re-invio notifica corso</h3>
   <ul>
