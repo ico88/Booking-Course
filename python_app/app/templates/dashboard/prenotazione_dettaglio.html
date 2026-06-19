@@ -25,11 +25,12 @@
   </div>
   {% set stato_val = p.stato.value %}
   {% set badge = {
-    'CONFERMATA': ('bg-green-100 text-green-700', 'Confermata'),
-    'IN_ATTESA_PAGAMENTO': ('bg-amber-100 text-amber-700', 'In attesa di pagamento'),
-    'PAGAMENTO_CARICATO': ('bg-blue-100 text-blue-700', 'Ricevuta caricata'),
-    'ANNULLATA': ('bg-red-100 text-red-700', 'Annullata'),
-    'SCADUTA': ('bg-gray-100 text-gray-600', 'Scaduta'),
+    'IN_ATTESA_VALIDAZIONE': ('bg-orange-100 text-orange-700', 'In attesa di validazione'),
+    'IN_ATTESA_PAGAMENTO':   ('bg-amber-100 text-amber-700',  'In attesa di pagamento'),
+    'PAGAMENTO_CARICATO':    ('bg-blue-100 text-blue-700',    'Ricevuta caricata'),
+    'CONFERMATA':            ('bg-green-100 text-green-700',  'Confermata'),
+    'ANNULLATA':             ('bg-red-100 text-red-700',      'Annullata'),
+    'SCADUTA':               ('bg-gray-100 text-gray-600',    'Scaduta'),
   } %}
   {% set cls, lbl = badge.get(stato_val, ('bg-gray-100 text-gray-600', stato_val)) %}
   <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ cls }} shrink-0">{{ lbl }}</span>
@@ -37,6 +38,29 @@
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
   <div class="lg:col-span-2 space-y-5">
+
+    {# In attesa di validazione prerequisito #}
+    {% if p.stato.value == 'IN_ATTESA_VALIDAZIONE' %}
+    <div class="bg-orange-50 border border-orange-200 rounded-xl p-5">
+      <div class="flex items-start gap-3">
+        <svg class="w-6 h-6 text-orange-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <div>
+          <p class="font-semibold text-orange-900">In attesa di validazione</p>
+          <p class="text-sm text-orange-800 mt-1">
+            La segreteria sta verificando i requisiti per questa iscrizione.
+            Riceverai una email non appena la prenotazione sarà approvata e potrai procedere con il pagamento.
+          </p>
+          {% if p.corso.descrizione_prerequisito %}
+          <p class="text-sm text-orange-700 mt-2 bg-orange-100 rounded-lg px-3 py-2">
+            <span class="font-medium">Requisito richiesto:</span> {{ p.corso.descrizione_prerequisito }}
+          </p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
 
     {# Scadenza pagamento #}
     {% if p.stato.value == 'IN_ATTESA_PAGAMENTO' and p.scadenza_pagamento %}
@@ -165,6 +189,47 @@
             Dopo il completamento del corso potrai scaricare il tuo attestato di partecipazione da questa pagina.
           </p>
           {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {# Annullata #}
+    {% if p.stato.value == 'ANNULLATA' %}
+    <div class="bg-red-50 border border-red-200 rounded-xl p-5">
+      <div class="flex items-start gap-3">
+        <svg class="w-6 h-6 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <div>
+          <p class="font-semibold text-red-900">Prenotazione annullata</p>
+          <p class="text-sm text-red-700 mt-1">
+            Questa prenotazione è stata annullata. Per ulteriori informazioni contatta la segreteria.
+          </p>
+          {% if p.note_segreteria %}
+          <p class="text-sm text-red-700 mt-2 bg-red-100 rounded-lg px-3 py-2">{{ p.note_segreteria }}</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {# Scaduta #}
+    {% if p.stato.value == 'SCADUTA' %}
+    <div class="bg-gray-50 border border-gray-200 rounded-xl p-5">
+      <div class="flex items-start gap-3">
+        <svg class="w-6 h-6 text-gray-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <div>
+          <p class="font-semibold text-gray-700">Prenotazione scaduta</p>
+          <p class="text-sm text-gray-600 mt-1">
+            Il termine per il pagamento è scaduto e la prenotazione è stata annullata automaticamente.
+            Puoi effettuare una nuova prenotazione dal catalogo corsi.
+          </p>
+          <a href="{{ url_for('public.index') }}" class="inline-block mt-2 text-sm text-blue-600 hover:underline">
+            Torna al catalogo →
+          </a>
         </div>
       </div>
     </div>
