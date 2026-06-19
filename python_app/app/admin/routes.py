@@ -884,6 +884,100 @@ def _get_newsletter_tags() -> list:
     return []
 
 
+# ===========================================================================
+# MATERIALE DIDATTICO
+# ===========================================================================
+
+@admin_bp.route("/corsi/<corso_id>/materiale/upload", methods=["POST"])
+@superadmin_required
+def corso_materiale_upload(corso_id):
+    from ..models import MaterialeCorso
+    import uuid as _uuid, threading
+    corso = Corso.query.get_or_404(corso_id)
+    files = request.files.getlist("file")
+    if not files or not any(f.filename for f in files):
+        flash("Nessun file selezionato.", "error")
+        return redirect(url_for("admin.corso_partecipanti", corso_id=corso_id))
+
+    ALLOWED = {".pdf", ".doc", ".docx", ".ppt", ".pptx", ".xls", ".xlsx",
+               ".jpg", ".jpeg", ".png", ".webp", ".zip"}
+    materiali_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], "materiale", corso_id)
+    os.makedirs(materiali_dir, exist_ok=True)
+
+    nuovi = []
+    for f in files:
+        if not f.filename:
+            continue
+        ext = os.path.splitext(f.filename)[1].lower()
+        if ext not in ALLOWED:
+            flash(f"Tipo non consentito: {f.filename}", "warning")
+            continue
+        data = f.read()
+        if len(data) > 50 * 1024 * 1024:
+            flash(f"File troppo grande (max 50 MB): {f.filename}", "warning")
+            continue
+        safe_name = _uuid.uuid4().hex + ext
+        with open(os.path.join(materiali_dir, safe_name), "wb") as fh:
+            fh.write(data)
+        nome = request.form.get("nome", "").strip() or os.path.splitext(f.filename)[0]
+        m = MaterialeCorso(
+            corso_id=corso_id,
+            nome=nome,
+            nome_file=safe_name,
+            mime_type=f.content_type or None,
+            dimensione=len(data),
+            uploaded_by=current_user.id,
+        )
+        db.session.add(m)
+        nuovi.append(m)
+
+    if nuovi:
+        db.session.commit()
+        # Notifica partecipanti confermati in background
+        app_obj = current_app._get_current_object()
+        _nuovi_ids = [m.id for m in nuovi]
+        def _notify():
+            with app_obj.app_context():
+                from ..models import MaterialeCorso, Corso as _Corso
+                from ..email_service import invia_email_materiale_didattico
+                _corso = _Corso.query.get(corso_id)
+                _materiali = MaterialeCorso.query.filter(MaterialeCorso.id.in_(_nuovi_ids)).all()
+                if _corso and _materiali:
+                    invia_email_materiale_didattico(_corso, _materiali)
+        threading.Thread(target=_notify, daemon=True).start()
+        flash(f"{len(nuovi)} file caricati. I partecipanti confermati riceveranno una notifica.", "success")
+    return redirect(url_for("admin.corso_partecipanti", corso_id=corso_id))
+
+
+@admin_bp.route("/corsi/<corso_id>/materiale/<materiale_id>/elimina", methods=["POST"])
+@superadmin_required
+def corso_materiale_elimina(corso_id, materiale_id):
+    from ..models import MaterialeCorso
+    m = MaterialeCorso.query.filter_by(id=materiale_id, corso_id=corso_id).first_or_404()
+    materiali_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], "materiale", corso_id)
+    fpath = os.path.join(materiali_dir, m.nome_file)
+    try:
+        if os.path.isfile(fpath):
+            os.remove(fpath)
+    except Exception:
+        pass
+    db.session.delete(m)
+    db.session.commit()
+    flash(f"File '{m.nome}' eliminato.", "success")
+    return redirect(url_for("admin.corso_partecipanti", corso_id=corso_id))
+
+
+@admin_bp.route("/corsi/<corso_id>/materiale/<materiale_id>/download")
+@admin_required
+def corso_materiale_download(corso_id, materiale_id):
+    from ..models import MaterialeCorso
+    from flask import send_from_directory
+    m = MaterialeCorso.query.filter_by(id=materiale_id, corso_id=corso_id).first_or_404()
+    materiali_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], "materiale", corso_id)
+    return send_from_directory(materiali_dir, m.nome_file, download_name=m.nome,
+                               as_attachment=True)
+
+
 @admin_bp.route("/marketing")
 @admin_required
 def marketing():

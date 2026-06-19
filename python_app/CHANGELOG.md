@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.9.0] — 2026-06-19
+
+### Nuove funzionalità
+
+- **Materiale didattico per corso**: gli admin possono caricare file didattici (PDF, Word, PPT, Excel, immagini, ZIP — max 50 MB ciascuno) dalla pagina partecipanti del corso; i partecipanti con prenotazione confermata vedono e scaricano il materiale dalla propria area prenotazione.
+- **Notifica automatica**: quando viene caricato del materiale dopo la creazione del corso, i partecipanti confermati ricevono una notifica email con elenco dei file disponibili e link all'area personale.
+- Migrazione DB `add_materiale_corso` con tabella `materiale_corso`.
+
+---
+
 ## [1.8.0] — 2026-06-19
 
 ### Nuove funzionalità

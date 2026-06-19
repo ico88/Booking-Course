@@ -245,4 +245,113 @@ document.getElementById('modal-aggiungi').addEventListener('click', function(e) 
   if (e.target === this) closeModal();
 });
 </script>
+
+<!-- Materiale Didattico -->
+<div class="mt-8">
+  <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+    <h2 class="text-lg font-semibold">Materiale didattico</h2>
+    <button onclick="document.getElementById('modal-materiale').classList.remove('hidden')"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-700 text-white text-xs font-medium rounded-lg hover:bg-green-800 transition-colors">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+      </svg>
+      Carica file
+    </button>
+  </div>
+  {% set materiali = corso.materiali.order_by(none).all() %}
+  {% if materiali %}
+  <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+    <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+        <tr>
+          <th class="px-5 py-3 text-left">Nome</th>
+          <th class="px-5 py-3 text-left hidden sm:table-cell">Dimensione</th>
+          <th class="px-5 py-3 text-left hidden sm:table-cell">Caricato</th>
+          <th class="px-5 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        {% for m in materiali %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-5 py-3 font-medium flex items-center gap-2">
+            <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            {{ m.nome }}
+          </td>
+          <td class="px-5 py-3 text-gray-500 text-xs hidden sm:table-cell">
+            {% if m.dimensione %}{{ "%.1f"|format(m.dimensione / 1024) }} KB{% else %}—{% endif %}
+          </td>
+          <td class="px-5 py-3 text-gray-500 text-xs hidden sm:table-cell">{{ format_date(m.created_at) }}</td>
+          <td class="px-5 py-3 text-right flex items-center justify-end gap-2">
+            <a href="{{ url_for('admin.corso_materiale_download', corso_id=corso.id, materiale_id=m.id) }}"
+               class="text-blue-600 hover:text-blue-800 text-xs font-medium">Scarica</a>
+            <form method="POST"
+                  action="{{ url_for('admin.corso_materiale_elimina', corso_id=corso.id, materiale_id=m.id) }}"
+                  onsubmit="return confirm('Eliminare {{ m.nome }}?')">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="text-red-500 hover:text-red-700 text-xs font-medium">Elimina</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="bg-white border border-gray-200 rounded-xl px-5 py-8 text-center text-gray-400 text-sm">
+    Nessun file caricato. Usa "Carica file" per aggiungere materiale didattico per i partecipanti.
+  </div>
+  {% endif %}
+</div>
+
+<!-- Modal carica materiale -->
+<div id="modal-materiale" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-semibold text-lg">Carica materiale didattico</h2>
+      <button onclick="document.getElementById('modal-materiale').classList.add('hidden')"
+              class="text-gray-400 hover:text-gray-600">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    <form method="POST" action="{{ url_for('admin.corso_materiale_upload', corso_id=corso.id) }}"
+          enctype="multipart/form-data" class="space-y-3">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Nome visualizzato (opzionale)</label>
+        <input type="text" name="nome" placeholder="es. Dispensa lezione 1"
+               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">
+          File <span class="text-gray-400">(PDF, Word, PPT, Excel, JPG, PNG, ZIP — max 50 MB)</span>
+        </label>
+        <input type="file" name="file" multiple
+               accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.jpg,.jpeg,.png,.webp,.zip"
+               required
+               class="w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+        <p class="text-xs text-gray-400 mt-1">Puoi selezionare più file contemporaneamente.</p>
+      </div>
+      <p class="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">
+        I partecipanti con prenotazione confermata riceveranno una notifica email.
+      </p>
+      <div class="flex gap-2 pt-1">
+        <button type="submit"
+                class="flex-1 bg-green-700 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-800 transition-colors">
+          Carica
+        </button>
+        <button type="button"
+                onclick="document.getElementById('modal-materiale').classList.add('hidden')"
+                class="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
+          Annulla
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
 {% endblock %}

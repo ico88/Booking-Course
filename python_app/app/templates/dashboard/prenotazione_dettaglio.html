@@ -170,6 +170,35 @@
     </div>
     {% endif %}
 
+    {# Materiale didattico — visibile solo se confermata #}
+    {% if p.stato.value == 'CONFERMATA' %}
+      {% set materiali = p.corso.materiali.all() %}
+      {% if materiali %}
+    <div class="bg-blue-50 border border-blue-200 rounded-xl p-5">
+      <div class="flex items-center gap-2 mb-3">
+        <svg class="w-5 h-5 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+        </svg>
+        <p class="font-semibold text-blue-900">Materiale didattico</p>
+      </div>
+      <ul class="space-y-2">
+        {% for m in materiali %}
+        <li class="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-blue-100">
+          <span class="text-sm text-gray-700 truncate">{{ m.nome }}</span>
+          <a href="{{ url_for('dashboard.materiale_download', corso_id=p.corso.id, materiale_id=m.id) }}"
+             class="ml-3 shrink-0 text-xs font-medium text-blue-600 hover:text-blue-800 flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+            </svg>
+            Scarica
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+      {% endif %}
+    {% endif %}
+
     {# Attestato disponibile #}
     {% if p.attestato_emesso and p.attestato_url %}
     <div class="bg-purple-50 border border-purple-200 rounded-xl p-5">

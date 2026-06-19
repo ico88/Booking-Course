@@ -322,3 +322,19 @@ class VisitaCorso(db.Model):
     visitato_at = db.Column(db.DateTime(timezone=True), default=now_utc, index=True)
     ip_hash = db.Column(db.String(64))  # SHA256 of IP, anonymized
     utente_id = db.Column(db.String, db.ForeignKey("utenti.id", ondelete="SET NULL"), nullable=True)
+
+
+class MaterialeCorso(db.Model):
+    """File didattici allegati a un corso, visibili ai partecipanti confermati."""
+    __tablename__ = "materiale_corso"
+
+    id = db.Column(db.String, primary_key=True, default=gen_id)
+    corso_id = db.Column(db.String, db.ForeignKey("corsi.id", ondelete="CASCADE"), nullable=False, index=True)
+    nome = db.Column(db.String(255), nullable=False)
+    nome_file = db.Column(db.String(255), nullable=False)
+    mime_type = db.Column(db.String(100))
+    dimensione = db.Column(db.Integer)
+    created_at = db.Column(db.DateTime(timezone=True), default=now_utc)
+    uploaded_by = db.Column(db.String, db.ForeignKey("utenti.id", ondelete="SET NULL"), nullable=True)
+
+    corso = db.relationship("Corso", backref=db.backref("materiali", lazy="dynamic", cascade="all, delete-orphan"))

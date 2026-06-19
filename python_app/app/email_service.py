@@ -604,3 +604,41 @@ def invia_email_reminder_scadenza(prenotazione):
         + _p("<small style='color:#6b7280'>Se hai già effettuato il pagamento e caricato la ricevuta, ignora questa email.</small>")
     )
     send_email(u.email, f"Promemoria: carica il pagamento entro {scadenza} — {c.titolo}", _html_wrapper(body, app_name, app_url, logo_url, legal, color_scheme))
+
+
+def invia_email_materiale_didattico(corso, materiali_nuovi):
+    """Notifica ai partecipanti confermati che è stato caricato materiale didattico."""
+    from .models import Prenotazione, StatoPrenotazione
+    app_name, app_url, logo_url, legal, color_scheme = _ctx()
+
+    destinatari = (
+        Prenotazione.query
+        .filter_by(corso_id=corso.id, stato=StatoPrenotazione.CONFERMATA)
+        .all()
+    )
+    if not destinatari:
+        return 0
+
+    elenco_html = "".join(
+        f"<li style='margin:4px 0;color:#374151'>{m.nome}</li>"
+        for m in materiali_nuovi
+    )
+    body = (
+        _h2("Materiale didattico disponibile")
+        + _p(f"Ciao, è stato caricato del materiale didattico per il corso <strong style='color:#111827'>{corso.titolo}</strong>.")
+        + f"<ul style='margin:12px 0 16px 20px;padding:0;color:#374151'>{elenco_html}</ul>"
+        + _p("Puoi scaricarlo dalla tua area personale, nella sezione <strong>Corsi</strong>.")
+        + _btn(f"{app_url}/dashboard/corsi", "Vai all'area corsi")
+    )
+    sent = 0
+    for p in destinatari:
+        try:
+            send_email(
+                p.utente.email,
+                f"Materiale didattico disponibile — {corso.titolo}",
+                _html_wrapper(body, app_name, app_url, logo_url, legal, color_scheme),
+            )
+            sent += 1
+        except Exception:
+            pass
+    return sent

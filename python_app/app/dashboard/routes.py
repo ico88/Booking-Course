@@ -289,3 +289,20 @@ def esporta_dati():
 @login_required
 def manuale():
     return render_template("dashboard/manuale.html")
+
+
+@dashboard_bp.route("/corsi/<corso_id>/materiale/<materiale_id>/download")
+@login_required
+def materiale_download(corso_id, materiale_id):
+    from ..models import MaterialeCorso
+    m = MaterialeCorso.query.filter_by(id=materiale_id, corso_id=corso_id).first_or_404()
+    # Verify current user has a confirmed booking for this corso
+    p = Prenotazione.query.filter_by(
+        utente_id=current_user.id,
+        corso_id=corso_id,
+        stato=StatoPrenotazione.CONFERMATA,
+    ).first()
+    if not p:
+        abort(403)
+    materiali_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], "materiale", corso_id)
+    return send_from_directory(materiali_dir, m.nome_file, download_name=m.nome, as_attachment=True)
