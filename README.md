@@ -30,18 +30,18 @@ Dimentica fogli Excel, email disperse e bonifici da tracciare manualmente. Con B
 
 ---
 
-## 🆕 Novità recenti (v1.7.0)
+## 🆕 Novità recenti (v1.8.0)
 
 | Funzionalità | Dettaglio |
 |---|---|
+| **Media Library** | Sezione dedicata (menu admin) per caricare e gestire immagini e PDF (max 15 MB); griglia con filtro per tipo; eliminazione file fisico + DB; endpoint JSON per integrazione con altri form |
+| **Campagna email libera** | Composer Quill con anteprima live in iframe; filtro tag opzionale per destinatari; allegato PDF dalla Media Library; modalità individuale o BCC; storico invii per campagna |
+| **Migrazione DB** | Nuove tabelle `media_files`, `campagne_libere`, `invii_campagne_libere` |
 | **Reminder scadenza prenotazione** | Email automatica ~48h prima della scadenza a chi non ha ancora caricato la ricevuta; inviato una sola volta per prenotazione |
 | **Re-invio notifica corso** | Dal dettaglio campagna è possibile re-inviare la notifica rispettando lo schema (escludi iscritti, escludi bounce, filtra tag); ogni invio tracciato separatamente |
 | **Backup ZIP completo** | Il backup include database + tutti i file caricati (attestati, ricevute, locandine, prerequisiti) in formato ZIP compresso |
 | **Ripristino backup** | Dalla lista backup, un click ripristina database e file; il sistema salva automaticamente un backup di emergenza prima di sovrascrivere |
 | **Bounce detection sincrona** | Gli indirizzi rifiutati con errore 5xx vengono marcati automaticamente come non validi e saltati negli invii futuri |
-| **Esclusione iscritti dal marketing** | Gli utenti già prenotati a un corso non ricevono la notifica marketing per quel corso |
-| **Pannello admin mobile** | Tutte le pagine del pannello admin sono ottimizzate per smartphone (tabelle scrollabili, header responsive, griglie adattive) |
-| **Suite di test automatici** | Test unitari e di integrazione coprono modelli, autenticazione, pannello admin, email e pagine pubbliche |
 
 ---
 

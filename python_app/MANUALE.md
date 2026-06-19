@@ -140,6 +140,47 @@ Dalla scheda di una prenotazione o dal pannello corsi, puoi iscrivere direttamen
 
 ## 6. Marketing e Lead
 
+### Media Library
+
+La Media Library (Admin → Media) permette di caricare e gestire immagini e documenti PDF riutilizzabili in tutto il sistema.
+
+**Caricare un file**
+1. Vai su **Admin → Media**
+2. Clicca **Carica file**
+3. (Opzionale) Inserisci un nome visualizzato; se lasci vuoto viene usato il nome del file
+4. Seleziona il file (JPG, PNG, WebP, GIF o PDF — max 15 MB) e clicca **Carica**
+
+**Filtri**
+Usa i pulsanti in cima alla griglia per visualizzare solo **Immagini** o **Documenti PDF**.
+
+**Eliminare un file**
+Clicca **Elimina** sotto il file. Il file viene rimosso sia dal disco che dal database.
+
+> **Nota**: i file della Media Library sono memorizzati nella cartella `static/uploads/media/` e sono accessibili tramite URL diretto.
+
+### Campagna email libera
+
+La campagna email libera (Admin → Marketing → tab Campagne → Nuova campagna email) permette di inviare una email personalizzata a tutti i lead e/o utenti con consenso marketing, con filtro opzionale per tag.
+
+**Creare e inviare una campagna**
+1. Vai su **Admin → Marketing**, tab **Campagne**
+2. Clicca **Nuova campagna email**
+3. Compila:
+   - **Oggetto**: oggetto dell'email
+   - **Corpo**: usa l'editor Quill per formattare il testo (grassetto, link, liste, colori…)
+   - **Allegato PDF** (opzionale): seleziona un PDF dalla Media Library
+   - **Destinatari**: spunta "Tutti" oppure seleziona uno o più tag per filtrare
+   - **Modalità invio**: *Individuale* (personalizzata, più lenta) o *BCC* (unica email, più veloce)
+4. Clicca **Invia campagna** — l'invio avviene in background
+
+**Anteprima live**
+Mentre scrivi, il pannello a destra mostra in tempo reale come apparirà l'email ai destinatari.
+
+**Storico campagna**
+Dopo l'invio vieni reindirizzato alla pagina di dettaglio dove puoi vedere il numero di email inviate e l'elenco dei destinatari raggiunti.
+
+
+
 ### Come funziona
 I visitatori possono iscriversi alle notifiche corsi tramite la pagina `/notifiche-corsi`. Dopo la verifica email, vengono aggiunti ai lead.
 
