@@ -79,6 +79,40 @@
 </div>
 {% endif %}
 
+{% block scripts %}
+<script>
+function mdzOver(e) {
+  e.preventDefault();
+  document.getElementById('media-drop-zone').classList.add('border-blue-500', 'bg-blue-50');
+  document.getElementById('mdz-icon').classList.add('text-blue-500');
+}
+function mdzLeave(e) {
+  document.getElementById('media-drop-zone').classList.remove('border-blue-500', 'bg-blue-50');
+  document.getElementById('mdz-icon').classList.remove('text-blue-500');
+}
+function mdzDrop(e) {
+  e.preventDefault();
+  mdzLeave(e);
+  const input = document.getElementById('media-file-input');
+  input.files = e.dataTransfer.files;
+  mdzSelect(input);
+}
+function mdzSelect(input) {
+  const label = document.getElementById('mdz-label');
+  const nameEl = document.getElementById('mdz-name');
+  if (input.files.length) {
+    label.classList.add('hidden');
+    nameEl.textContent = input.files[0].name;
+    nameEl.classList.remove('hidden');
+    document.getElementById('mdz-icon').classList.add('text-blue-500');
+  } else {
+    label.classList.remove('hidden');
+    nameEl.classList.add('hidden');
+  }
+}
+</script>
+{% endblock %}
+
 <!-- Modal upload -->
 <div id="modal-upload" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
   <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
@@ -102,8 +136,18 @@
         <label class="block text-xs font-medium text-gray-600 mb-1">
           File <span class="text-gray-400">(PDF, JPG, PNG, WebP, GIF — max 15 MB)</span>
         </label>
-        <input type="file" name="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.gif" required
-               class="w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+        <div id="media-drop-zone"
+             class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer transition-colors hover:border-blue-400 hover:bg-blue-50"
+             onclick="document.getElementById('media-file-input').click()"
+             ondragover="mdzOver(event)" ondragleave="mdzLeave(event)" ondrop="mdzDrop(event)">
+          <svg id="mdz-icon" class="w-8 h-8 mx-auto mb-2 text-gray-300 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+          </svg>
+          <p id="mdz-label" class="text-sm text-gray-500">Trascina il file qui oppure <span class="text-blue-700 font-medium">scegli file</span></p>
+          <p id="mdz-name" class="text-xs text-blue-700 font-medium mt-1 hidden"></p>
+        </div>
+        <input id="media-file-input" type="file" name="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.gif"
+               required class="hidden" onchange="mdzSelect(this)">
       </div>
       <div class="flex gap-2 pt-1">
         <button type="submit"
