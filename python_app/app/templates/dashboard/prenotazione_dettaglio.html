@@ -172,7 +172,7 @@
 
     {# Materiale didattico — visibile solo se confermata #}
     {% if p.stato.value == 'CONFERMATA' %}
-      {% set materiali = p.corso.materiali.all() %}
+      {% set materiali = p.corso.materiali %}
       {% if materiali %}
     <div class="bg-blue-50 border border-blue-200 rounded-xl p-5">
       <div class="flex items-center gap-2 mb-3">
