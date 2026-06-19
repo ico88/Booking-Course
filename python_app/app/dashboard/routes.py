@@ -294,8 +294,12 @@ def manuale():
 @dashboard_bp.route("/corsi/<corso_id>/materiale/<materiale_id>/download")
 @login_required
 def materiale_download(corso_id, materiale_id):
-    from ..models import MaterialeCorso
-    m = MaterialeCorso.query.filter_by(id=materiale_id, corso_id=corso_id).first_or_404()
+    from ..models import MaterialeDidattico
+    m = MaterialeDidattico.query.get_or_404(materiale_id)
+    # Verify file is actually associated with this course
+    corso = next((c for c in m.corsi if c.id == corso_id), None)
+    if not corso:
+        abort(404)
     # Verify current user has a confirmed booking for this corso
     p = Prenotazione.query.filter_by(
         utente_id=current_user.id,
@@ -304,5 +308,5 @@ def materiale_download(corso_id, materiale_id):
     ).first()
     if not p:
         abort(403)
-    materiali_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], "materiale", corso_id)
+    materiali_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], "materiale")
     return send_from_directory(materiali_dir, m.nome_file, download_name=m.nome, as_attachment=True)

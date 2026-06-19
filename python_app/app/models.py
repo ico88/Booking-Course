@@ -128,6 +128,7 @@ class Corso(db.Model):
     updated_at = db.Column(db.DateTime(timezone=True), default=now_utc, onupdate=now_utc)
 
     prenotazioni = db.relationship("Prenotazione", back_populates="corso", lazy="dynamic")
+    materiali = db.relationship("MaterialeDidattico", secondary="corso_materiale", back_populates="corsi")
 
     @property
     def posti_disponibili(self):
@@ -324,12 +325,11 @@ class VisitaCorso(db.Model):
     utente_id = db.Column(db.String, db.ForeignKey("utenti.id", ondelete="SET NULL"), nullable=True)
 
 
-class MaterialeCorso(db.Model):
-    """File didattici allegati a un corso, visibili ai partecipanti confermati."""
-    __tablename__ = "materiale_corso"
+class MaterialeDidattico(db.Model):
+    """Libreria centralizzata di materiale didattico riutilizzabile su più corsi."""
+    __tablename__ = "materiale_didattico"
 
     id = db.Column(db.String, primary_key=True, default=gen_id)
-    corso_id = db.Column(db.String, db.ForeignKey("corsi.id", ondelete="CASCADE"), nullable=False, index=True)
     nome = db.Column(db.String(255), nullable=False)
     nome_file = db.Column(db.String(255), nullable=False)
     mime_type = db.Column(db.String(100))
@@ -337,4 +337,13 @@ class MaterialeCorso(db.Model):
     created_at = db.Column(db.DateTime(timezone=True), default=now_utc)
     uploaded_by = db.Column(db.String, db.ForeignKey("utenti.id", ondelete="SET NULL"), nullable=True)
 
-    corso = db.relationship("Corso", backref=db.backref("materiali", lazy="dynamic", cascade="all, delete-orphan"))
+    corsi = db.relationship("Corso", secondary="corso_materiale", back_populates="materiali")
+
+
+# Join table corso ↔ materiale didattico
+corso_materiale = db.Table(
+    "corso_materiale",
+    db.Column("corso_id", db.String, db.ForeignKey("corsi.id", ondelete="CASCADE"), primary_key=True),
+    db.Column("materiale_id", db.String, db.ForeignKey("materiale_didattico.id", ondelete="CASCADE"), primary_key=True),
+    db.Column("aggiunto_at", db.DateTime(timezone=True), default=now_utc),
+)

@@ -4,9 +4,11 @@
 
 ### Nuove funzionalità
 
-- **Materiale didattico per corso**: gli admin possono caricare file didattici (PDF, Word, PPT, Excel, immagini, ZIP — max 50 MB ciascuno) dalla pagina partecipanti del corso; i partecipanti con prenotazione confermata vedono e scaricano il materiale dalla propria area prenotazione.
-- **Notifica automatica**: quando viene caricato del materiale dopo la creazione del corso, i partecipanti confermati ricevono una notifica email con elenco dei file disponibili e link all'area personale.
-- Migrazione DB `add_materiale_corso` con tabella `materiale_corso`.
+- **Libreria Materiali Didattici** (`Admin → Materiali`): carica dispense, presentazioni e documenti una sola volta (PDF, Word, PPT, Excel, immagini, ZIP — max 50 MB); il file fisico esiste una sola volta sul server indipendentemente da quanti corsi lo usano.
+- **Associazione materiali ai corsi**: dalla pagina partecipanti del corso, seleziona con checkbox quali materiali della libreria rendere disponibili; aggiungere un materiale già esistente non richiede nessun upload aggiuntivo.
+- **Notifica automatica**: quando si associano nuovi materiali a un corso che ha già partecipanti confermati, questi ricevono una email con l'elenco dei nuovi file e il link all'area personale.
+- I partecipanti con prenotazione **Confermata** scaricano i materiali dal dettaglio prenotazione nella loro area personale.
+- Migrazioni DB `add_materiale_corso` e `add_materiale_didattico` (tabelle `materiale_didattico`, `corso_materiale`).
 
 ---
 

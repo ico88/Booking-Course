@@ -312,13 +312,16 @@ def corso_duplica(corso_id):
 @admin_bp.route("/corsi/<string:corso_id>/partecipanti")
 @admin_required
 def corso_partecipanti(corso_id):
+    from ..models import MaterialeDidattico
     corso = Corso.query.get_or_404(corso_id)
     prenotazioni = corso.prenotazioni.filter(
         Prenotazione.stato.in_([StatoPrenotazione.CONFERMATA, StatoPrenotazione.PAGAMENTO_CARICATO])
     ).all()
     n_partecipanti = sum(len(p.partecipanti) for p in prenotazioni)
+    libreria_materiali = MaterialeDidattico.query.order_by(MaterialeDidattico.nome).all()
     return render_template("admin/corsi/partecipanti.html", corso=corso,
-                           prenotazioni=prenotazioni, n_partecipanti=n_partecipanti)
+                           prenotazioni=prenotazioni, n_partecipanti=n_partecipanti,
+                           libreria_materiali=libreria_materiali)
 
 
 @admin_bp.route("/corsi/<string:corso_id>/partecipanti/aggiungi", methods=["POST"])
@@ -885,26 +888,33 @@ def _get_newsletter_tags() -> list:
 
 
 # ===========================================================================
-# MATERIALE DIDATTICO
+# LIBRERIA MATERIALE DIDATTICO
 # ===========================================================================
 
-@admin_bp.route("/corsi/<corso_id>/materiale/upload", methods=["POST"])
+@admin_bp.route("/materiali")
 @superadmin_required
-def corso_materiale_upload(corso_id):
-    from ..models import MaterialeCorso
-    import uuid as _uuid, threading
-    corso = Corso.query.get_or_404(corso_id)
+def materiali_lista():
+    from ..models import MaterialeDidattico
+    materiali = MaterialeDidattico.query.order_by(MaterialeDidattico.created_at.desc()).all()
+    return render_template("admin/materiali/lista.html", materiali=materiali)
+
+
+@admin_bp.route("/materiali/upload", methods=["POST"])
+@superadmin_required
+def materiali_upload():
+    from ..models import MaterialeDidattico
+    import uuid as _uuid
     files = request.files.getlist("file")
     if not files or not any(f.filename for f in files):
         flash("Nessun file selezionato.", "error")
-        return redirect(url_for("admin.corso_partecipanti", corso_id=corso_id))
+        return redirect(url_for("admin.materiali_lista"))
 
     ALLOWED = {".pdf", ".doc", ".docx", ".ppt", ".pptx", ".xls", ".xlsx",
                ".jpg", ".jpeg", ".png", ".webp", ".zip"}
-    materiali_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], "materiale", corso_id)
+    materiali_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], "materiale")
     os.makedirs(materiali_dir, exist_ok=True)
 
-    nuovi = []
+    caricati = 0
     for f in files:
         if not f.filename:
             continue
@@ -920,42 +930,30 @@ def corso_materiale_upload(corso_id):
         with open(os.path.join(materiali_dir, safe_name), "wb") as fh:
             fh.write(data)
         nome = request.form.get("nome", "").strip() or os.path.splitext(f.filename)[0]
-        m = MaterialeCorso(
-            corso_id=corso_id,
+        db.session.add(MaterialeDidattico(
             nome=nome,
             nome_file=safe_name,
             mime_type=f.content_type or None,
             dimensione=len(data),
             uploaded_by=current_user.id,
-        )
-        db.session.add(m)
-        nuovi.append(m)
+        ))
+        caricati += 1
 
-    if nuovi:
+    if caricati:
         db.session.commit()
-        # Notifica partecipanti confermati in background
-        app_obj = current_app._get_current_object()
-        _nuovi_ids = [m.id for m in nuovi]
-        def _notify():
-            with app_obj.app_context():
-                from ..models import MaterialeCorso, Corso as _Corso
-                from ..email_service import invia_email_materiale_didattico
-                _corso = _Corso.query.get(corso_id)
-                _materiali = MaterialeCorso.query.filter(MaterialeCorso.id.in_(_nuovi_ids)).all()
-                if _corso and _materiali:
-                    invia_email_materiale_didattico(_corso, _materiali)
-        threading.Thread(target=_notify, daemon=True).start()
-        flash(f"{len(nuovi)} file caricati. I partecipanti confermati riceveranno una notifica.", "success")
-    return redirect(url_for("admin.corso_partecipanti", corso_id=corso_id))
+        flash(f"{caricati} file caricati nella libreria.", "success")
+    return redirect(url_for("admin.materiali_lista"))
 
 
-@admin_bp.route("/corsi/<corso_id>/materiale/<materiale_id>/elimina", methods=["POST"])
+@admin_bp.route("/materiali/<materiale_id>/elimina", methods=["POST"])
 @superadmin_required
-def corso_materiale_elimina(corso_id, materiale_id):
-    from ..models import MaterialeCorso
-    m = MaterialeCorso.query.filter_by(id=materiale_id, corso_id=corso_id).first_or_404()
-    materiali_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], "materiale", corso_id)
-    fpath = os.path.join(materiali_dir, m.nome_file)
+def materiali_elimina(materiale_id):
+    from ..models import MaterialeDidattico
+    m = MaterialeDidattico.query.get_or_404(materiale_id)
+    if m.corsi:
+        flash(f"Impossibile eliminare '{m.nome}': è associato a {len(m.corsi)} corso/i.", "error")
+        return redirect(url_for("admin.materiali_lista"))
+    fpath = os.path.join(current_app.config["UPLOAD_FOLDER"], "materiale", m.nome_file)
     try:
         if os.path.isfile(fpath):
             os.remove(fpath)
@@ -963,19 +961,63 @@ def corso_materiale_elimina(corso_id, materiale_id):
         pass
     db.session.delete(m)
     db.session.commit()
-    flash(f"File '{m.nome}' eliminato.", "success")
-    return redirect(url_for("admin.corso_partecipanti", corso_id=corso_id))
+    flash(f"File '{m.nome}' eliminato dalla libreria.", "success")
+    return redirect(url_for("admin.materiali_lista"))
 
 
-@admin_bp.route("/corsi/<corso_id>/materiale/<materiale_id>/download")
+@admin_bp.route("/materiali/<materiale_id>/download")
 @admin_required
-def corso_materiale_download(corso_id, materiale_id):
-    from ..models import MaterialeCorso
+def materiali_download(materiale_id):
+    from ..models import MaterialeDidattico
     from flask import send_from_directory
-    m = MaterialeCorso.query.filter_by(id=materiale_id, corso_id=corso_id).first_or_404()
-    materiali_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], "materiale", corso_id)
-    return send_from_directory(materiali_dir, m.nome_file, download_name=m.nome,
-                               as_attachment=True)
+    m = MaterialeDidattico.query.get_or_404(materiale_id)
+    materiali_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], "materiale")
+    return send_from_directory(materiali_dir, m.nome_file, download_name=m.nome, as_attachment=True)
+
+
+@admin_bp.route("/corsi/<corso_id>/materiale/associa", methods=["POST"])
+@superadmin_required
+def corso_materiale_associa(corso_id):
+    from ..models import MaterialeDidattico
+    import threading
+    corso = Corso.query.get_or_404(corso_id)
+    ids_selezionati = set(request.form.getlist("materiale_ids"))
+    ids_attuali = {m.id for m in corso.materiali}
+
+    nuovi_ids = ids_selezionati - ids_attuali
+    rimossi_ids = ids_attuali - ids_selezionati
+
+    for mid in rimossi_ids:
+        m = MaterialeDidattico.query.get(mid)
+        if m and m in corso.materiali:
+            corso.materiali.remove(m)
+
+    nuovi = []
+    for mid in nuovi_ids:
+        m = MaterialeDidattico.query.get(mid)
+        if m:
+            corso.materiali.append(m)
+            nuovi.append(m)
+
+    db.session.commit()
+
+    if nuovi:
+        app_obj = current_app._get_current_object()
+        _nuovi_ids = [m.id for m in nuovi]
+        _corso_id = corso_id
+        def _notify():
+            with app_obj.app_context():
+                from ..models import MaterialeDidattico as _MD, Corso as _Corso
+                from ..email_service import invia_email_materiale_didattico
+                _corso = _Corso.query.get(_corso_id)
+                _materiali = _MD.query.filter(_MD.id.in_(_nuovi_ids)).all()
+                if _corso and _materiali:
+                    invia_email_materiale_didattico(_corso, _materiali)
+        threading.Thread(target=_notify, daemon=True).start()
+        flash(f"Materiale aggiornato. {len(nuovi)} nuovo/i file: i partecipanti confermati riceveranno una notifica.", "success")
+    else:
+        flash("Materiale aggiornato.", "success")
+    return redirect(url_for("admin.corso_partecipanti", corso_id=corso_id))
 
 
 @admin_bp.route("/marketing")
