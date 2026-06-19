@@ -1,0 +1,52 @@
+{% comment %}
+  Editor HTML leggero senza dipendenze esterne.
+  Parametri (set prima dell'include):
+    editor_id       — id del div contenteditable (default "rich-editor")
+    textarea_id     — id del textarea nascosto che riceve l'HTML (default "rich-textarea")
+    min_height      — altezza minima in px (default 160)
+    placeholder     — testo placeholder (default "Scrivi qui...")
+{% endcomment %}
+{% set _eid = editor_id if editor_id is defined else "rich-editor" %}
+{% set _tid = textarea_id if textarea_id is defined else "rich-textarea" %}
+{% set _mh  = min_height  if min_height  is defined else 160 %}
+{% set _ph  = placeholder  if placeholder  is defined else "Scrivi qui..." %}
+
+<style>
+  #{{ _eid }}-wrap { border:1px solid #d1d5db; border-radius:0.5rem; overflow:hidden; background:#fff; }
+  #{{ _eid }}-bar  { display:flex; flex-wrap:wrap; gap:2px; padding:6px 8px; background:#f9fafb; border-bottom:1px solid #d1d5db; }
+  #{{ _eid }}-bar button,
+  #{{ _eid }}-bar select { font-size:12px; border:1px solid transparent; border-radius:4px; padding:3px 6px; cursor:pointer; background:transparent; color:#374151; line-height:1; }
+  #{{ _eid }}-bar button:hover,
+  #{{ _eid }}-bar select:hover { background:#e5e7eb; }
+  #{{ _eid }}-bar .sep { width:1px; background:#e5e7eb; margin:2px 4px; align-self:stretch; }
+  #{{ _eid }} { min-height:{{ _mh }}px; padding:10px 14px; font-size:14px; line-height:1.6; outline:none; }
+  #{{ _eid }}:empty::before { content:attr(data-placeholder); color:#9ca3af; pointer-events:none; }
+  #{{ _eid }} h2 { font-size:1.25em; font-weight:700; margin:.4em 0; }
+  #{{ _eid }} h3 { font-size:1.1em; font-weight:600; margin:.4em 0; }
+  #{{ _eid }} ul,#{{ _eid }} ol { padding-left:1.4em; margin:.3em 0; }
+  #{{ _eid }} a  { color:#2563eb; text-decoration:underline; }
+</style>
+
+<div id="{{ _eid }}-wrap">
+  <div id="{{ _eid }}-bar">
+    <select onchange="efmt('{{ _eid }}','formatBlock',this.value);this.value=''">
+      <option value="">Paragrafo</option>
+      <option value="h2">Titolo 2</option>
+      <option value="h3">Titolo 3</option>
+      <option value="p">Normale</option>
+    </select>
+    <span class="sep"></span>
+    <button type="button" onclick="efmt('{{ _eid }}','bold')"           title="Grassetto"><b>B</b></button>
+    <button type="button" onclick="efmt('{{ _eid }}','italic')"         title="Corsivo"><i>I</i></button>
+    <button type="button" onclick="efmt('{{ _eid }}','underline')"      title="Sottolineato"><u>U</u></button>
+    <span class="sep"></span>
+    <button type="button" onclick="efmt('{{ _eid }}','insertUnorderedList')" title="Lista puntata">• —</button>
+    <button type="button" onclick="efmt('{{ _eid }}','insertOrderedList')"   title="Lista numerata">1.</button>
+    <span class="sep"></span>
+    <button type="button" onclick="elink('{{ _eid }}')"  title="Link">🔗</button>
+    <button type="button" onclick="efmt('{{ _eid }}','removeFormat')"   title="Rimuovi formattazione">✕</button>
+  </div>
+  <div id="{{ _eid }}" contenteditable="true" data-placeholder="{{ _ph }}"
+       oninput="esync('{{ _eid }}','{{ _tid }}');{% if editor_onchange is defined %}{{ editor_onchange }}{% endif %}">
+  </div>
+</div>

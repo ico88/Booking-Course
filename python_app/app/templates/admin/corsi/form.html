@@ -1,26 +1,6 @@
 {% extends "admin/base_admin.html" %}
 {% block title %}{{ 'Modifica' if corso else 'Nuovo' }} corso{% endblock %}
 
-{% block head %}
-<link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
-<style>
-  .ql-toolbar.ql-snow { border: 1px solid #d1d5db !important; border-radius: 0.5rem 0.5rem 0 0 !important; background: #f9fafb; padding: 6px 8px !important; }
-  .ql-container.ql-snow { border: 1px solid #d1d5db !important; border-top: none !important; border-radius: 0 0 0.5rem 0.5rem !important; font-size: 0.875rem; }
-  .ql-editor { min-height: 160px; line-height: 1.6; }
-  .ql-toolbar.ql-snow .ql-formats { display: inline-flex !important; align-items: center; margin-right: 8px !important; }
-  .ql-toolbar.ql-snow button { display: inline-flex !important; align-items: center; justify-content: center; width: 28px !important; height: 28px !important; padding: 3px !important; border-radius: 4px; cursor: pointer; }
-  .ql-toolbar.ql-snow button:hover { background: #e5e7eb !important; }
-  .ql-toolbar.ql-snow button svg { display: block !important; width: 18px !important; height: 18px !important; }
-  .ql-toolbar .ql-stroke { stroke: #374151 !important; fill: none !important; }
-  .ql-toolbar .ql-fill { fill: #374151 !important; stroke: none !important; }
-  .ql-toolbar .ql-picker { color: #374151 !important; }
-  .ql-toolbar .ql-picker-label { display: flex !important; align-items: center; border: 1px solid #d1d5db !important; border-radius: 4px; padding: 2px 6px !important; }
-  .ql-toolbar .ql-picker-label svg { display: inline-block !important; }
-  .ql-snow .ql-picker.ql-header .ql-picker-label::before { content: attr(data-value) !important; }
-  .ql-snow .ql-picker.ql-header .ql-picker-label[data-value=""]::before,
-  .ql-snow .ql-picker.ql-header .ql-picker-label:not([data-value])::before { content: "Normal" !important; }
-</style>
 {% endblock %}
 
 {% block admin_content %}
@@ -55,7 +35,11 @@
         </div>
         <div>
           <label class="block text-sm font-medium mb-1">Descrizione</label>
-          <div id="quill-desc" style="min-height:160px"></div>
+          {% set editor_id = "rich-editor" %}
+          {% set textarea_id = "textarea-descrizione" %}
+          {% set min_height = 160 %}
+          {% set placeholder = "Descrizione del corso..." %}
+          {% include "admin/_rich_editor.html" %}
           <textarea name="descrizione" id="textarea-descrizione" class="hidden"></textarea>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -289,22 +273,7 @@ function _renderVisiteChart() {
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  const quill = new Quill('#quill-desc', {
-    theme: 'snow',
-    modules: {
-      toolbar: [
-        [{ header: [2, 3, false] }],
-        ['bold', 'italic', 'underline', 'strike'],
-        [{ list: 'ordered' }, { list: 'bullet' }],
-        ['link'],
-        ['clean'],
-      ]
-    }
-  });
-  quill.clipboard.dangerouslyPasteHTML({{ (corso.descrizione if corso else '') | tojson }});
-  document.getElementById('corso-form').addEventListener('submit', function() {
-    document.getElementById('textarea-descrizione').value = quill.root.innerHTML;
-  });
+  einit('rich-editor', 'textarea-descrizione', {{ (corso.descrizione if corso else '') | tojson }});
 });
 </script>
 {% endblock %}

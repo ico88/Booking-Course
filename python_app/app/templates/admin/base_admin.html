@@ -143,6 +143,27 @@
 
 {% block scripts %}{% endblock %}
 <script>
+/* ---- Rich editor helpers (nessuna dipendenza esterna) ---- */
+function efmt(eid, cmd, val) {
+  document.getElementById(eid).focus();
+  document.execCommand(cmd, false, val || null);
+}
+function elink(eid) {
+  const url = prompt('URL del link:');
+  if (url) efmt(eid, 'createLink', url);
+}
+function esync(eid, tid) {
+  const el = document.getElementById(tid);
+  if (el) el.value = document.getElementById(eid).innerHTML;
+}
+function einit(eid, tid, html) {
+  const ed = document.getElementById(eid);
+  if (html) ed.innerHTML = html;
+  const ta = document.getElementById(tid);
+  if (ta && ta.closest('form'))
+    ta.closest('form').addEventListener('submit', () => esync(eid, tid));
+}
+/* ---- Sidebar ---- */
 function openSidebar() {
   document.getElementById('sidebar').classList.remove('-translate-x-full');
   document.getElementById('sidebar-overlay').classList.remove('hidden');
