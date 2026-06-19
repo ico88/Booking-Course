@@ -23,7 +23,7 @@
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-  <div class="{{ 'lg:col-span-2' if corso else 'lg:col-span-3' }}">
+  <div class="lg:col-span-2">
     <form method="POST" id="corso-form" class="space-y-5">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
@@ -151,8 +151,8 @@
     </form>
   </div>
 
-  {% if corso %}
   <div class="space-y-4">
+  {% if corso %}
     <div class="bg-white border border-gray-200 rounded-xl p-5">
       <h3 class="font-semibold mb-3">Immagine corso</h3>
       {% if corso.immagine_url %}
@@ -170,6 +170,34 @@
         <a href="{{ url_for('admin.corso_partecipanti', corso_id=corso.id) }}" class="block w-full text-center bg-gray-100 hover:bg-gray-200 py-2 rounded-lg text-sm">Lista partecipanti</a>
         <a href="{{ url_for('public.corso_dettaglio', corso_id=corso.id) }}" target="_blank" class="block w-full text-center bg-gray-100 hover:bg-gray-200 py-2 rounded-lg text-sm">Vedi pagina pubblica</a>
       </div>
+    </div>
+    {# ── Materiali didattici ── #}
+    <div class="bg-white border border-gray-200 rounded-xl p-5">
+      <h3 class="font-semibold mb-3">Materiali didattici</h3>
+      {% if libreria_materiali %}
+      <form method="POST" action="{{ url_for('admin.corso_materiale_associa', corso_id=corso.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="space-y-1 mb-3 max-h-48 overflow-y-auto">
+          {% for mat in libreria_materiali %}
+          {% set already = mat in corso.materiali %}
+          <label class="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50 rounded px-1 py-0.5">
+            <input type="checkbox" name="materiale_ids" value="{{ mat.id }}" {% if already %}checked{% endif %}>
+            <span class="truncate">{{ mat.nome }}</span>
+          </label>
+          {% endfor %}
+        </div>
+        <button type="submit" class="w-full bg-gray-100 hover:bg-gray-200 py-2 rounded-lg text-sm">Salva</button>
+      </form>
+      {% else %}
+      <p class="text-sm text-gray-400 mb-3">Nessun materiale in libreria.</p>
+      {% endif %}
+      {# Upload zone #}
+      <div id="mat-upload-zone" class="mt-3 border-2 border-dashed border-gray-300 rounded-lg p-4 text-center text-sm text-gray-400 cursor-pointer hover:border-blue-400 hover:text-blue-500 transition-colors">
+        <p>Trascina un file qui o <span class="underline">clicca per caricare</span></p>
+        <input type="file" id="mat-upload-input" class="hidden">
+        <p id="mat-upload-status" class="mt-1 text-xs"></p>
+      </div>
+      <a href="{{ url_for('admin.materiali_lista') }}" class="block mt-3 text-xs text-blue-600 hover:underline text-right">Gestisci tutti i materiali →</a>
     </div>
     {% if visite_totali is defined %}
     <div class="bg-white border border-gray-200 rounded-xl p-5">
@@ -198,8 +226,14 @@
       {% endif %}
     </div>
     {% endif %}
-  </div>
+  {% else %}
+    {# Info box for new corso #}
+    <div class="bg-gray-50 border border-gray-200 rounded-xl p-5 text-sm text-gray-500">
+      <p class="font-medium text-gray-700 mb-1">Materiali didattici</p>
+      <p>Dopo aver salvato il corso potrai aggiungere materiali didattici.</p>
+    </div>
   {% endif %}
+  </div>
 </div>
 
 <script>
@@ -220,6 +254,34 @@ if (valPrevCheck && prerequisitoBox) {
     prerequisitoBox.classList.toggle('hidden', !valPrevCheck.checked);
   });
 }
+
+// Materiali upload zone
+{% if corso %}
+(function() {
+  var zone = document.getElementById('mat-upload-zone');
+  var input = document.getElementById('mat-upload-input');
+  var status = document.getElementById('mat-upload-status');
+  if (!zone || !input) return;
+  zone.addEventListener('click', function() { input.click(); });
+  zone.addEventListener('dragover', function(e) { e.preventDefault(); zone.classList.add('border-blue-500'); });
+  zone.addEventListener('dragleave', function() { zone.classList.remove('border-blue-500'); });
+  zone.addEventListener('drop', function(e) { e.preventDefault(); zone.classList.remove('border-blue-500'); if (e.dataTransfer.files.length) uploadFile(e.dataTransfer.files[0]); });
+  input.addEventListener('change', function() { if (input.files.length) uploadFile(input.files[0]); });
+  function uploadFile(file) {
+    status.textContent = 'Caricamento...';
+    var fd = new FormData();
+    fd.append('file', file);
+    fd.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+    fetch('{{ url_for("admin.materiali_upload") }}', { method: 'POST', body: fd })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.ok || data.id || data.success) { status.textContent = 'Caricato!'; setTimeout(function() { location.reload(); }, 800); }
+        else { status.textContent = 'Errore: ' + (data.error || 'caricamento fallito'); }
+      })
+      .catch(function() { status.textContent = 'Errore di rete.'; });
+  }
+})();
+{% endif %}
 
 // Visit chart
 {% if corso and visite_per_giorno is defined and visite_per_giorno %}

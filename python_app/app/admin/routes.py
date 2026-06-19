@@ -187,7 +187,7 @@ def corso_nuovo():
         logger.info("Admin %s: corso creato %s", current_user.email, corso.id)
         flash("Corso creato.", "success")
         return redirect(url_for("admin.corso_modifica", corso_id=corso.id))
-    return render_template("admin/corsi/form.html", corso=None, newsletter_tags=_get_newsletter_tags())
+    return render_template("admin/corsi/form.html", corso=None, newsletter_tags=_get_newsletter_tags(), libreria_materiali=[])
 
 
 @admin_bp.route("/corsi/<string:corso_id>", methods=["GET", "POST"])
@@ -216,9 +216,11 @@ def corso_modifica(corso_id):
         func.count().label('cnt')
     ).filter(VisitaCorso.corso_id == corso.id, VisitaCorso.visitato_at >= ora - timedelta(days=30)
     ).group_by(func.date(VisitaCorso.visitato_at)).order_by('giorno').all()
+    from ..models import MaterialeDidattico
+    libreria_materiali = MaterialeDidattico.query.order_by(MaterialeDidattico.nome).all()
     return render_template("admin/corsi/form.html", corso=corso, newsletter_tags=_get_newsletter_tags(),
                            visite_totali=visite_totali, visite_7gg=visite_7gg, visite_30gg=visite_30gg,
-                           visite_per_giorno=visite_per_giorno)
+                           visite_per_giorno=visite_per_giorno, libreria_materiali=libreria_materiali)
 
 
 def _corso_da_form(corso: Corso) -> Corso:
