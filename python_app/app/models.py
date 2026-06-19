@@ -28,32 +28,35 @@ def now_utc():
 
 
 class TZDateTime(types.TypeDecorator):
-    """DateTime che funziona correttamente sia con SQLite (naive) che con altri DB (aware)."""
+    """DateTime compatibile SQLite + PostgreSQL.
+
+    SQLAlchemy chiama il processore C (str_to_datetime) come fixed_impl_processor
+    *prima* di process_result_value, e crasha su NULL. Sovrascriviamo result_processor
+    direttamente per bypassare completamente il processore nativo.
+    """
     impl = types.DateTime
     cache_ok = True
 
     def process_bind_param(self, value, dialect):
         if value is None:
             return None
-        if isinstance(value, datetime):
-            # Converte in naive UTC per SQLite
-            if value.tzinfo is not None:
-                value = value.astimezone(timezone.utc).replace(tzinfo=None)
-            return value
+        if isinstance(value, datetime) and value.tzinfo is not None:
+            value = value.astimezone(timezone.utc).replace(tzinfo=None)
         return value
 
-    def process_result_value(self, value, dialect):
-        if value is None:
-            return None
-        if isinstance(value, str):
-            try:
-                value = datetime.fromisoformat(value)
-            except (ValueError, TypeError):
+    def result_processor(self, dialect, coltype):
+        def process(value):
+            if value is None:
                 return None
-        # Aggiunge UTC se naive
-        if isinstance(value, datetime) and value.tzinfo is None:
-            return value.replace(tzinfo=timezone.utc)
-        return value
+            if isinstance(value, str):
+                try:
+                    value = datetime.fromisoformat(value)
+                except (ValueError, TypeError):
+                    return None
+            if isinstance(value, datetime) and value.tzinfo is None:
+                return value.replace(tzinfo=timezone.utc)
+            return value
+        return process
 
 
 # ---------------------------------------------------------------------------
