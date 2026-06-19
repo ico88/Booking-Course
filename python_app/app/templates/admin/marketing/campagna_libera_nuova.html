@@ -1,6 +1,11 @@
 {% extends "admin/base_admin.html" %}
 {% block title %}Nuova campagna email{% endblock %}
 
+{% block head %}
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+{% endblock %}
+
 {% block admin_content %}
 <div class="flex flex-wrap items-center gap-3 mb-6">
   <div class="flex-1 min-w-0">
