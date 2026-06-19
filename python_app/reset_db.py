@@ -53,10 +53,10 @@ with app.app_context():
 
     if not existing:
         import uuid
-        from werkzeug.security import generate_password_hash
+        import bcrypt as _bcrypt
         uid = str(uuid.uuid4())
         now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-        pw_hash = generate_password_hash(password)
+        pw_hash = _bcrypt.hashpw(password.encode(), _bcrypt.gensalt()).decode()
         db.session.execute(db.text("""
             INSERT INTO utenti
               (id, email, nome, cognome, password_hash, ruolo,
