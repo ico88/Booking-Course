@@ -89,6 +89,43 @@
 </div>
 {% endif %}
 
+{% block scripts %}
+<script>
+function dzOver(e) {
+  e.preventDefault();
+  const dz = document.getElementById('drop-zone');
+  dz.classList.add('border-green-500', 'bg-green-50');
+  document.getElementById('dz-icon').classList.add('text-green-500');
+}
+function dzLeave(e) {
+  const dz = document.getElementById('drop-zone');
+  dz.classList.remove('border-green-500', 'bg-green-50');
+  document.getElementById('dz-icon').classList.remove('text-green-500');
+}
+function dzDrop(e) {
+  e.preventDefault();
+  dzLeave(e);
+  const input = document.getElementById('file-input');
+  input.files = e.dataTransfer.files;
+  dzSelect(input);
+}
+function dzSelect(input) {
+  const names = Array.from(input.files).map(f => f.name);
+  const label = document.getElementById('dz-label');
+  const namesEl = document.getElementById('dz-names');
+  if (names.length) {
+    label.classList.add('hidden');
+    namesEl.textContent = names.length === 1 ? names[0] : `${names.length} file selezionati`;
+    namesEl.classList.remove('hidden');
+    document.getElementById('dz-icon').classList.add('text-green-500');
+  } else {
+    label.classList.remove('hidden');
+    namesEl.classList.add('hidden');
+  }
+}
+</script>
+{% endblock %}
+
 <!-- Modal upload -->
 <div id="modal-upload" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
   <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
@@ -114,10 +151,20 @@
         <label class="block text-xs font-medium text-gray-600 mb-1">
           File <span class="text-gray-400">(PDF, Word, PPT, Excel, immagini, ZIP — max 50 MB)</span>
         </label>
-        <input type="file" name="file" multiple
+        <!-- Drop zone -->
+        <div id="drop-zone"
+             class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer transition-colors hover:border-green-400 hover:bg-green-50"
+             onclick="document.getElementById('file-input').click()"
+             ondragover="dzOver(event)" ondragleave="dzLeave(event)" ondrop="dzDrop(event)">
+          <svg id="dz-icon" class="w-8 h-8 mx-auto mb-2 text-gray-300 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+          </svg>
+          <p id="dz-label" class="text-sm text-gray-500">Trascina i file qui oppure <span class="text-green-700 font-medium">scegli file</span></p>
+          <p id="dz-names" class="text-xs text-green-700 font-medium mt-1 hidden"></p>
+        </div>
+        <input id="file-input" type="file" name="file" multiple
                accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.jpg,.jpeg,.png,.webp,.zip"
-               required
-               class="w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+               required class="hidden" onchange="dzSelect(this)">
       </div>
       <div class="flex gap-2 pt-1">
         <button type="submit"
