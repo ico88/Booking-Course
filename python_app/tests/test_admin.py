@@ -305,3 +305,118 @@ class TestCampagnaReinvia:
     def test_reinvia_non_accessibile_a_utente(self, client_utente, db, corso):
         r = client_utente.get(f"/admin/marketing/campagna/{corso.id}/reinvia")
         assert r.status_code in (302, 403)
+
+
+class TestMediaLibrary:
+    def test_lista_media_accessibile_admin(self, client_admin):
+        r = client_admin.get("/admin/media")
+        assert r.status_code == 200
+
+    def test_lista_media_non_accessibile_utente(self, client_utente):
+        r = client_utente.get("/admin/media")
+        assert r.status_code in (302, 403)
+
+    def test_media_json_endpoint(self, client_admin):
+        r = client_admin.get("/admin/media/json")
+        assert r.status_code == 200
+        data = r.get_json()
+        assert data is not None
+        # può essere lista o dict con chiave 'files'
+        files = data if isinstance(data, list) else data.get("files", data)
+        assert isinstance(files, list)
+
+    def test_elimina_media_inesistente_404(self, client_admin):
+        r = client_admin.post("/admin/media/elimina/id-non-esiste", follow_redirects=True)
+        assert r.status_code in (200, 404)
+
+    def test_lista_media_non_accessibile_segreteria(self, client_segreteria):
+        r = client_segreteria.get("/admin/media")
+        assert r.status_code in (302, 403)
+
+
+class TestCampagnaLibera:
+    def test_nuova_campagna_pagina(self, client_admin):
+        r = client_admin.get("/admin/marketing/campagna-libera/nuova")
+        assert r.status_code == 200
+
+    def test_nuova_campagna_non_accessibile_segreteria(self, client_segreteria):
+        r = client_segreteria.get("/admin/marketing/campagna-libera/nuova")
+        assert r.status_code in (302, 403)
+
+    def test_crea_campagna_libera(self, client_admin, db):
+        from app.models import CampagnaLibera
+        r = client_admin.post("/admin/marketing/campagna-libera/nuova", data={
+            "oggetto": "Oggetto Test",
+            "corpo_html": "<p>Testo campagna</p>",
+            "modalita": "bcc",
+        }, follow_redirects=True)
+        assert r.status_code == 200
+        assert CampagnaLibera.query.filter_by(oggetto="Oggetto Test").first() is not None
+
+    def test_dettaglio_campagna(self, client_admin, db):
+        from app.models import CampagnaLibera
+        c = CampagnaLibera(oggetto="Obj", corpo_html="<p>x</p>")
+        db.session.add(c)
+        db.session.flush()
+        r = client_admin.get(f"/admin/marketing/campagna-libera/{c.id}")
+        assert r.status_code == 200
+
+    def test_anteprima_campagna(self, client_admin):
+        import json
+        r = client_admin.post("/admin/marketing/campagna-libera/anteprima",
+                              data=json.dumps({"corpo": "<p>Test</p>"}),
+                              content_type="application/json")
+        assert r.status_code == 200
+
+
+class TestMaterialeDidattico:
+    def test_lista_materiali_accessibile_admin(self, client_admin):
+        r = client_admin.get("/admin/materiali")
+        assert r.status_code == 200
+
+    def test_lista_materiali_non_accessibile_utente(self, client_utente):
+        r = client_utente.get("/admin/materiali")
+        assert r.status_code in (302, 403)
+
+    def test_lista_materiali_non_accessibile_segreteria(self, client_segreteria):
+        r = client_segreteria.get("/admin/materiali")
+        assert r.status_code in (302, 403)
+
+    def test_elimina_materiale_inesistente(self, client_admin):
+        r = client_admin.post("/admin/materiali/id-non-esiste/elimina", follow_redirects=True)
+        assert r.status_code in (200, 404)
+
+    def test_associa_materiale_a_corso(self, client_admin, db, corso):
+        from app.models import MaterialeDidattico
+        m = MaterialeDidattico(nome="Dispensa BLSD", nome_file="blsd.pdf", mime_type="application/pdf", dimensione=1024)
+        db.session.add(m)
+        db.session.flush()
+        r = client_admin.post(f"/admin/corsi/{corso.id}/materiale/associa", data={
+            "materiale_ids": [m.id],
+        }, follow_redirects=True)
+        assert r.status_code == 200
+        db.session.expire(corso)
+        assert m in corso.materiali
+
+    def test_disassocia_materiale_da_corso(self, client_admin, db, corso):
+        from app.models import MaterialeDidattico
+        m = MaterialeDidattico(nome="Dispensa BLSD", nome_file="blsd2.pdf", mime_type="application/pdf", dimensione=512)
+        db.session.add(m)
+        corso.materiali.append(m)
+        db.session.flush()
+        # Invia senza materiale_ids → rimuove tutti
+        r = client_admin.post(f"/admin/corsi/{corso.id}/materiale/associa", data={}, follow_redirects=True)
+        assert r.status_code == 200
+        db.session.expire(corso)
+        assert m not in corso.materiali
+
+    def test_materiale_non_eliminabile_se_usato(self, client_admin, db, corso):
+        from app.models import MaterialeDidattico
+        m = MaterialeDidattico(nome="In uso", nome_file="in_uso.pdf", mime_type="application/pdf", dimensione=100)
+        db.session.add(m)
+        corso.materiali.append(m)
+        db.session.flush()
+        r = client_admin.post(f"/admin/materiali/{m.id}/elimina", follow_redirects=True)
+        assert r.status_code == 200
+        # File deve esistere ancora nel DB
+        assert MaterialeDidattico.query.get(m.id) is not None
