@@ -30,13 +30,14 @@ Dimentica fogli Excel, email disperse e bonifici da tracciare manualmente. Con B
 
 ---
 
-## 🆕 Novità recenti (v1.8.0)
+## 🆕 Novità recenti (v1.9.0)
 
 | Funzionalità | Dettaglio |
 |---|---|
+| **Materiale didattico** | Upload di file didattici (PDF, Word, PPT, Excel, ZIP — max 50 MB) dalla pagina partecipanti del corso; notifica email automatica ai partecipanti confermati al caricamento; download dalla propria area prenotazione |
 | **Media Library** | Sezione dedicata (menu admin) per caricare e gestire immagini e PDF (max 15 MB); griglia con filtro per tipo; eliminazione file fisico + DB; endpoint JSON per integrazione con altri form |
 | **Campagna email libera** | Composer Quill con anteprima live in iframe; filtro tag opzionale per destinatari; allegato PDF dalla Media Library; modalità individuale o BCC; storico invii per campagna |
-| **Migrazione DB** | Nuove tabelle `media_files`, `campagne_libere`, `invii_campagne_libere` |
+| **Migrazione DB** | Nuove tabelle `media_files`, `campagne_libere`, `invii_campagne_libere`, `materiale_corso` |
 | **Reminder scadenza prenotazione** | Email automatica ~48h prima della scadenza a chi non ha ancora caricato la ricevuta; inviato una sola volta per prenotazione |
 | **Re-invio notifica corso** | Dal dettaglio campagna è possibile re-inviare la notifica rispettando lo schema (escludi iscritti, escludi bounce, filtra tag); ogni invio tracciato separatamente |
 | **Backup ZIP completo** | Il backup include database + tutti i file caricati (attestati, ricevute, locandine, prerequisiti) in formato ZIP compresso |

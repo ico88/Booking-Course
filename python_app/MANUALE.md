@@ -90,6 +90,21 @@ Usa il pulsante **Duplica** per creare una copia (utile per corsi ricorrenti). L
 2. Quando una prenotazione è **Confermata**, dalla scheda della prenotazione puoi usare **Emetti attestato**
 3. L'attestato viene generato e inviato automaticamente al partecipante
 
+### Materiale didattico
+Dalla pagina **Admin → Corsi → Partecipanti** puoi caricare file didattici per il corso (dispense, presentazioni, moduli, ecc.).
+
+**Formati supportati**: PDF, Word (.doc/.docx), PowerPoint (.ppt/.pptx), Excel (.xls/.xlsx), immagini (JPG, PNG, WebP), ZIP — max 50 MB per file.
+
+**Come caricare:**
+1. Vai su **Admin → Corsi → [nome corso] → Partecipanti**
+2. Clicca **Carica file** in fondo alla pagina
+3. (Opzionale) inserisci un nome visualizzato
+4. Seleziona uno o più file e clicca **Carica**
+
+**Notifica automatica**: se al momento del caricamento esistono partecipanti con prenotazione **Confermata**, ricevono una email con l'elenco dei nuovi file e il link all'area personale. Se carichi materiale prima che ci siano prenotazioni confermate, i partecipanti troveranno i file disponibili una volta confermata la propria iscrizione.
+
+**Area partecipante**: nella pagina di dettaglio della prenotazione (area personale), chi ha prenotazione Confermata vede la sezione "Materiale didattico" con tutti i file scaricabili.
+
 ---
 
 ## 4. Gestione Prenotazioni
