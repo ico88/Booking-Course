@@ -1944,11 +1944,13 @@ def campagna_libera_nuova():
 
     newsletter_tags = _get_newsletter_tags()
     media_docs = MediaFile.query.filter_by(tipo="documento").order_by(MediaFile.created_at.desc()).all()
+    media_images = MediaFile.query.filter_by(tipo="immagine").order_by(MediaFile.created_at.desc()).all()
 
     if request.method == "GET":
         return render_template("admin/marketing/campagna_libera_nuova.html",
                                newsletter_tags=newsletter_tags,
-                               media_docs=media_docs)
+                               media_docs=media_docs,
+                               media_images=media_images)
 
     oggetto = request.form.get("oggetto", "").strip()
     corpo_html = request.form.get("corpo_html", "").strip()
@@ -1959,7 +1961,8 @@ def campagna_libera_nuova():
     if not oggetto or not corpo_html:
         flash("Oggetto e corpo sono obbligatori.", "error")
         return render_template("admin/marketing/campagna_libera_nuova.html",
-                               newsletter_tags=newsletter_tags, media_docs=media_docs)
+                               newsletter_tags=newsletter_tags, media_docs=media_docs,
+                               media_images=media_images)
 
     campagna = CampagnaLibera(
         oggetto=oggetto,
