@@ -28,7 +28,6 @@
           Oggetto email <span class="text-red-500">*</span>
         </label>
         <input type="text" name="oggetto" id="oggetto" required placeholder="es. Novità e aggiornamenti"
-               oninput="aggiornaAnteprima()"
                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
       </div>
 
@@ -85,7 +84,6 @@
           <option value="bcc">BCC (unica email, più veloce)</option>
         </select>
         <button type="submit"
-                onclick="document.getElementById('corpo_html_hidden').value = quill.root.innerHTML"
                 class="w-full bg-blue-700 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-800 transition-colors">
           Invia campagna
         </button>
@@ -115,39 +113,52 @@
 </div>
 
 <script>
-const quill = new Quill('#quill-editor', {
-  theme: 'snow',
-  modules: { toolbar: [
-    [{ header: [1,2,3,false] }],
-    ['bold','italic','underline'],
-    [{ color: [] },{ background: [] }],
-    [{ list: 'ordered' },{ list: 'bullet' }],
-    ['link'],
-    ['clean']
-  ]}
+let quill;
+document.addEventListener('DOMContentLoaded', function() {
+  quill = new Quill('#quill-editor', {
+    theme: 'snow',
+    modules: { toolbar: [
+      [{ header: [1,2,3,false] }],
+      ['bold','italic','underline'],
+      [{ color: [] },{ background: [] }],
+      [{ list: 'ordered' },{ list: 'bullet' }],
+      ['link'],
+      ['clean']
+    ]}
+  });
+  quill.on('text-change', () => schedulePreview());
 });
 
-quill.on('text-change', () => aggiornaAnteprima());
+// Aggiorna oggetto nell'intestazione anteprima immediatamente (no server)
+document.getElementById('oggetto').addEventListener('input', function() {
+  const val = this.value.trim();
+  document.getElementById('anteprima-oggetto').textContent = val || '—';
+  schedulePreview();
+});
 
-let _anteprima_timer = null;
-function aggiornaAnteprima() {
-  clearTimeout(_anteprima_timer);
-  _anteprima_timer = setTimeout(_fetchAnteprima, 600);
+let _timer = null;
+function schedulePreview() {
+  clearTimeout(_timer);
+  _timer = setTimeout(fetchPreview, 700);
 }
 
-async function _fetchAnteprima() {
+async function fetchPreview() {
+  if (!quill) return;
   const oggetto = document.getElementById('oggetto').value;
   const corpo = quill.root.innerHTML;
+  const isEmpty = !corpo || corpo === '<p><br></p>';
+
+  // Aggiorna sempre oggetto
   document.getElementById('anteprima-oggetto').textContent = oggetto || '—';
-  if (!corpo || corpo === '<p><br></p>') return;
+
+  // Fetch HTML solo se c'è corpo
+  if (isEmpty) return;
+
   document.getElementById('anteprima-status').textContent = 'Aggiornamento...';
   try {
     const r = await fetch('{{ url_for("admin.campagna_libera_anteprima") }}', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': '{{ csrf_token() }}'
-      },
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
       body: JSON.stringify({ oggetto, corpo })
     });
     const data = await r.json();
@@ -155,15 +166,17 @@ async function _fetchAnteprima() {
     document.getElementById('anteprima-status').textContent = 'Aggiornata';
     setTimeout(() => document.getElementById('anteprima-status').textContent = '', 2000);
   } catch(e) {
-    document.getElementById('anteprima-status').textContent = 'Errore anteprima';
+    document.getElementById('anteprima-status').textContent = 'Errore';
   }
 }
 
+document.getElementById('form-campagna').addEventListener('submit', function() {
+  if (quill) document.getElementById('corpo_html_hidden').value = quill.root.innerHTML;
+});
+
 function toggleTutti(cb) {
   document.getElementById('tag-section').classList.toggle('hidden', cb.checked);
-  if (cb.checked) {
-    document.querySelectorAll('input[name="tags"]').forEach(el => el.checked = false);
-  }
+  if (cb.checked) document.querySelectorAll('input[name="tags"]').forEach(el => el.checked = false);
 }
 </script>
 {% endblock %}
