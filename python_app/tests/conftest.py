@@ -8,26 +8,33 @@ import os
 import pytest
 
 os.environ.setdefault("SECRET_KEY", "test-secret-key-non-usare-in-produzione")
-os.environ.setdefault("DATABASE_URL", "sqlite:////tmp/test_booking.db")
 
 from app import create_app, limiter
 from app.models import db as _db, Utente, Corso, Ruolo
 from datetime import datetime, timezone, timedelta
+import tempfile
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def app():
+    """Crea una nuova app con DB SQLite temporaneo per ogni test."""
+    db_fd, db_path = tempfile.mkstemp(suffix=".db")
+    os.close(db_fd)
+    os.environ["DATABASE_URL"] = f"sqlite:///{db_path}"
     app = create_app("testing")
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
-    # Disabilita tutti i limiti per i test
     app.config["RATELIMIT_ENABLED"] = False
-    return app
+    yield app
+    # Cleanup
+    try:
+        os.unlink(db_path)
+    except OSError:
+        pass
 
 
 @pytest.fixture(scope="function", autouse=True)
 def reset_rate_limit():
     """Pulisce i tentativi di login tra un test e l'altro."""
-    import importlib
     import sys
     mod = sys.modules.get("app.auth.routes")
     if mod and hasattr(mod, "_login_attempts"):
@@ -44,7 +51,10 @@ def db(app):
         _db.create_all()
         yield _db
         _db.session.remove()
-        _db.drop_all()
+        try:
+            _db.drop_all()
+        except Exception:
+            pass
 
 
 @pytest.fixture(scope="function")
