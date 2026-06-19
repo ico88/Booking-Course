@@ -154,7 +154,121 @@
 </div>
 {% endif %}
 
+<style>
+#img-toolbar {
+  position:absolute; display:none; background:#1f2937; border-radius:8px;
+  padding:4px 6px; gap:4px; align-items:center; z-index:100; white-space:nowrap;
+  box-shadow:0 4px 12px rgba(0,0,0,.3);
+}
+#img-toolbar button {
+  font-size:11px; color:#e5e7eb; background:rgba(255,255,255,.1);
+  border:none; border-radius:4px; padding:2px 7px; cursor:pointer; line-height:1.6;
+}
+#img-toolbar button:hover { background:rgba(255,255,255,.25); }
+#img-toolbar input[type=number] {
+  width:52px; font-size:11px; padding:2px 4px; border-radius:4px; border:none;
+  background:rgba(255,255,255,.15); color:#fff; text-align:center;
+}
+#img-toolbar input[type=number]:focus { outline:none; background:rgba(255,255,255,.25); }
+#img-toolbar .sep { width:1px; background:rgba(255,255,255,.2); align-self:stretch; margin:2px 2px; }
+#rich-editor img.img-selected { outline:2px solid #3b82f6; outline-offset:2px; }
+</style>
+
+<!-- Toolbar ridimensionamento immagine -->
+<div id="img-toolbar" style="display:none">
+  <button type="button" onclick="setImgW('25%')">25%</button>
+  <button type="button" onclick="setImgW('50%')">50%</button>
+  <button type="button" onclick="setImgW('75%')">75%</button>
+  <button type="button" onclick="setImgW('100%')">100%</button>
+  <span class="sep"></span>
+  <input type="number" id="img-w-input" min="10" max="800" placeholder="px"
+         onchange="setImgW(this.value+'px')" title="Larghezza in px">
+  <span class="sep"></span>
+  <button type="button" onclick="setImgAlign('left')"   title="Allinea sinistra">◀</button>
+  <button type="button" onclick="setImgAlign('center')" title="Centra">■</button>
+  <button type="button" onclick="setImgAlign('right')"  title="Allinea destra">▶</button>
+  <span class="sep"></span>
+  <button type="button" onclick="removeSelectedImg()" style="color:#f87171">✕</button>
+</div>
+
 <script>
+let _selectedImg = null;
+
+document.getElementById('rich-editor').addEventListener('click', function(e) {
+  if (e.target.tagName === 'IMG') {
+    selectImg(e.target);
+  } else {
+    deselectImg();
+  }
+});
+
+function selectImg(img) {
+  if (_selectedImg) _selectedImg.classList.remove('img-selected');
+  _selectedImg = img;
+  img.classList.add('img-selected');
+  const tb = document.getElementById('img-toolbar');
+  // Posiziona sopra l'immagine
+  const rect = img.getBoundingClientRect();
+  const edRect = document.getElementById('rich-editor').getBoundingClientRect();
+  const edWrap = document.getElementById('rich-editor-wrap');
+  const wrapRect = edWrap.getBoundingClientRect();
+  tb.style.display = 'flex';
+  tb.style.top  = (rect.top - wrapRect.top - tb.offsetHeight - 6) + 'px';
+  tb.style.left = (rect.left - wrapRect.left) + 'px';
+  // Imposta valore px corrente
+  document.getElementById('img-w-input').value = Math.round(img.getBoundingClientRect().width);
+  edWrap.style.position = 'relative';
+  edWrap.appendChild(tb);
+}
+
+function deselectImg() {
+  if (_selectedImg) _selectedImg.classList.remove('img-selected');
+  _selectedImg = null;
+  document.getElementById('img-toolbar').style.display = 'none';
+}
+
+function setImgW(val) {
+  if (!_selectedImg) return;
+  _selectedImg.style.width = val;
+  _selectedImg.style.maxWidth = '100%';
+  _selectedImg.style.height = 'auto';
+  // aggiorna input px
+  document.getElementById('img-w-input').value = Math.round(_selectedImg.getBoundingClientRect().width);
+  esync('rich-editor', 'corpo_html_hidden');
+  schedulePreview();
+}
+
+function setImgAlign(align) {
+  if (!_selectedImg) return;
+  if (align === 'center') {
+    _selectedImg.style.display = 'block';
+    _selectedImg.style.marginLeft = 'auto';
+    _selectedImg.style.marginRight = 'auto';
+    _selectedImg.style.float = '';
+  } else {
+    _selectedImg.style.display = '';
+    _selectedImg.style.float = align;
+    _selectedImg.style.margin = align === 'right' ? '0 0 .5em .5em' : '0 .5em .5em 0';
+  }
+  esync('rich-editor', 'corpo_html_hidden');
+  schedulePreview();
+}
+
+function removeSelectedImg() {
+  if (!_selectedImg) return;
+  _selectedImg.remove();
+  deselectImg();
+  esync('rich-editor', 'corpo_html_hidden');
+  schedulePreview();
+}
+
+// Chiudi toolbar cliccando fuori dall'editor
+document.addEventListener('click', function(e) {
+  const ed = document.getElementById('rich-editor');
+  const tb = document.getElementById('img-toolbar');
+  if (!ed.contains(e.target) && !tb.contains(e.target)) deselectImg();
+});
+
 function insertImage(url, alt) {
   const ed = document.getElementById('rich-editor');
   ed.focus();
