@@ -1,9 +1,7 @@
 {% extends "admin/base_admin.html" %}
 {% block title %}Statistiche{% endblock %}
 
-{% block head %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
-{% endblock %}
+{% block head %}{% endblock %}
 
 {% block admin_content %}
 <h1 class="text-2xl font-bold mb-6">Statistiche</h1>
@@ -103,31 +101,54 @@
   const labels = {{ trend | map(attribute='giorno') | map('string') | list | tojson }};
   const data   = {{ trend | map(attribute='cnt')   | list | tojson }};
 
-  const ctx = document.getElementById('trendChart');
-  if (!ctx) return;
-  new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [{
-        label: 'Visite',
-        data,
-        backgroundColor: 'rgba(59,130,246,0.6)',
-        borderColor: 'rgba(59,130,246,1)',
-        borderWidth: 1,
-        borderRadius: 4,
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { grid: { display: false }, ticks: { font: { size: 10 } } },
-        y: { beginAtZero: true, ticks: { precision: 0, font: { size: 10 } } },
+  function renderChart() {
+    const ctx = document.getElementById('trendChart');
+    if (!ctx) return;
+    if (typeof Chart !== 'undefined') {
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Visite',
+            data,
+            backgroundColor: 'rgba(59,130,246,0.6)',
+            borderColor: 'rgba(59,130,246,1)',
+            borderWidth: 1,
+            borderRadius: 4,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+            y: { beginAtZero: true, ticks: { precision: 0, font: { size: 10 } } },
+          }
+        }
+      });
+    } else {
+      // Fallback: barre CSS
+      const max = Math.max(...data) || 1;
+      const wrap = ctx.parentElement;
+      let html = '<div style="display:flex;align-items:flex-end;gap:2px;height:180px;width:100%;">';
+      for (let i = 0; i < data.length; i++) {
+        const h = Math.round((data[i] / max) * 170);
+        html += `<div title="${labels[i]}: ${data[i]} visite" style="flex:1;background:#3b82f6;height:${h}px;border-radius:3px 3px 0 0;min-height:2px;cursor:default;"></div>`;
       }
+      html += '</div>';
+      html += `<div style="display:flex;justify-content:space-between;font-size:9px;color:#9ca3af;margin-top:4px"><span>${labels[0]||''}</span><span>${labels[Math.floor(labels.length/2)]||''}</span><span>${labels[labels.length-1]||''}</span></div>`;
+      ctx.outerHTML = html;
     }
-  });
+  }
+
+  // Carica Chart.js, poi renderizza — fallback CSS se CDN non risponde
+  const s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js';
+  s.onload = renderChart;
+  s.onerror = renderChart;  // usa il fallback CSS
+  document.head.appendChild(s);
 })();
 </script>
 {% endif %}
