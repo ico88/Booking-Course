@@ -326,6 +326,93 @@ def corso_partecipanti(corso_id):
                            libreria_materiali=libreria_materiali)
 
 
+@admin_bp.route("/corsi/<string:corso_id>/partecipanti/pdf")
+@admin_required
+def corso_partecipanti_pdf(corso_id):
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib import colors
+    from reportlab.lib.units import mm
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+
+    corso = Corso.query.get_or_404(corso_id)
+    prenotazioni = corso.prenotazioni.filter(
+        Prenotazione.stato.in_([StatoPrenotazione.CONFERMATA, StatoPrenotazione.PAGAMENTO_CARICATO])
+    ).all()
+
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4,
+                            leftMargin=20*mm, rightMargin=20*mm,
+                            topMargin=20*mm, bottomMargin=20*mm)
+    styles = getSampleStyleSheet()
+    elements = []
+
+    # Titolo
+    title_style = ParagraphStyle('Title', parent=styles['Heading1'], fontSize=16, spaceAfter=4)
+    sub_style   = ParagraphStyle('Sub',   parent=styles['Normal'],   fontSize=9,  textColor=colors.HexColor('#6b7280'), spaceAfter=12)
+    elements.append(Paragraph(corso.titolo, title_style))
+    meta = []
+    if corso.data_inizio:
+        meta.append(corso.data_inizio.strftime('%d/%m/%Y'))
+    if corso.luogo:
+        meta.append(corso.luogo)
+    if meta:
+        elements.append(Paragraph(' · '.join(meta), sub_style))
+    elements.append(Spacer(1, 4*mm))
+
+    # Raccoglie partecipanti
+    righe = [['#', 'Nome', 'Cognome', 'Codice Fiscale', 'Email', 'Stato']]
+    n = 1
+    stato_labels = {
+        'CONFERMATA': 'Confermata',
+        'PAGAMENTO_CARICATO': 'Ricevuta caricata',
+    }
+    for p in prenotazioni:
+        stato = stato_labels.get(p.stato.value, p.stato.value)
+        if p.partecipanti:
+            for part in p.partecipanti:
+                righe.append([str(n), part.nome or '', part.cognome or '',
+                               part.codice_fiscale or '—', part.email or '—', stato])
+                n += 1
+        else:
+            u = p.utente
+            righe.append([str(n), u.nome or '', u.cognome or '',
+                          u.codice_fiscale or '—', u.email, stato])
+            n += 1
+
+    col_w = [10*mm, 32*mm, 32*mm, 38*mm, 52*mm, 30*mm]
+    t = Table(righe, colWidths=col_w, repeatRows=1)
+    t.setStyle(TableStyle([
+        ('BACKGROUND',  (0, 0), (-1, 0),  colors.HexColor('#1d4ed8')),
+        ('TEXTCOLOR',   (0, 0), (-1, 0),  colors.white),
+        ('FONTNAME',    (0, 0), (-1, 0),  'Helvetica-Bold'),
+        ('FONTSIZE',    (0, 0), (-1, 0),  8),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
+        ('TOPPADDING',    (0, 0), (-1, 0), 6),
+        ('FONTSIZE',    (0, 1), (-1, -1), 8),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f8fafc')]),
+        ('GRID',        (0, 0), (-1, -1), 0.4, colors.HexColor('#e2e8f0')),
+        ('TOPPADDING',  (0, 1), (-1, -1), 5),
+        ('BOTTOMPADDING', (0, 1), (-1, -1), 5),
+        ('VALIGN',      (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+    elements.append(t)
+
+    # Footer conteggio
+    elements.append(Spacer(1, 4*mm))
+    elements.append(Paragraph(
+        f'Totale partecipanti: <b>{n - 1}</b>  —  Generato il {datetime.now().strftime("%d/%m/%Y %H:%M")}',
+        ParagraphStyle('Footer', parent=styles['Normal'], fontSize=8, textColor=colors.HexColor('#9ca3af'))
+    ))
+
+    doc.build(elements)
+    buf.seek(0)
+    safe_title = re.sub(r'[^a-z0-9_-]', '_', corso.titolo.lower())[:40]
+    filename = f"partecipanti_{safe_title}.pdf"
+    return Response(buf.read(), mimetype='application/pdf',
+                    headers={'Content-Disposition': f'attachment; filename="{filename}"'})
+
+
 @admin_bp.route("/corsi/<string:corso_id>/partecipanti/aggiungi", methods=["POST"])
 @admin_required
 def corso_aggiungi_partecipante(corso_id):
